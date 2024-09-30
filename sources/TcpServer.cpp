@@ -6,11 +6,11 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/30 15:38:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/09/30 16:32:22 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/09/30 18:12:56 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "TcpServer.hpp"
+#include "../includes/TcpServer.hpp"
 
 TcpServer::TcpServer()
 {
@@ -39,8 +39,13 @@ int TcpServer::startServer()
 
 	if (m_socket == -1)
 		throw TcpServer::SocketCreationFailed();
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_port = htons(8080);  // Port 8080
+	server_addr.sin_addr.s_addr = INADDR_ANY;  // Bind to any available interface (localhost)
+	if (bind(m_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
+    	throw TcpServer::SocketCreationFailed();
 
-		return 0;
+	return 0;
 }
 
 /* --------------- Expections handling --------------- */

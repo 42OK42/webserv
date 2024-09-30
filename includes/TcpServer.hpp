@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/30 15:38:08 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/09/30 16:22:15 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/09/30 18:13:49 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,18 +17,36 @@
 #include <iostream>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <iostream>
+#include <cstring>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/poll.h>
+#include <sys/ioctl.h>
+#include <exception>
+#include <unistd.h>
+#include <cerrno>
+#include <fcntl.h>
+#include <csignal>
+#include <cstdlib>
+#include <netdb.h>
+#include <sstream>
+#include <string.h>
+#include <vector>
 
 class TcpServer
 {
 	private:
 		int	m_socket; //return a socket decriptor
-
+		struct sockaddr_in	server_addr;
 
 	public:
 		TcpServer();
 		~TcpServer();
 
-		int TcpServer::startServer();
+		int startServer();
 
 
 		class SocketCreationFailed : public std::exception {
