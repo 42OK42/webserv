@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/30 15:38:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/09/30 15:39:33 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/09/30 16:32:22 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,15 +22,31 @@ TcpServer::~TcpServer()
 	std::cout << "\033[32m" << "Destructor called" << "\033[0m" << std::endl;
 }
 
-// TcpServer::TcpServer(const TcpServer &copy)
+// void TcpServer::closeServer()
 // {
-// 	std::cout << "\033[34m" << "Copy constructor called" << "\033[0m" << std::endl;
+// 		close(m_socket);
+// 		exit(0);
 // }
 
-// TcpServer &TcpServer::operator=(const TcpServer &copy)
-// {
-// 	std::cout << "\033[35m" << "Copy assignment operator called" << "\033[0m" << std::endl;
-// 	return *this;
-// }
+/*
+AF_INET -> IPv4
+SOCK_STREAM -> TCP
+0 -> default protocol -> TCP
+*/
+int TcpServer::startServer()
+{
+	m_socket = socket(AF_INET, SOCK_STREAM, 0);
 
+	if (m_socket == -1)
+		throw TcpServer::SocketCreationFailed();
+
+		return 0;
+}
+
+/* --------------- Expections handling --------------- */
+
+const char* TcpServer::SocketCreationFailed::what() const throw ()
+{
+	return ("Trowing exception : creating server socket");
+}
 
