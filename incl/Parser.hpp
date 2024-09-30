@@ -7,7 +7,10 @@
 #include <iostream>
 #include "Data.hpp"
 
-std::stringstream readConfigFile(const std::string& filePath);
+std::string removeSemicolon(const std::string& str);
+bool readConfigFile(const std::string& filePath, std::stringstream& buffer);
 bool parseConfigStream(std::stringstream& buffer, Data& data);
+bool parseLocation(std::stringstream& buffer, LocationConf& location);
+bool parseCGI(std::istringstream& iss, CGIConfig& cgi);
 
 #endif

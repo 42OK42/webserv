@@ -1,16 +1,21 @@
 #include "Server.hpp"
 #include "Data.hpp"
 #include "Parser.hpp"
-#include <iostream>
-#include <sstream>
 
 int main(int argc, char *argv[])
 {
-	// Check for configuration file argument
-	const char* config_file = (argc > 1) ? argv[1] : "config/default.conf";
 
-	std::stringstream buffer = readConfigFile(config_file);
-	if (buffer.str().empty()) {
+	if (argc <= 1)
+	{
+		std::cerr << "Error: No configuration file provided." << std::endl;
+		return 1;
+	}
+
+	const char* config_file = argv[1];
+
+	std::stringstream buffer;
+	if (!readConfigFile(config_file, buffer))
+	{
 		std::cerr << "Failed to read configuration file." << std::endl;
 		return 1;
 	}

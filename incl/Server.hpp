@@ -5,16 +5,17 @@
 #include <string>
 #include <iostream>
 
-class Server {
-public:
-	Server(const ServerConf& config);
-	~Server();
+class Server
+{
+	public:
+		Server(const ServerConf& config);
+		~Server();
 
-	bool init();
-	void run();
+		bool init();
+		void run();
 
-private:
-	ServerConf config;
+	private:
+		ServerConf config;
 };
 
 #endif // SERVER_HPP

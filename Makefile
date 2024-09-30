@@ -5,7 +5,8 @@ CXXFLAGS = -Wall -Wextra -Werror -std=c++98
 INCLUDES = -I incl/
 
 SRCS = main.cpp \
-		Server.cpp
+		Server.cpp \
+		Parser.cpp \
 
 OBJS = $(SRCS:.cpp=.o)
 
