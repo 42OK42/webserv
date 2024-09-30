@@ -1,23 +1,20 @@
-
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
+#include "Data.hpp"
 #include <string>
 #include <iostream>
 
-class Server
-{
-	public:
+class Server {
+public:
+	Server(const ServerConf& config);
+	~Server();
 
-		Server();
-		~Server();
+	bool init();
+	void run();
 
-		bool init(const std::string& config_file);
-		void run();
-
-	private:
-
-	
+private:
+	ServerConf config;
 };
 
-#endif
+#endif // SERVER_HPP

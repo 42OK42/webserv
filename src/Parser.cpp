@@ -19,6 +19,10 @@ bool parseConfigStream(std::stringstream& buffer, Data& data)
 	ServerConf server;
 	std::string line;
 	std::string key;
+	int errorCode;
+	std::string errorPage;
+	std::string sizeStr;
+	LocationConf location;
 
 	while (std::getline(buffer, line))
 	{
@@ -32,20 +36,16 @@ bool parseConfigStream(std::stringstream& buffer, Data& data)
 			iss >> server.serverName;
 		else if (key == "error_page")
 		{
-			int errorCode;
-			std::string errorPage;
 			while (iss >> errorCode >> errorPage)
 				server.errorPages[errorCode] = errorPage;
 		}
 		else if (key == "client_max_body_size")
 		{
-			std::string sizeStr;
 			iss >> sizeStr;
 			server.clientMaxBodySize = std::stoul(sizeStr) * 1024 * 1024;
 		}
 		else if (key == "location")
 		{
-			LocationConf location;
 			iss >> location.path;
 			parseLocation(buffer, location);
 			server.locations.push_back(location);
@@ -62,6 +62,8 @@ bool parseLocation(std::stringstream& buffer, LocationConf& location)
 {
 	std::string line;
 	std::string key;
+	std::string method;
+	std::string value;
 
 	while (std::getline(buffer, line) && line.find('}') == std::string::npos)
 	{
@@ -75,13 +77,11 @@ bool parseLocation(std::stringstream& buffer, LocationConf& location)
 			iss >> location.index;
 		else if (key == "allow_methods")
 		{
-			std::string method;
 			while (iss >> method)
 				location.allowedMethods.push_back(method);
 		}
 		else if (key == "autoindex")
 		{
-			std::string value;
 			iss >> value;
 			location.autoindex = (value == "on");
 		}
