@@ -1,7 +1,7 @@
 #include "HttpRequest.hpp"
 
-HttpRequest::HttpRequest(const std::string& rawRequest) {
-	parse(rawRequest);
+HttpRequest::HttpRequest(const char* buffer, int bytesRead) {
+	parse(buffer, bytesRead);
 }
 
 const std::string& HttpRequest::getMethod() const { return method; }
@@ -34,29 +34,44 @@ std::string HttpRequest::getAccept() const {
 	return getHeader("Accept");
 }
 
-void HttpRequest::parse(const std::string& rawRequest) {
+void HttpRequest::parse(const char* buffer, int bytesRead)
+{
+	std::string rawRequest(buffer, bytesRead);
 	std::istringstream stream(rawRequest);
 	std::string line;
 
-	// Parse Startzeile
 	std::getline(stream, line);
 	std::istringstream startLine(line);
 	startLine >> method >> url >> httpVersion;
 
-	// Parse Header
-	while (std::getline(stream, line) && line != "\r") {
-		if (line.back() == '\r') line.pop_back(); // Entferne \r am Ende
+	while (std::getline(stream, line) && line != "\r")
+	{
+		if (!line.empty() && line[line.size() - 1] == '\r') {
+			line.erase(line.size() - 1);
+		}
 		std::string key, value;
 		std::istringstream headerLine(line);
-		if (std::getline(headerLine, key, ':') && std::getline(headerLine, value)) {
-			headers[key] = value.substr(1); // Entferne führendes Leerzeichen
-		}
+		if (std::getline(headerLine, key, ':') && std::getline(headerLine, value))
+			headers[key] = value.substr(1);
 	}
 
-	// Body ist bei GET normalerweise nicht vorhanden, hier nur der Vollständigkeit halber
-	if (headers.count("Content-Length")) {
-		int contentLength = std::stoi(headers["Content-Length"]);
+	if (headers.count("Content-Length"))
+	{
+		int contentLength;
+		std::istringstream(headers["Content-Length"]) >> contentLength;
 		body.resize(contentLength);
 		stream.read(&body[0], contentLength);
 	}
+}
+
+void HttpRequest::print() const
+{
+	std::cout << "Method: " << method << "\n";
+	std::cout << "URL: " << url << "\n";
+	std::cout << "HTTP Version: " << httpVersion << "\n";
+	std::cout << "Headers:\n";
+	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
+		std::cout << "  " << it->first << ": " << it->second << "\n";
+	if (!body.empty())
+		std::cout << "Body: " << body << "\n";
 }

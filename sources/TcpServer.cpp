@@ -3,14 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   TcpServer.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/30 15:38:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/02 14:20:57 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/02 16:08:58 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/TcpServer.hpp"
+#include "HttpRequest.hpp"
 
 TcpServer::TcpServer()
 {
@@ -69,7 +70,11 @@ int TcpServer::startServer()
 
 		std::cout << "Received: " << buffer << std::endl;
 
+		HttpRequest httpRequest(buffer, bytes_read);
 
+		std::cout << "printing request" << std::endl;
+		httpRequest.print();
+		
 		std::string response = "HTTP/1.1 200 OK\r\n"
 							"Content-Type: text/plain\r\n"
 							"Content-Length: 13\r\n"

@@ -6,8 +6,8 @@ NAME = webserv
 CC = c++
 CFLAGS = -Wall -Wextra -Werror -std=c++98 -Iincludes
 
-SRCS = $(wildcard sources/*.cpp) #main.cpp
-OBJS = $(SRCS:.cpp=.o)
+SRCS = $(wildcard sources/*.cpp)
+OBJS = $(patsubst sources/%.cpp, objects/%.o, $(SRCS))
 
 all: $(NAME)
 
@@ -16,14 +16,12 @@ $(NAME): $(OBJS)
 	@$(CC) $(CFLAGS) -o $(NAME) $(OBJS)
 	@echo "$(GREEN)./$(NAME) is ready!$(RESET)"
 
-
-sources/%.o: sources/%.cpp includes/%.hpp
+objects/%.o: sources/%.cpp | objects
 	@echo "Compiling $<..."
 	@$(CC) $(CFLAGS) -c $< -o $@
 
-%.o: %.cpp includes/%.hpp
-	@echo "Compiling $<..."
-	@$(CC) $(CFLAGS) -c $< -o $@
+objects:
+	@mkdir -p objects
 
 clean:
 	@echo "Cleaning object files and executable..."
