@@ -1,4 +1,4 @@
-#include "Parser.hpp"
+#include "ParseConfFile.hpp"
 
 std::string removeSemicolon(const std::string& str)
 {

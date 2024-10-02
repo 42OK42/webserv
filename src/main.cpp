@@ -1,6 +1,6 @@
 #include "Server.hpp"
 #include "Data.hpp"
-#include "Parser.hpp"
+#include "ParseConfFile.hpp"
 
 int main(int argc, char *argv[])
 {

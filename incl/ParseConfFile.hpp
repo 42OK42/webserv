@@ -1,5 +1,5 @@
-#ifndef PARSER_HPP
-#define PARSER_HPP
+#ifndef PARSECONFFILE_HPP
+#define PARSECONFFILE_HPP
 
 #include <sstream>
 #include <string>

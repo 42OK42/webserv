@@ -6,7 +6,7 @@ INCLUDES = -I incl/
 
 SRCS = main.cpp \
 		Server.cpp \
-		Parser.cpp \
+		ParseConfFile.cpp \
 
 OBJS = $(SRCS:.cpp=.o)
 
