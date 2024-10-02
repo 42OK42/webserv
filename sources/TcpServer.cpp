@@ -6,11 +6,13 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/30 15:38:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/02 16:08:58 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/02 18:00:59 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/TcpServer.hpp"
+#include "Router.hpp"
+#include "HttpResponse.hpp"
 #include "HttpRequest.hpp"
 
 TcpServer::TcpServer()
@@ -37,17 +39,17 @@ SOCK_STREAM -> TCP
 int TcpServer::startServer()
 {
 	std::cout << "Starting server..." << std::endl;
-	
+
 	m_socket = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (m_socket == -1)
 		throw TcpServer::SocketCreationFailed();
 	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(8080);  // Port 8080
-	server_addr.sin_addr.s_addr = INADDR_ANY;  // Bind to any available interface (including localhost)
+	server_addr.sin_port = htons(8080);
+	server_addr.sin_addr.s_addr = INADDR_ANY;
 
 	if (bind(m_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
-		throw TcpServer::SocketBindingFailed();  //binding failed, could be replace by throw std::runtime_error("Binding failed");
+		throw TcpServer::SocketBindingFailed();
 
 	if (listen(m_socket, SOMAXCONN) < 0)
 		throw TcpServer::SocketlisteningFailed();
@@ -55,6 +57,10 @@ int TcpServer::startServer()
 	std::cout << "Server is listening on port 8080..." << std::endl;
 
 	socklen_t client_addr_len = sizeof(client_addr);
+
+	// Router initialisieren
+	Router router;
+	initializeRoutes(router);
 
 	while (true)
 	{
@@ -71,21 +77,17 @@ int TcpServer::startServer()
 		std::cout << "Received: " << buffer << std::endl;
 
 		HttpRequest httpRequest(buffer, bytes_read);
+		HttpResponse httpResponse(httpRequest);
 
-		std::cout << "printing request" << std::endl;
-		httpRequest.print();
-		
-		std::string response = "HTTP/1.1 200 OK\r\n"
-							"Content-Type: text/plain\r\n"
-							"Content-Length: 13\r\n"
-							"\r\n"
-							"Hello, World!";
-		send(client_socket, response.c_str(), response.size(), 0);
+		// Anfrage mit dem Router verarbeiten
+		router.handleRequest(httpRequest, httpResponse);
 
+		// Antwort senden
+		std::string httpResponseString = httpResponse.toString();
+		send(client_socket, httpResponseString.c_str(), httpResponseString.size(), 0);
 
 		close(client_socket);
 	}
-
 
 	return 0;
 }
