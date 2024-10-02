@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 14:18:42 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/02 17:47:54 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/02 18:07:33 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ int main()
 
 	try
 	{
-		server.startServer();  // Appelle la méthode pour démarrer le serveur
+		server.startServer();
 	}
     catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
