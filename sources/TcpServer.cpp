@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   TcpServer.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/30 15:38:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/02 16:08:58 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/02 18:00:17 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,11 +23,19 @@ TcpServer::~TcpServer()
 	std::cout << "\033[32m" << "Destructor called" << "\033[0m" << std::endl;
 }
 
-// void TcpServer::closeServer()
-// {
-// 		close(m_socket);
-// 		exit(0);
-// }
+// Fonction pour lire un fichier HTML
+std::string TcpServer::readFile(const std::string& filepath)
+{
+		std::ifstream file(filepath.c_str());  // open the file in read mode
+		if (!file)
+		{
+			std::cerr << "Could not open the file: " << filepath << std::endl;
+			return "";
+		}
+		std::stringstream buffer;
+		buffer << file.rdbuf();
+		return buffer.str();
+}
 
 /*
 AF_INET -> IPv4
@@ -37,7 +45,7 @@ SOCK_STREAM -> TCP
 int TcpServer::startServer()
 {
 	std::cout << "Starting server..." << std::endl;
-	
+
 	m_socket = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (m_socket == -1)
@@ -68,20 +76,56 @@ int TcpServer::startServer()
 		if (bytes_read < 0)
 			throw SocketReadFailed();
 
-		std::cout << "Received: " << buffer << std::endl;
+		// std::cout << "Received: " << buffer << std::endl;
+
+		std::cout << "Received... " << std::endl;
 
 		HttpRequest httpRequest(buffer, bytes_read);
 
-		std::cout << "printing request" << std::endl;
+		std::cout << "Printing request..." << std::endl;
 		httpRequest.print();
-		
-		std::string response = "HTTP/1.1 200 OK\r\n"
-							"Content-Type: text/plain\r\n"
-							"Content-Length: 13\r\n"
-							"\r\n"
-							"Hello, World!";
-		send(client_socket, response.c_str(), response.size(), 0);
 
+		if (httpRequest.getMethod() == "GET")
+		{
+			if (httpRequest.getUrl() == "/")
+			{
+				std::string response_body = readFile("welcome.html");
+				if (response_body.empty())
+				{
+					std::cout << "Enter is empty / \n\n" << std::endl;
+ 					 std::string response = "HTTP/1.1 404 Not Found\r\n"
+											"Content-Type: text/plain\r\n"
+											"Content-Length: 9\r\n"
+											"\r\n"
+											"Not Found";
+					send(client_socket, response.c_str(), response.size(), 0);
+				}
+				else
+				{
+					std::ostringstream oss;
+					oss << response_body.size();
+					std::string response = "HTTP/1.1 200 OK\r\n"
+											"Content-Type: text/html\r\n"
+											"Content-Length: " + oss.str() + "\r\n"
+											"\r\n" +
+											response_body;
+
+					std::cout << "Sending response:" << std::endl;
+					std::cout << response << std::endl;
+
+					send(client_socket, response.c_str(), response.size(), 0);
+				}
+			}
+			else
+			{
+				std::string response = "HTTP/1.1 404 Not Found\r\n"
+										"Content-Type: text/plain\r\n"
+										"Content-Length: 9\r\n"
+										"\r\n"
+										"Not Found";
+				send(client_socket, response.c_str(), response.size(), 0);
+			}
+		}
 
 		close(client_socket);
 	}

@@ -69,9 +69,9 @@ void HttpRequest::print() const
 	std::cout << "Method: " << method << "\n";
 	std::cout << "URL: " << url << "\n";
 	std::cout << "HTTP Version: " << httpVersion << "\n";
-	std::cout << "Headers:\n";
-	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
-		std::cout << "  " << it->first << ": " << it->second << "\n";
-	if (!body.empty())
-		std::cout << "Body: " << body << "\n";
+	// std::cout << "Headers:\n";
+	// for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
+	// 	std::cout << "  " << it->first << ": " << it->second << "\n";
+	// if (!body.empty())
+	// 	std::cout << "Body: " << body << "\n";
 }
