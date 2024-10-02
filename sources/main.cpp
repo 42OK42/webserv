@@ -1,19 +1,28 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   server.cpp                                         :+:      :+:    :+:   */
+/*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/09/30 15:40:07 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/02 14:20:17 by ecarlier         ###   ########.fr       */
+/*   Created: 2024/10/02 14:18:42 by ecarlier          #+#    #+#             */
+/*   Updated: 2024/10/02 14:19:24 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-// #include "../includes/TcpServer.hpp"
+#include "../includes/TcpServer.hpp"
 
-// int main()
-// {
-// 	TcpServer server = TcpServer();
-// 	return (0);
-// }
+int main()
+{
+	TcpServer server;
+
+	try
+	{
+		server.startServer();  // Appelle la méthode pour démarrer le serveur
+	}
+    catch (const std::exception &e) {
+        std::cerr << e.what() << std::endl;
+    }
+
+    return 0;
+}

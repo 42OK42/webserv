@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/30 15:38:08 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/09/30 18:13:49 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/02 14:13:59 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,6 +41,8 @@ class TcpServer
 	private:
 		int	m_socket; //return a socket decriptor
 		struct sockaddr_in	server_addr;
+		struct sockaddr_in client_addr; //contains Ip adress and client port
+		int client_socket;
 
 	public:
 		TcpServer();
@@ -53,6 +55,24 @@ class TcpServer
 			public:
 				virtual const char* what() const throw();
 		};
+		class SocketBindingFailed : public std::exception {
+			public:
+				virtual const char* what() const throw();
+		};
+		class SocketlisteningFailed : public std::exception {
+			public:
+				virtual const char* what() const throw();
+		};
+		class SocketAcceptFailed : public std::exception {
+			public:
+				virtual const char* what() const throw();
+		};
+		class SocketReadFailed : public std::exception {
+			public:
+				virtual const char* what() const throw();
+		};
+
+
 };
 
 std::ostream &operator<<(std::ostream &o, TcpServer const &i);
