@@ -1,31 +1,38 @@
+GREEN = \033[0;32m
+RESET = \033[0m
+
 NAME = webserv
 
-CXX = c++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98
-INCLUDES = -I incl/
+CC = c++
+CFLAGS = -Wall -Wextra -Werror -std=c++98 -Iincludes
 
-SRCS = main.cpp \
-		Server.cpp \
-		ParseConfFile.cpp \
-
+SRCS = $(wildcard sources/*.cpp) #main.cpp
 OBJS = $(SRCS:.cpp=.o)
-
-SRCDIR = src
-OBJDIR = obj
 
 all: $(NAME)
 
-$(NAME): $(addprefix $(OBJDIR)/, $(OBJS))
-	$(CXX) $(CXXFLAGS) $(addprefix $(OBJDIR)/, $(OBJS)) -o $(NAME)
+$(NAME): $(OBJS)
+	@echo "Linking the executable..."
+	@$(CC) $(CFLAGS) -o $(NAME) $(OBJS)
+	@echo "$(GREEN)./$(NAME) is ready!$(RESET)"
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.cpp
-	mkdir -p $(OBJDIR)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+
+sources/%.o: sources/%.cpp includes/%.hpp
+	@echo "Compiling $<..."
+	@$(CC) $(CFLAGS) -c $< -o $@
+
+%.o: %.cpp includes/%.hpp
+	@echo "Compiling $<..."
+	@$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -rf $(OBJDIR)
+	@echo "Cleaning object files and executable..."
+	@rm -f $(OBJS)
 
 fclean: clean
-	rm -f $(NAME)
+	@echo "Cleaning all temporary files..."
+	@rm -f $(NAME)
 
 re: fclean all
+
+.PHONY: all clean fclean re
