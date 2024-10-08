@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:54 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/08 16:59:35 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/08 20:18:15 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,19 +20,41 @@
 class Location
 {
 	private:
-		std::string	_path;                       // Le chemin URL (ex: "/uploads")
-		std::string	_root;                       // Répertoire racine pour cette location
-		std::string	_index;                      // Fichier à servir par défaut (ex: "index.html")
-		bool 		_autoIndex;
-		std::vector<std::string>	_allowedMethods; // Méthodes HTTP acceptées (GET, POST, etc.)
-
+		std::string					_path;	// Le chemin URL (ex: "/uploads")
+		std::string					_root;	// Répertoire racine pour cette location
+		std::string					_index;	// Fichier à servir par défaut (ex: "index.html")
+		bool 						_autoIndex;
+		std::vector<std::string>	_Methods;
 	public:
 		Location();
 		// Location(const Location &copy);
 		// Location &operator=(const Location &copy);
 		~Location();
 
-		class CustomException : public std::exception {
+		bool isValidMethod(const std::string& token);
+		bool isValidAutoIndex(const std::string& token);
+
+		/*Getters and Setters */
+		std::string getPath() const;
+		std::string getRoot() const;
+		std::string getIndex() const;
+		bool getAutoIndex() const;
+		std::vector<std::string> getMethods() const;
+
+		void setPath(const std::string& token);
+		void setRoot(const std::string& token);
+		void setIndex(const std::string& token);
+		void setAutoIndex(const std::string& token);
+		void setMethods(const std::string& token);
+
+		//void	setMethods();
+
+		class InvalidAutoIndexException: public std::exception {
+			public:
+				virtual const char* what() const throw();
+		};
+
+		class InvalidMethodException : public std::exception {
 			public:
 				virtual const char* what() const throw();
 		};
