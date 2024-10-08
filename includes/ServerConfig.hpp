@@ -6,13 +6,14 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/08 14:51:34 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/08 17:21:36 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef ServerConfig_HPP
 #define ServerConfig_HPP
 
+#include "Location.hpp"
 #include <string>
 #include <iostream>
 #include <vector>
@@ -29,6 +30,7 @@ class ServerConfig
 		std::map<int, std::string>		_errorPages;  // Default error pages (e.g., 404 -> "/404.html")
 		size_t 							_clientMaxBodySize;  // Maximum allowed size for client request body
 		//std::vector<RouteConfig> routes;  // Routes for the server
+		std::map <std::string, Location>	_locations;
 
 		/* CGI */
 		bool							_cgiEnabled;
