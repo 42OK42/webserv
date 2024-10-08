@@ -5,8 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/10/02 15:24:35 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/02 15:34:46 by okrahl           ###   ########.fr       */
+/*   Created: 2024/10/08 16:28:34 by okrahl            #+#    #+#             */
+/*   Updated: 2024/10/08 16:28:37 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,7 @@ class HttpRequest
 		std::string getUserAgent() const;
 		std::string getConnection() const;
 		std::string getAccept() const;
+		const std::string& getFilename() const; // Methode zum Abrufen des Dateinamens
 
 		void print() const;
 
@@ -44,8 +45,10 @@ class HttpRequest
 		std::string httpVersion;
 		std::map<std::string, std::string> headers;
 		std::string body;
+		std::string filename; // Variable für den Dateinamen
 
 		void parse(const char* buffer, int bytesRead);
+		void parseMultipartData(const std::string& boundary);
 };
 
 #endif
