@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserver.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/24 19:03:57 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/25 13:07:10 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@
 Webserver::Webserver() {}
 
 Webserver::Webserver(const std::vector<ServerConfig>& servers) : _servers(servers) {
-	// Initialisierungen, falls nötig
+    // Initialisierungen, falls nötig
 }
 
 Webserver::~Webserver() {
@@ -104,82 +104,32 @@ void Webserver::handleNewConnection(int server_socket) {
 
 void Webserver::handleClientData(size_t index) {
 	int client_fd = fds[index].fd;
-	std::string& requestData = _servers[0].getClientData(client_fd);
+	ServerConfig& server = _servers[0]; // Assuming a single server configuration for simplicity
 
-	char buffer[1024];
-	int bytesRead = recv(client_fd, buffer, sizeof(buffer), 0);
-	if (bytesRead <= 0) {
-		if (bytesRead < 0) {
-			std::cerr << "Error reading from client socket: " << strerror(errno) << std::endl;
-		}
-		close(client_fd);
-		fds.erase(fds.begin() + index);
-		return;
-	}
+	if (server.readClientData(client_fd)) {
+		HttpRequest httpRequest(server.getClientData(client_fd).c_str(), server.getClientData(client_fd).size());
+		HttpResponse httpResponse(httpRequest);
+		Router router(server);
 
-	requestData.append(buffer, bytesRead);
+		// Initialize routes if not already done
+		router.initializeRoutes();
 
-	if (isCompleteRequest(requestData)) {
-		HttpRequest httpRequest(requestData.c_str(), requestData.size());
-		httpRequest.print();
+		// Handle the request
+		router.handleRequest(httpRequest, httpResponse);
 
-		std::string requestHost = httpRequest.getHost();
-		int requestPort = httpRequest.getPort();
-
-		ServerConfig* matchedServer = findMatchingServer(requestHost, requestPort);
-
-		if (matchedServer != NULL) {
-			processRequest(httpRequest, matchedServer, client_fd);
+		// Send the response
+		std::string httpResponseString = httpResponse.toString();
+		if (send(client_fd, httpResponseString.c_str(), httpResponseString.size(), 0) < 0) {
+			std::cerr << "Error sending response: " << strerror(errno) << std::endl;
 		} else {
-			std::cerr << "No matching server configuration found for host: " << requestHost << " and port: " << requestPort << std::endl;
+			std::cout << "Response sent to client: " << client_fd << std::endl;
 		}
 
+		// Clean up
+		server.eraseClientData(client_fd);
 		close(client_fd);
 		fds.erase(fds.begin() + index);
 	}
-}
-
-bool Webserver::isCompleteRequest(const std::string& requestData) {
-	size_t headerEnd = requestData.find("\r\n\r\n");
-	if (headerEnd != std::string::npos) {
-		size_t contentLength = 0;
-		size_t contentLengthPos = requestData.find("Content-Length:");
-		if (contentLengthPos != std::string::npos) {
-			contentLengthPos += 15;
-			contentLength = std::atoi(requestData.c_str() + contentLengthPos);
-		}
-		return requestData.size() >= headerEnd + 4 + contentLength;
-	}
-	return false;
-}
-
-ServerConfig* Webserver::findMatchingServer(const std::string& host, int port) {
-	for (size_t i = 0; i < _servers.size(); ++i) {
-		if (_servers[i].getHost() == host && _servers[i].getPort() == port) {
-			return &_servers[i];
-		}
-	}
-	return NULL;
-}
-
-void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, int client_fd) {
-	std::cout << "Processing request for server: " 
-			  << server->getHost() << ":" << server->getPort() << std::endl;
-
-	HttpResponse httpResponse(httpRequest);
-	Router router(*server);
-	
-	router.initializeRoutes();
-	router.handleRequest(httpRequest, httpResponse);
-	
-	std::string httpResponseString = httpResponse.toString();
-	if (send(client_fd, httpResponseString.c_str(), httpResponseString.size(), 0) < 0) {
-		std::cerr << "Error sending response: " << strerror(errno) << std::endl;
-	} else {
-		std::cout << "Response sent to client: " << client_fd << std::endl;
-	}
-	
-	server->eraseClientData(client_fd);
 }
 
 void Webserver::setNonBlocking(int sockfd) {
