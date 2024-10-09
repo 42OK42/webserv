@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 18:59:49 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/09 22:27:36 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,7 +71,7 @@ class ServerConfig
 		std::string					getCgiBin( void ) const;
 
 
-	
+
 		void addErrorPage(int code, const std::string& page);
 		const std::map<int, std::string>& getErrorPages() const;
 
@@ -82,7 +82,5 @@ class ServerConfig
 		void print() const;
 
 };
-
-
 
 #endif // ServerConfig_HPP

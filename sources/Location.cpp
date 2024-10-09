@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:01:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 22:19:59 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/09 22:38:22 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,12 +14,12 @@
 
 Location::Location()
 {
-	std::cout << "\033[33m" << "Default constructor called" << "\033[0m" << std::endl;
+	//std::cout << "\033[33m" << "Default constructor called" << "\033[0m" << std::endl;
 }
 
 Location::~Location()
 {
-	std::cout << "\033[32m" << "Destructor called" << "\033[0m" << std::endl;
+	//std::cout << "\033[32m" << "Destructor called" << "\033[0m" << std::endl;
 }
 
 // Location::Location(const Location &copy)
@@ -93,15 +93,35 @@ void Location::setCgiPath(const std::string& token)
 	_cgi_path = token;
 }
 
-void Location::setMethods(const std::vector<std::string>& methods) {
-    for (std::vector<std::string>::const_iterator it = methods.begin(); it != methods.end(); ++it) {
-        if (!isValidMethod(*it)) {
-            throw InvalidMethodException();
+// void Location::setMethods(const std::vector<std::string>& methods)
+// {
+// 	for (std::vector<std::string>::const_iterator it = methods.begin(); it != methods.end(); ++it)
+// 	{
+// 		if (!isValidMethod(*it))
+// 			throw InvalidMethodException();
+// 		else
+// 			_Methods.push_back(*it);
+// 	}
+// 	// _Methods = methods;
+// }
+void Location::setMethods(const std::vector<std::string>& methods)
+{
+    for (std::vector<std::string>::const_iterator it = methods.begin(); it != methods.end(); ++it)
+    {
+        try
+        {
+            if (!isValidMethod(*it))
+                throw InvalidMethodException();
+            else
+                _Methods.push_back(*it);
+        }
+        catch (const InvalidMethodException& e)
+        {
+            std::cerr << "Error: " << e.what() << std::endl;
+            // Optionally, you can break, skip this item, or perform other actions.
         }
     }
-    _Methods = methods;
 }
-
 
 /*			Getters			*/
 
@@ -140,7 +160,7 @@ const char* Location::InvalidAutoIndexException::what() const throw ()
 
 const char* Location::InvalidMethodException::what() const throw ()
 {
-	return ("Trowing exception : invalid auto index ");
+	return ("Trowing exception : invalid method");
 }
 
 

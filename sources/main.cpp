@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 14:18:42 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 17:05:06 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/09 22:29:35 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@ int main() {
     Parser parser;
     std::stringstream configBuffer;
 
-    if (!parser.readFile("server_conf/basic.conf", configBuffer)) {
+    if (!parser.readFile("server_conf/invalid.conf", configBuffer)) {
         return 1;
     }
     if (!parser.ParseConfigStream(configBuffer)) {

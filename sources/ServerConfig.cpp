@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/09 15:30:30 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 19:04:35 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/09 22:42:21 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@ void ServerConfig::setPort(const std::vector<std::string>& tokens)
     _port.clear();
     for (size_t i = 0; i < tokens.size(); ++i)
     {
-        _port.push_back(atoi(tokens[i].c_str())); // Utilisez atoi à la place de std::stoi
+        _port.push_back(atoi(tokens[i].c_str()));
     }
 }
 
@@ -43,8 +43,7 @@ void ServerConfig::setRoot(const std::vector<std::string>& tokens) {
 
 void ServerConfig::setErrorPage(const std::vector<std::string>& tokens) {
     if (tokens.size() >= 2) {
-        int code = atoi(tokens[0].c_str()); // Utilisez atoi à la place de std::stoi
-        // std::string page = removeSemicolon(tokens[1]); // Enlevez le point-virgule
+        int code = atoi(tokens[0].c_str());
          _errorPages[code] = tokens[1];
     }
 }
@@ -189,7 +188,7 @@ void ServerConfig::print() const {
     for (std::map<int, std::string>::const_iterator it = _errorPages.begin(); it != _errorPages.end(); ++it) {
     std::cout << "Error Code " << it->first << " -> " << it->second << std::endl;
     }
-    
+
     std::cout << "Locations: " << std::endl;
     for (std::map<std::string, Location>::const_iterator it = _locations.begin(); it != _locations.end(); ++it) {
         std::cout << std::endl;
