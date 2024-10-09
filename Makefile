@@ -26,6 +26,8 @@ objects:
 clean:
 	@echo "Cleaning object files and executable..."
 	@rm -f $(OBJS)
+	@echo "Removing uploads directory..."
+	@rm -rf uploads
 
 fclean: clean
 	@echo "Cleaning all temporary files..."

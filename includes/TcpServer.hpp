@@ -6,13 +6,14 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/30 15:38:08 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/02 14:13:59 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/02 17:16:45 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef TcpServer_HPP
 #define TcpServer_HPP
 
+#include <fstream> 
 #include <string>
 #include <iostream>
 #include <sys/socket.h>
@@ -49,7 +50,7 @@ class TcpServer
 		~TcpServer();
 
 		int startServer();
-
+		std::string readFile(const std::string& filepath);
 
 		class SocketCreationFailed : public std::exception {
 			public:
