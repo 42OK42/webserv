@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:54 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/08 20:18:15 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/09 15:37:17 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ class Location
 		void setRoot(const std::string& token);
 		void setIndex(const std::string& token);
 		void setAutoIndex(const std::string& token);
-		void setMethods(const std::string& token);
+		void setMethods(const std::vector<std::string>& tokens);
 
 		//void	setMethods();
 

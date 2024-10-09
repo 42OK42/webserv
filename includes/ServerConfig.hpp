@@ -6,18 +6,19 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/08 17:21:36 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/09 16:34:06 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef ServerConfig_HPP
-#define ServerConfig_HPP
+#ifndef SERVERCONFIG_HPP
+#define SERVERCONFIG_HPP
 
 #include "Location.hpp"
 #include <string>
 #include <iostream>
 #include <vector>
 #include <map>
+#include <cstdlib>
 
 class ServerConfig
 {
@@ -51,7 +52,7 @@ class ServerConfig
 		void			setServerName( const std::vector<std::string>& tokens );
 		void			setRoot( const std::vector<std::string>& tokens );
 		void			setErrorPage( const std::vector<std::string>& tokens );
-		void			setClientMaxBodySize( const std::vector<std::string>& tokens );
+		void 			setClientMaxBodySize(size_t token);
 		void			setCgiEnabled( const std::vector<std::string>& tokens );
 		void			setCgiExtension( const std::vector<std::string>& tokens );
 		void			setCgiBin( const std::vector<std::string>& tokens );
@@ -71,6 +72,9 @@ class ServerConfig
 		std::string					getCgiExtension( void ) const;
 		std::string					getCgiBin( void ) const;
 		//Location*		getLocation( const string& path_or_flag );
+		std::map<std::string, Location>& getLocations();
+		void addLocation(const std::string& path, const Location& location);
+
 
 };
 
