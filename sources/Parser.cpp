@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 22:16:58 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/09 22:26:25 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,7 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 {
 	ServerConfig server;
 	std::string line;
+	std::string host;
 	std::string key;
 	int errorCode;
 	std::string errorPage;
@@ -62,15 +63,23 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
             std::string port;
             iss >> port;
             std::vector<std::string> portVector;
-            portVector.push_back(port);
+            portVector.push_back(removeSemicolon(port));
             server.setPort(portVector);
+        }
+		if (key == "host")
+        {
+            std::string host;
+            iss >> host;
+            std::vector<std::string> hostVector;
+            hostVector.push_back(removeSemicolon(host));
+            server.setHost(hostVector);
         }
 		else if (key == "server_name")
 		{
 			std::string name;
             iss >> name;
             std::vector<std::string> nameVector;
-			nameVector.push_back(name);
+			nameVector.push_back(removeSemicolon(name));
             server.setServerName(nameVector);
         }
 		else if (key == "error_page")
