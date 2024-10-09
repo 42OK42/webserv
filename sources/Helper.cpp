@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 17:55:55 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/08 16:26:09 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/09 17:12:51 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,4 +41,12 @@ std::string extractFilename(const std::string& contentDisposition) {
 		}
 	}
 	return filename;
+}
+
+std::string extractFilenameFromUrl(const std::string& url) {
+	size_t pos = url.find("filename=");
+	if (pos != std::string::npos) {
+		return url.substr(pos + 9);
+	}
+	return "";
 }

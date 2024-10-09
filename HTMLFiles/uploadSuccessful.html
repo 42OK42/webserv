@@ -13,16 +13,13 @@
 	<button onclick="location.href='/form'">Go to Form Page</button>
 
 	<!-- Button to delete the uploaded file -->
-	<button onclick="deleteFile('uploaded_image.jpg')">Delete Uploaded File</button>
+	<button onclick="deleteFile()">Delete Uploaded File</button>
 
 	<script>
-		function deleteFile(filename) {
-			fetch('/delete', {
-				method: 'DELETE',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({ filename: filename })
+		function deleteFile() {
+			const filename = 'pxfuel.jpg'; // Hardcoded filename
+			fetch(`/upload?filename=${encodeURIComponent(filename)}`, {
+				method: 'DELETE'
 			})
 			.then(response => response.text())
 			.then(data => {

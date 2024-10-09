@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:49 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/08 16:39:29 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/09 17:40:27 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,17 @@ void Router::addRoute(const std::string& path, RouteHandler handler) {
 }
 
 void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
-	std::map<std::string, RouteHandler>::const_iterator it = routes.find(request.getUrl());
+	std::cout << "Request URL: " << request.getUrl() << std::endl;
+	std::cout << "Request Method: " << request.getMethod() << std::endl;
+
+	// Extract Path without Query-Parameter
+	std::string path = request.getUrl();
+	size_t queryPos = path.find('?');
+	if (queryPos != std::string::npos) {
+		path = path.substr(0, queryPos);
+	}
+
+	std::map<std::string, RouteHandler>::const_iterator it = routes.find(path);
 	if (it != routes.end()) {
 		RouteHandler handler = it->second;
 		(this->*handler)(request, response); // Call the member function
@@ -44,52 +54,6 @@ void Router::handleHomeRoute(const HttpRequest& req, HttpResponse& res) {
 	}
 }
 
-void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
-	if (req.getMethod() == "GET") {
-		std::string content = readFile("HTMLFiles/upload.html");
-		res.setStatusCode(200);
-		res.setBody(content);
-		res.setHeader("Content-Type", "text/html");
-	} else if (req.getMethod() == "POST") {
-		std::string originalFilename = req.getFilename();  // Verwende getFilename()
-
-		if (originalFilename.empty()) {
-			res.setStatusCode(400);
-			res.setBody("Bad Request: Filename not found");
-			res.setHeader("Content-Type", "text/plain");
-			return;
-		}
-
-		std::string imageData = req.getBody();
-
-		std::string uploadDir = "./uploads";
-		ensureDirectoryExists(uploadDir);
-
-		std::string savedFilename = uploadDir + "/" + originalFilename;
-		
-		std::ofstream outFile(savedFilename.c_str(), std::ios::binary);
-		if (outFile.is_open()) {
-			outFile.write(imageData.c_str(), imageData.size());
-			outFile.close();
-
-			uploadedFiles.push_back(savedFilename);
-
-			std::string successContent = readFile("HTMLFiles/uploadSuccessful.html");
-			res.setStatusCode(200);
-			res.setBody(successContent);
-			res.setHeader("Content-Type", "text/html");
-		} else {
-			res.setStatusCode(500);
-			res.setBody("<html><body><h1>500 Internal Server Error</h1></body></html>");
-			res.setHeader("Content-Type", "text/html");
-		}
-	} else {
-		res.setStatusCode(405);
-		res.setBody("<html><body><h1>405 Method Not Allowed</h1></body></html>");
-		res.setHeader("Content-Type", "text/html");
-	}
-}
-
 void Router::handleFormRoute(const HttpRequest& req, HttpResponse& res) {
 	if (req.getMethod() == "GET") {
 		std::string content = readFile("HTMLFiles/form.html");
@@ -103,11 +67,63 @@ void Router::handleFormRoute(const HttpRequest& req, HttpResponse& res) {
 	}
 }
 
-void Router::handleUploadSuccessfulRoute(const HttpRequest& req, HttpResponse& res) {
-	if (req.getMethod() == "DELETE") {
-		std::string filename = req.getBody(); // Angenommen, der Dateiname wird im Body gesendet
+void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
+	std::cout << "handleUploadRoute called" << std::endl;
+	std::cout << "Request URL: " << req.getUrl() << std::endl;
+	std::cout << "Request Method: " << req.getMethod() << std::endl;
+
+	if (req.getMethod() == "GET") {
+		std::string content = readFile("HTMLFiles/upload.html");
+		res.setStatusCode(200);
+		res.setBody(content);
+		res.setHeader("Content-Type", "text/html");
+	} else if (req.getMethod() == "POST") {
+		std::cout << "Processing POST request" << std::endl;
+		std::string originalFilename = req.getFilename();
+		std::cout << "Original filename: " << originalFilename << std::endl;
+
+		if (originalFilename.empty()) {
+			std::cout << "Filename not found" << std::endl;
+			res.setStatusCode(400);
+			res.setBody("Bad Request: Filename not found");
+			res.setHeader("Content-Type", "text/plain");
+			return;
+		}
+
+		std::string imageData = req.getBody();
+		std::cout << "Image data size: " << imageData.size() << std::endl;
+
+		std::string uploadDir = "./uploads";
+		ensureDirectoryExists(uploadDir);
+
+		std::string savedFilename = uploadDir + "/" + originalFilename;
+		std::cout << "Saving file to: " << savedFilename << std::endl;
+
+		std::ofstream outFile(savedFilename.c_str(), std::ios::binary);
+		if (outFile.is_open()) {
+			outFile.write(imageData.c_str(), imageData.size());
+			outFile.close();
+			std::cout << "File saved successfully" << std::endl;
+
+			uploadedFiles.push_back(savedFilename);
+
+			std::string successContent = readFile("HTMLFiles/uploadSuccessful.html");
+			res.setStatusCode(200);
+			res.setBody(successContent);
+			res.setHeader("Content-Type", "text/html");
+		} else {
+			std::cout << "Failed to open file for writing" << std::endl;
+			res.setStatusCode(500);
+			res.setBody("<html><body><h1>500 Internal Server Error</h1></body></html>");
+			res.setHeader("Content-Type", "text/html");
+		}
+	} else if (req.getMethod() == "DELETE") {
+		std::cout << "Processing DELETE request" << std::endl;
+		std::string filename = extractFilenameFromUrl(req.getUrl());
+		std::cout << "Extracted filename: " << filename << std::endl;
 
 		if (filename.empty()) {
+			std::cout << "Filename not found in DELETE request" << std::endl;
 			res.setStatusCode(400);
 			res.setBody("Bad Request: Filename not found");
 			res.setHeader("Content-Type", "text/plain");
@@ -115,19 +131,23 @@ void Router::handleUploadSuccessfulRoute(const HttpRequest& req, HttpResponse& r
 		}
 
 		std::string filePath = "./uploads/" + filename;
+		std::cout << "Attempting to delete file: " << filePath << std::endl;
+
 		if (remove(filePath.c_str()) == 0) {
+			std::cout << "File deleted successfully" << std::endl;
+			uploadedFiles.erase(std::remove(uploadedFiles.begin(), uploadedFiles.end(), filename), uploadedFiles.end());
 			res.setStatusCode(200);
 			res.setBody("File Deleted Successfully");
 		} else {
+			std::cout << "Error deleting file: " << strerror(errno) << std::endl;
 			res.setStatusCode(404);
 			res.setBody("File Not Found");
 		}
 		res.setHeader("Content-Type", "text/plain");
 	} else {
-		// Falls du GET oder andere Methoden für die Erfolgsseite unterstützen möchtest
-		std::string content = readFile("HTMLFiles/uploadSuccessful.html");
-		res.setStatusCode(200);
-		res.setBody(content);
+		std::cout << "Method not allowed: " << req.getMethod() << std::endl;
+		res.setStatusCode(405);
+		res.setBody("<html><body><h1>405 Method Not Allowed</h1></body></html>");
 		res.setHeader("Content-Type", "text/html");
 	}
 }
@@ -136,6 +156,4 @@ void Router::initializeRoutes() {
 	addRoute("/", &Router::handleHomeRoute);
 	addRoute("/upload", &Router::handleUploadRoute);
 	addRoute("/form", &Router::handleFormRoute);
-	addRoute("/uploadSuccessful", &Router::handleUploadSuccessfulRoute); // Neue Route
-	// Entferne die alte Delete-Route
 }

@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:28:34 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/08 16:28:37 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/09 15:56:23 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ class HttpRequest
 		std::string getUserAgent() const;
 		std::string getConnection() const;
 		std::string getAccept() const;
-		const std::string& getFilename() const; // Methode zum Abrufen des Dateinamens
+		const std::string& getFilename() const;
 
 		void print() const;
 

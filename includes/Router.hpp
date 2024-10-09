@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/08 16:40:59 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/09 17:33:36 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,8 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <algorithm>
+#include <cstring>
 
 class Router
 {
