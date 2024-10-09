@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 18:47:12 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/09 18:59:10 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,11 +77,11 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
         }
 		else if (key == "error_page")
 		{
-			while (iss >> errorCode >> errorPage)
+          while (iss >> errorCode >> errorPage)
             {
-				errorPage = removeSemicolon(errorPage);
-				// server.errorPages[errorCode] = errorPage;
-			}
+                errorPage = removeSemicolon(errorPage); // Supprimer le point-virgule
+                server.addErrorPage(errorCode, errorPage); // Ajouter à la map des pages d'erreur
+            }
 		}
 		else if (key == "client_max_body_size")
 		{
@@ -102,9 +102,6 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 			location.setPath(path);
 			parseLocation(buffer, location);
 			server.addLocation(path, location);
-
-			// std::cout << "Printing location class ......\n";
-			// location.print();
 		}
 	}
 

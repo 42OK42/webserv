@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/09 15:30:30 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 18:49:41 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/09 19:04:35 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -152,9 +152,16 @@ void ServerConfig::addLocation(const std::string& path, const Location& location
     _locations[path] = location;
 }
 
+/* ---------------- Error pages Accessors ---------------- */
+
+void ServerConfig::addErrorPage(int code, const std::string& page) {
+        _errorPages[code] = page;
+    }
 
 
-
+    const std::map<int, std::string>& ServerConfig::getErrorPages() const {
+        return _errorPages;
+    }
 /* DEBUG*/
 
 void ServerConfig::print() const {
@@ -178,11 +185,11 @@ void ServerConfig::print() const {
 
     std::cout << "Root: " << _root << std::endl;
 
-    std::cout << "Error Pages: " << std::endl;
+    std::cout << "Error Pages:\n";
     for (std::map<int, std::string>::const_iterator it = _errorPages.begin(); it != _errorPages.end(); ++it) {
-        std::cout << "  " << it->first << " -> " << it->second << std::endl;
+    std::cout << "Error Code " << it->first << " -> " << it->second << std::endl;
     }
-
+    
     std::cout << "Locations: " << std::endl;
     for (std::map<std::string, Location>::const_iterator it = _locations.begin(); it != _locations.end(); ++it) {
         std::cout << std::endl;
