@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 16:28:10 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/09 17:06:37 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -102,6 +102,8 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 		}
 	}
 
+	std::cout << "Printing Server class ......\n";
+	server.print();
 	// if (!server.serverName.empty())
 	// 	data.serverConfig = server;
 

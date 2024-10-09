@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 16:34:06 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/09 16:47:42 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,6 +75,7 @@ class ServerConfig
 		std::map<std::string, Location>& getLocations();
 		void addLocation(const std::string& path, const Location& location);
 
+		  void print() const;
 
 };
 

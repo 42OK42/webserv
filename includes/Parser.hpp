@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:21 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 16:09:06 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/09 17:03:46 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,31 +21,20 @@
 #include "ServerConfig.hpp"
 #include "Location.hpp"
 
-class Parser {
-private:
-    std::vector<ServerConfig> _servers; // Collection de serveurs configurés
+class Parser
+{
 
-public:
-    // Constructeur et destructeur
-    Parser();
-    ~Parser();
-
-    // Méthode principale pour lire et analyser le fichier de configuration
-    bool parseConfigFile(const std::string& filePath);
-    std::string removeSemicolon(const std::string& str);
-    // Méthodes d'accès pour récupérer les serveurs configurés
-    bool ParseConfigStream(std::stringstream& buffer);
-    bool parseLocation(std::stringstream& buffer, Location& location);
-    std::vector<ServerConfig> getServers() const;
-
-private:
-    // Méthodes auxiliaires pour parser les différentes sections
-    bool parseServerConfig(std::stringstream& buffer, ServerConfig& server);
-    bool parseLocationConfig(std::stringstream& buffer, Location& location);
+    private:
 
 
-    // Méthode pour lire le fichier de configuration
-    bool readFile(const std::string& filePath, std::stringstream& buffer);
+    public:
+        Parser();
+        ~Parser();
+
+        bool readFile(const std::string& filePath, std::stringstream& buffer);
+        std::string removeSemicolon(const std::string& str);
+        bool ParseConfigStream(std::stringstream& buffer);
+        bool parseLocation(std::stringstream& buffer, Location& location);
 };
 
 #endif // PARSER_HPP

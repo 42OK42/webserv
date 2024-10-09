@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/09 15:30:30 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 16:38:37 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/09 17:01:19 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -150,4 +150,41 @@ std::map<std::string, Location>& ServerConfig::getLocations() {
 // Ajoute une Location au map _locations
 void ServerConfig::addLocation(const std::string& path, const Location& location) {
     _locations[path] = location;
+}
+
+
+/* DEBUG*/
+
+void ServerConfig::print() const {
+    std::cout << "Ports: ";
+    for (size_t i = 0; i < _port.size(); ++i) {
+        std::cout << _port[i] << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "Hosts: ";
+    for (size_t i = 0; i < _host.size(); ++i) {
+        std::cout << _host[i] << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "Server Names: ";
+    for (size_t i = 0; i < _serverNames.size(); ++i) {
+        std::cout << _serverNames[i] << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "Root: " << _root << std::endl;
+
+    std::cout << "Error Pages: " << std::endl;
+    for (std::map<int, std::string>::const_iterator it = _errorPages.begin(); it != _errorPages.end(); ++it) {
+        std::cout << "  " << it->first << " -> " << it->second << std::endl;
+    }
+
+    // Uncomment and implement this section if you have a print method in Location
+    // std::cout << "Locations: " << std::endl;
+    // for (std::map<std::string, Location>::const_iterator it = _locations.begin(); it != _locations.end(); ++it) {
+    //     std::cout << it->first << ":" << std::endl;
+    //     it->second.print(); // Assurez-vous que la méthode print() existe dans la classe Location
+    // }
 }
