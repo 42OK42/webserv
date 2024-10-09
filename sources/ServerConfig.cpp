@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/09 15:30:30 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 17:01:19 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/09 18:49:41 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -142,15 +142,17 @@ std::string ServerConfig::getCgiBin() const {
 
 /* ---------------- Locations Accessors ---------------- */
 
-// Récupère la référence de _locations
-std::map<std::string, Location>& ServerConfig::getLocations() {
-    return _locations;
+
+const std::map<std::string, Location>& ServerConfig::getLocations() const {
+    return _locations; //returns the whole map
 }
 
-// Ajoute une Location au map _locations
+
 void ServerConfig::addLocation(const std::string& path, const Location& location) {
     _locations[path] = location;
 }
+
+
 
 
 /* DEBUG*/
@@ -181,10 +183,10 @@ void ServerConfig::print() const {
         std::cout << "  " << it->first << " -> " << it->second << std::endl;
     }
 
-    // Uncomment and implement this section if you have a print method in Location
-    // std::cout << "Locations: " << std::endl;
-    // for (std::map<std::string, Location>::const_iterator it = _locations.begin(); it != _locations.end(); ++it) {
-    //     std::cout << it->first << ":" << std::endl;
-    //     it->second.print(); // Assurez-vous que la méthode print() existe dans la classe Location
-    // }
+    std::cout << "Locations: " << std::endl;
+    for (std::map<std::string, Location>::const_iterator it = _locations.begin(); it != _locations.end(); ++it) {
+        std::cout << std::endl;
+        std::cout << it->first << ":";
+        it->second.print(); // Assurez-vous que la méthode print() existe dans la classe Location
+    }
 }

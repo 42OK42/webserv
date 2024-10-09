@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 16:47:42 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/09 18:37:28 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@ class ServerConfig
 		size_t 							_clientMaxBodySize;  // Maximum allowed size for client request body
 		//std::vector<RouteConfig> routes;  // Routes for the server
 		std::map <std::string, Location>	_locations;
+		// std::vector<Location>			_locations;
 
 		/* CGI */
 		bool							_cgiEnabled;
@@ -71,11 +72,11 @@ class ServerConfig
 		bool						isCgiEnabled( void ) const;
 		std::string					getCgiExtension( void ) const;
 		std::string					getCgiBin( void ) const;
-		//Location*		getLocation( const string& path_or_flag );
-		std::map<std::string, Location>& getLocations();
-		void addLocation(const std::string& path, const Location& location);
 
-		  void print() const;
+		void addLocation(const std::string& path, const Location& location);
+		const std::map<std::string, Location>& getLocations() const;
+
+		void print() const;
 
 };
 

@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 17:06:37 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/09 18:47:12 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,8 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 	int errorCode;
 	std::string errorPage;
 	std::string sizeStr;
-	Location location;
+	//Location location;
+	std::vector<std::string> locationVector;
 
 	while (std::getline(buffer, line))
 	{
@@ -93,19 +94,28 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 		}
 		else if (key == "location")
 		{
-
-            std::string	path;
+			std::string	path;
 			iss >> path;
-			location.setPath(removeSemicolon(path));
+			path = removeSemicolon(path);
+
+			Location location;
+			location.setPath(path);
 			parseLocation(buffer, location);
-			// server.location.push_back(location);
+			server.addLocation(path, location);
+
+			// std::cout << "Printing location class ......\n";
+			// location.print();
 		}
 	}
 
 	std::cout << "Printing Server class ......\n";
 	server.print();
+
+
+
 	// if (!server.serverName.empty())
 	// 	data.serverConfig = server;
+
 
 	return true;
 }
@@ -130,26 +140,21 @@ bool Parser::parseLocation(std::stringstream& buffer, Location& location)
 
 		if (key == "root")
 		{
-
 			iss >> root;
 			location.setRoot(removeSemicolon(root));
 		}
 		else if (key == "index")
 		{
-
 			iss >> index;
 			location.setIndex(removeSemicolon(index));
 		}
 		else if (key == "allow_methods")
 		{
 			std::vector<std::string> methodVector;
-			// location._Methods.clear();
 			while (iss >> method)
 			{
 				method = removeSemicolon(method);
 				methodVector.push_back(method);
-
-				// location.allowedMethods.push_back(method);
 			}
 
 			location.setMethods(methodVector);
@@ -160,6 +165,9 @@ bool Parser::parseLocation(std::stringstream& buffer, Location& location)
 			value = removeSemicolon(value);
 			location.setAutoIndex(value);
 		}
+
+
+
 		// else if (key == "cgi_extension")
 		// {
 		// 	iss >> location.cgi.extension;

@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:01:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 16:10:09 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/09 18:49:06 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -136,4 +136,19 @@ const char* Location::InvalidAutoIndexException::what() const throw ()
 const char* Location::InvalidMethodException::what() const throw ()
 {
 	return ("Trowing exception : invalid auto index ");
+}
+
+
+/* DEBUGING */
+void Location::print() const {
+   std::cout << std::endl;
+
+    std::cout << "Path: " << _path << std::endl;
+    std::cout << "Root: " << _root << std::endl;
+    std::cout << "Index: " << _index << std::endl;
+    std::cout << "Methods : ";
+    for (size_t i = 0; i < _Methods.size(); ++i) {
+        std::cout << _Methods[i] << " ";
+    }
+    std::cout << std::endl;
 }

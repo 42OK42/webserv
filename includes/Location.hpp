@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:54 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 15:37:17 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/09 18:17:32 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,7 +48,8 @@ class Location
 		void setMethods(const std::vector<std::string>& tokens);
 
 		//void	setMethods();
-
+		void print() const;
+		
 		class InvalidAutoIndexException: public std::exception {
 			public:
 				virtual const char* what() const throw();
