@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:54 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 18:17:32 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/09 22:16:03 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,9 @@ class Location
 		std::string					_index;	// Fichier à servir par défaut (ex: "index.html")
 		bool 						_autoIndex;
 		std::vector<std::string>	_Methods;
+		std::string					_cgi_extension;
+		std::string					_cgi_path;
+
 	public:
 		Location();
 		// Location(const Location &copy);
@@ -38,9 +41,13 @@ class Location
 		std::string getPath() const;
 		std::string getRoot() const;
 		std::string getIndex() const;
+		std::string getExtension() const;
+		std::string getCgiEXtension() const;
 		bool getAutoIndex() const;
 		std::vector<std::string> getMethods() const;
 
+		void setExtension(const std::string& token);
+		void setCgiPath(const std::string& token);
 		void setPath(const std::string& token);
 		void setRoot(const std::string& token);
 		void setIndex(const std::string& token);
@@ -49,7 +56,7 @@ class Location
 
 		//void	setMethods();
 		void print() const;
-		
+
 		class InvalidAutoIndexException: public std::exception {
 			public:
 				virtual const char* what() const throw();

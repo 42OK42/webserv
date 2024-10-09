@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 18:59:10 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/09 22:16:58 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,6 @@ bool Parser::readFile(const std::string& filePath, std::stringstream& buffer)
 	return true;
 }
 
-// Supprime le point-virgule en fin de chaîne
 std::string Parser::removeSemicolon(const std::string& str)
 {
 	if (!str.empty() && str[str.size() - 1] == ';')
@@ -49,7 +48,6 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 	int errorCode;
 	std::string errorPage;
 	std::string sizeStr;
-	//Location location;
 	std::vector<std::string> locationVector;
 
 	while (std::getline(buffer, line))
@@ -79,8 +77,8 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 		{
           while (iss >> errorCode >> errorPage)
             {
-                errorPage = removeSemicolon(errorPage); // Supprimer le point-virgule
-                server.addErrorPage(errorCode, errorPage); // Ajouter à la map des pages d'erreur
+                errorPage = removeSemicolon(errorPage);
+                server.addErrorPage(errorCode, errorPage);
             }
 		}
 		else if (key == "client_max_body_size")
@@ -125,6 +123,8 @@ bool Parser::parseLocation(std::stringstream& buffer, Location& location)
 	std::string value;
     std::string	root;
     std::string	index;
+	std::string extension;
+	std::string cgi_path;
 
 
 	while (std::getline(buffer, line) && line.find('}') == std::string::npos)
@@ -163,18 +163,16 @@ bool Parser::parseLocation(std::stringstream& buffer, Location& location)
 			location.setAutoIndex(value);
 		}
 
-
-
-		// else if (key == "cgi_extension")
-		// {
-		// 	iss >> location.cgi.extension;
-		// 	location.cgi.extension = removeSemicolon(location.cgi.extension);
-		// }
-		// else if (key == "cgi_path")
-		// {
-		// 	iss >> location.cgi.path;
-		// 	location.cgi.path = removeSemicolon(location.cgi.path);
-		// }
+		else if (key == "cgi_extension")
+		{
+			iss >> extension;
+			location.setExtension(removeSemicolon(extension));
+		}
+		else if (key == "cgi_path")
+		{
+			iss >> cgi_path;
+			location.setCgiPath(removeSemicolon(cgi_path));
+		}
 	}
 	return true;
 }

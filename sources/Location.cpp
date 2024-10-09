@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:01:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 18:49:06 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/09 22:19:59 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,12 +81,17 @@ void Location::setAutoIndex(const std::string& token)
 
 }
 
-// void Location::setMethods(const std::string& token)
-// {
-// 	// maybe this needs to be a vector ?
-// 	if (!isValidMethod(token))
-// 		throw (InvalidMethodException());
-// }
+
+void Location::setExtension(const std::string& token)
+{
+	_cgi_extension = token;
+}
+
+
+void Location::setCgiPath(const std::string& token)
+{
+	_cgi_path = token;
+}
 
 void Location::setMethods(const std::vector<std::string>& methods) {
     for (std::vector<std::string>::const_iterator it = methods.begin(); it != methods.end(); ++it) {
@@ -150,5 +155,8 @@ void Location::print() const {
     for (size_t i = 0; i < _Methods.size(); ++i) {
         std::cout << _Methods[i] << " ";
     }
+	std::cout << std::endl;
+	std::cout << "cgi_extension: " << _cgi_extension << std::endl;
+    std::cout << "cgi_path: " << _cgi_path << std::endl;
     std::cout << std::endl;
 }
