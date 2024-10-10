@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:01:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 22:38:22 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/10 19:45:50 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -164,19 +164,20 @@ const char* Location::InvalidMethodException::what() const throw ()
 }
 
 
-/* DEBUGING */
-void Location::print() const {
-   std::cout << std::endl;
+std::ostream& operator<<(std::ostream& os, const Location& location) {
+    os << "\n### Location ###" << std::endl;
+	os << "Path: " << location.getPath() << "\n";
+    os << "Root: " << location.getRoot() << "\n";
+    os << "Index: " << location.getIndex() << "\n";
+    os << "AutoIndex: " << (location.getAutoIndex() ? "on" : "off") << "\n";
+    os << "Allowed Methods: ";
 
-    std::cout << "Path: " << _path << std::endl;
-    std::cout << "Root: " << _root << std::endl;
-    std::cout << "Index: " << _index << std::endl;
-    std::cout << "Methods : ";
-    for (size_t i = 0; i < _Methods.size(); ++i) {
-        std::cout << _Methods[i] << " ";
+    const std::vector<std::string>& methods = location.getMethods();
+    for (size_t i = 0; i < methods.size(); ++i) {
+        os << methods[i] << " ";
     }
-	std::cout << std::endl;
-	std::cout << "cgi_extension: " << _cgi_extension << std::endl;
-    std::cout << "cgi_path: " << _cgi_path << std::endl;
-    std::cout << std::endl;
+
+    os << std::endl;
+    return os;
 }
+

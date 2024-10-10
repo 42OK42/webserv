@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:54 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 22:16:03 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/10 19:34:56 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,5 +68,5 @@ class Location
 		};
 };
 
-
+std::ostream& operator<<(std::ostream& os, const Location& location);
 #endif // Location_HPP

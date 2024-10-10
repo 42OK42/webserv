@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/10 18:37:47 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/10 19:41:03 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -113,7 +113,9 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 	}
 
 	std::cout << "Printing Server class ......\n";
-	server.print();
+
+	std::cout << server << std::endl;
+	//server.print();
 
 	servers.push_back(server);
 

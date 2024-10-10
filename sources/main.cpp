@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 14:18:42 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/10 19:26:38 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/10 19:33:21 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,8 @@
 int main(int argc, char **argv)
 {
 	//TcpServer server;
-
+    (void)argv;
+    
     if (argc > 2)
     {
         std::cout << "Wrong number of arguments" << std::endl;

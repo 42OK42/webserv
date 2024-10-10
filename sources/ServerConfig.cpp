@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/09 15:30:30 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/10 18:30:07 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/10 19:45:44 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -259,36 +259,40 @@ void ServerConfig::addErrorPage(int code, const std::string& page) {
     }
 /* DEBUG*/
 
-void ServerConfig::print() const {
-    std::cout << "Ports: ";
-    for (size_t i = 0; i < _port.size(); ++i) {
-        std::cout << _port[i] << " ";
-    }
-    std::cout << std::endl;
+std::ostream& operator<<(std::ostream& os, const ServerConfig& server) {
 
-    std::cout << "Hosts: ";
-    for (size_t i = 0; i < _host.size(); ++i) {
-        std::cout << _host[i] << " ";
+    os << "\n### Server ###" << std::endl;
+    os << "Ports: ";
+    for (size_t i = 0; i < server.getListen().size(); ++i) {
+        os << server.getListen()[i] << " ";
     }
-    std::cout << std::endl;
+    os << std::endl;
 
-    std::cout << "Server Names: ";
-    for (size_t i = 0; i < _serverNames.size(); ++i) {
-        std::cout << _serverNames[i] << " ";
+    os << "Hosts: ";
+    for (size_t i = 0; i < server.getHost().size(); ++i) {
+        os << server.getHost()[i] << " ";
     }
-    std::cout << std::endl;
+    os << std::endl;
 
-    std::cout << "Root: " << _root << std::endl;
+    os << "Server Names: ";
+    for (size_t i = 0; i < server.getServerName().size(); ++i) {
+        os << server.getServerName()[i] << " ";
+    }
+    os << std::endl;
 
-    std::cout << "Error Pages:\n";
-    for (std::map<int, std::string>::const_iterator it = _errorPages.begin(); it != _errorPages.end(); ++it) {
-    std::cout << "Error Code " << it->first << " -> " << it->second << std::endl;
+    os << "Root: " << server.getRoot() << std::endl;
+
+    os << "Error Pages:\n";
+    for (std::map<int, std::string>::const_iterator it = server.getErrorPages().begin(); it != server.getErrorPages().end(); ++it) {
+        os << "Error Code " << it->first << " -> " << it->second << std::endl;
     }
 
-    std::cout << "Locations: " << std::endl;
-    for (std::map<std::string, Location>::const_iterator it = _locations.begin(); it != _locations.end(); ++it) {
-        std::cout << std::endl;
-        std::cout << it->first << ":";
-        it->second.print(); // Assurez-vous que la méthode print() existe dans la classe Location
+    os << "Locations: " << std::endl;
+    for (std::map<std::string, Location>::const_iterator it = server.getLocations().begin(); it != server.getLocations().end(); ++it) {
+        os << it->first << ":";
+        os << it->second;
     }
+
+    return os;
 }
+

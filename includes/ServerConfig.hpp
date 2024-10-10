@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/10 18:25:56 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/10 19:33:03 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -135,5 +135,8 @@ class ServerConfig
 		};
 
 };
+
+std::ostream& operator<<(std::ostream& os, const ServerConfig& server);
+
 
 #endif // ServerConfig_HPP
