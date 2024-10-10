@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 22:26:25 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/10 18:37:47 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -115,7 +115,7 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 	std::cout << "Printing Server class ......\n";
 	server.print();
 
-
+	servers.push_back(server);
 
 	// if (!server.serverName.empty())
 	// 	data.serverConfig = server;
@@ -183,5 +183,18 @@ bool Parser::parseLocation(std::stringstream& buffer, Location& location)
 			location.setCgiPath(removeSemicolon(cgi_path));
 		}
 	}
+
 	return true;
+}
+/* Getters */
+
+const std::vector<ServerConfig>& Parser::getServers() const {
+    return servers;
+}
+
+ServerConfig& Parser::getFirstServer() {
+    if (servers.empty()) {
+        throw std::runtime_error("No servers have been parsed.");
+    }
+    return servers[0];
 }

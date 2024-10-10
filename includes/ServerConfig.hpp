@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 22:27:36 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/10 18:25:56 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,11 +14,31 @@
 #define SERVERCONFIG_HPP
 
 #include "Location.hpp"
-#include <string>
-#include <iostream>
-#include <vector>
 #include <map>
 #include <cstdlib>
+#include <fstream>
+#include <string>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <iostream>
+#include <cstring>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/poll.h>
+#include <sys/ioctl.h>
+#include <exception>
+#include <unistd.h>
+#include <cerrno>
+#include <fcntl.h>
+#include <csignal>
+#include <cstdlib>
+#include <netdb.h>
+#include <sstream>
+#include <string.h>
+#include <vector>
+
 
 class ServerConfig
 {
@@ -39,6 +59,14 @@ class ServerConfig
 		bool							_cgiEnabled;
 		std::string						_cgiExtension;
 		std::string						_cgiBin;
+
+		/**/
+		int	m_socket; //return a socket decriptor
+		struct sockaddr_in	server_addr;
+		struct sockaddr_in client_addr; //contains Ip adress and client port
+		int client_socket;
+
+
 
 	public:
 		//ServerConfig( const Configuration& config ); //from parsing config file
@@ -80,6 +108,31 @@ class ServerConfig
 		const std::map<std::string, Location>& getLocations() const;
 
 		void print() const;
+
+
+		int startServer();
+		std::string readFile(const std::string& filepath);
+
+		class SocketCreationFailed : public std::exception {
+			public:
+				virtual const char* what() const throw();
+		};
+		class SocketBindingFailed : public std::exception {
+			public:
+				virtual const char* what() const throw();
+		};
+		class SocketlisteningFailed : public std::exception {
+			public:
+				virtual const char* what() const throw();
+		};
+		class SocketAcceptFailed : public std::exception {
+			public:
+				virtual const char* what() const throw();
+		};
+		class SocketReadFailed : public std::exception {
+			public:
+				virtual const char* what() const throw();
+		};
 
 };
 

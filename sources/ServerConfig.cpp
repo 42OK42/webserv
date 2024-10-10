@@ -6,15 +6,111 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/09 15:30:30 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 22:42:21 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/10 18:30:07 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "ServerConfig.hpp"
+#include "../includes/ServerConfig.hpp"
+#include "../includes/Router.hpp"
+#include "../includes/HttpResponse.hpp"
+#include "../includes/HttpRequest.hpp"
+
 // #include "Parser.hpp"
 
 // Destructeur
 ServerConfig::~ServerConfig() {}
+
+
+std::string ServerConfig::readFile(const std::string& filepath) {
+	std::ifstream file(filepath.c_str());
+	if (!file) {
+		std::cerr << "Could not open the file: " << filepath << std::endl;
+		return "";
+	}
+	std::stringstream buffer;
+	buffer << file.rdbuf();
+	return buffer.str();
+}
+
+int ServerConfig::startServer()
+{
+	std::cout << "Starting server..." << std::endl;
+
+	m_socket = socket(AF_INET, SOCK_STREAM, 0);
+	if (m_socket == -1) throw ServerConfig::SocketCreationFailed();
+
+	server_addr.sin_family = AF_INET;
+	// server_addr.sin_port = htons(8080);
+    server_addr.sin_port = htons(_port[0]);
+	server_addr.sin_addr.s_addr = INADDR_ANY;
+
+	if (bind(m_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
+		throw ServerConfig::SocketBindingFailed();
+
+	if (listen(m_socket, SOMAXCONN) < 0)
+		throw ServerConfig::SocketlisteningFailed();
+
+    std::cout << "Server is listening on port " << _port[0] << std::endl;
+	//std::cout << "Server is listening on port 8080..." << std::endl;
+
+	socklen_t client_addr_len = sizeof(client_addr);
+
+	// Initialize router
+	Router router;
+	router.initializeRoutes();
+
+	while (true) {
+		client_socket = accept(m_socket, (struct sockaddr*)&client_addr, &client_addr_len);
+		if (client_socket < 0) throw SocketAcceptFailed();
+
+		char buffer[1024] = {0};
+		int bytes_read = recv(client_socket, buffer, sizeof(buffer), 0);
+		if (bytes_read < 0) throw SocketReadFailed();
+
+		std::cout << "Received..." << std::endl;
+
+		HttpRequest httpRequest(buffer, bytes_read);
+
+		//httpRequest.print();
+
+		HttpResponse httpResponse(httpRequest);
+
+		// Process request with the router
+		router.handleRequest(httpRequest, httpResponse);
+
+		// Send response
+		std::string httpResponseString = httpResponse.toString();
+		send(client_socket, httpResponseString.c_str(), httpResponseString.size(), 0);
+
+		close(client_socket);
+	}
+
+	return 0;
+}
+
+
+const char* ServerConfig::SocketCreationFailed::what() const throw () {
+	return "Throwing exception: creating server socket";
+}
+
+const char* ServerConfig::SocketBindingFailed::what() const throw () {
+	return "Throwing exception: socket binding failed";
+}
+
+const char* ServerConfig::SocketlisteningFailed::what() const throw () {
+	return "Throwing exception: socket listening failed";
+}
+
+const char* ServerConfig::SocketAcceptFailed::what() const throw () {
+	return "Throwing exception: Failed to accept connection";
+}
+
+const char* ServerConfig::SocketReadFailed::what() const throw () {
+	return "Throwing exception: Failed to read from client";
+}
+
+
+
 
 /* ---------------------- Setters ---------------------- */
 
