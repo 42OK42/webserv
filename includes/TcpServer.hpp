@@ -6,14 +6,14 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/30 15:38:08 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/08 14:41:25 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/02 17:16:45 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef TcpServer_HPP
 #define TcpServer_HPP
 
-#include <fstream>
+#include <fstream> 
 #include <string>
 #include <iostream>
 #include <sys/socket.h>
@@ -40,10 +40,10 @@
 class TcpServer
 {
 	private:
-		int					m_socket; //return a socket decriptor
+		int	m_socket; //return a socket decriptor
 		struct sockaddr_in	server_addr;
-		struct sockaddr_in	client_addr; //contains Ip adress and client port
-		int 				client_socket;
+		struct sockaddr_in client_addr; //contains Ip adress and client port
+		int client_socket;
 
 	public:
 		TcpServer();
@@ -51,14 +51,6 @@ class TcpServer
 
 		int startServer();
 		std::string readFile(const std::string& filepath);
-
-
-
-
-		// bool createSocket();
-		// bool bindSocket();
-		// bool listenOnSocket();
-		// void acceptConnections();
 
 		class SocketCreationFailed : public std::exception {
 			public:

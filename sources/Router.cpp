@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Router.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/10/02 17:50:39 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/10 15:22:15 by ecarlier         ###   ########.fr       */
+/*   Created: 2024/10/08 14:54:49 by okrahl            #+#    #+#             */
+/*   Updated: 2024/10/09 17:40:27 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,9 +15,7 @@
 #include <sstream>
 #include <ctime>
 
-
-void Router::addRoute(const std::string& path, RouteHandler handler)
-{
+void Router::addRoute(const std::string& path, RouteHandler handler) {
 	routes[path] = handler;
 }
 
@@ -42,7 +40,6 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 		response.setHeader("Content-Type", "text/html");
 	}
 }
-
 
 void Router::handleHomeRoute(const HttpRequest& req, HttpResponse& res) {
 	if (req.getMethod() == "GET") {
