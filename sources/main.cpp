@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 14:18:42 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 22:29:35 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/10 15:26:58 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,9 +29,6 @@ int main() {
         return 1;
     }
 
-
-    return 0;
-}
 	// try
 	// {
 	// 	server.startServer();
@@ -40,5 +37,10 @@ int main() {
 	// {
 	// 	std::cerr << e.what() << std::endl;
 	// }
+
+
+    return 0;
+}
+
 
 
