@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 17:55:55 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/10 18:24:09 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/10 18:37:19 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,4 +74,29 @@ std::string generateUniqueFilename(const std::string& uploadDir, const std::stri
 	pthread_mutex_unlock(&upload_mutex);
 
 	return uniqueName;
+}
+
+std::string generateUploadListHTML(const std::string& uploadDir) {
+	DIR* dir;
+	struct dirent* ent;
+	std::vector<std::string> files;
+
+	if ((dir = opendir(uploadDir.c_str())) != NULL) {
+		while ((ent = readdir(dir)) != NULL) {
+			std::string filename = ent->d_name;
+			if (filename != "." && filename != "..") {
+				files.push_back(filename);
+			}
+		}
+		closedir(dir);
+	}
+
+	std::stringstream html;
+	html << "<ul>";
+	for (std::vector<std::string>::const_iterator it = files.begin(); it != files.end(); ++it) {
+		html << "<li>" << *it << "</li>";
+	}
+	html << "</ul>";
+
+	return html.str();
 }

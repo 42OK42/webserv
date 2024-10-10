@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/30 15:38:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/10 18:14:54 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/10 18:26:53 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,12 +71,12 @@ int TcpServer::readRequest(int client_socket, std::vector<char>& buffer) {
 		int bytes_read = recv(client_socket, &buffer[total_bytes_read], buffer.size() - total_bytes_read, 0);
 		if (bytes_read < 0) {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
-				continue; // Keine Daten verfügbar, einfach weitermachen
+				continue; // No data so still continue
 			} else {
 				throw SocketReadFailed();
 			}
 		}
-		if (bytes_read == 0) break; // Verbindung geschlossen
+		if (bytes_read == 0) break;
 		total_bytes_read += bytes_read;
 
 		// If the buffer is full, increase its size
@@ -106,11 +106,11 @@ void* TcpServer::handleClient(void* args) {
 	ThreadArgs* threadArgs = static_cast<ThreadArgs*>(args);
 	int client_socket = threadArgs->client_socket;
 	Router* router = threadArgs->router;
-	TcpServer* server = threadArgs->server; // TcpServer-Zeiger
-	delete threadArgs; // Freigeben der Argumentstruktur
+	TcpServer* server = threadArgs->server; // TcpServer-Pointer
+	delete threadArgs;
 
 	std::vector<char> buffer(8192);
-	int total_bytes_read = server->readRequest(client_socket, buffer); // Verwende den Server-Zeiger
+	int total_bytes_read = server->readRequest(client_socket, buffer);
 
 	std::cout << "Received..." << std::endl;
 

@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:49 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/10 18:02:15 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/10 18:59:22 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,8 +67,6 @@ void Router::handleFormRoute(const HttpRequest& req, HttpResponse& res) {
 	}
 }
 
-#include "Helper.hpp" // Stelle sicher, dass die Helper-Funktionen inkludiert sind
-
 void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 	std::cout << "handleUploadRoute called" << std::endl;
 	std::cout << "Request URL: " << req.getUrl() << std::endl;
@@ -81,46 +79,60 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 		res.setHeader("Content-Type", "text/html");
 	} else if (req.getMethod() == "POST") {
 		std::cout << "Processing POST request" << std::endl;
-		std::string originalFilename = req.getFilename();
-		std::cout << "Original filename: " << originalFilename << std::endl;
+		
+		// Angenommen, diese Methoden geben alle Dateinamen und Daten zurück
+		std::vector<std::string> filenames = req.getFilenames(); 
+		std::vector<std::string> fileData = req.getFileData(); 
 
-		if (originalFilename.empty()) {
-			std::cout << "Filename not found" << std::endl;
+		if (filenames.empty() || fileData.empty()) {
+			std::cout << "No files found in request" << std::endl;
 			res.setStatusCode(400);
-			res.setBody("Bad Request: Filename not found");
+			res.setBody("Bad Request: No files found");
 			res.setHeader("Content-Type", "text/plain");
 			return;
 		}
 
-		std::string imageData = req.getBody();
-		std::cout << "Image data size: " << imageData.size() << std::endl;
-
 		std::string uploadDir = "./uploads";
 		ensureDirectoryExists(uploadDir);
 
-		// Generiere einen eindeutigen Dateinamen
-		std::string uniqueFilename = generateUniqueFilename(uploadDir, originalFilename, uploadedFiles);
-		std::string savedFilename = uploadDir + "/" + uniqueFilename;
-		std::cout << "Saving file to: " << savedFilename << std::endl;
+		for (size_t i = 0; i < filenames.size(); ++i) {
+			std::string originalFilename = filenames[i];
+			std::string imageData = fileData[i];
 
-		std::ofstream outFile(savedFilename.c_str(), std::ios::binary);
-		if (outFile.is_open()) {
-			outFile.write(imageData.c_str(), imageData.size());
-			outFile.close();
-			std::cout << "File saved successfully" << std::endl;
+			std::cout << "Original filename: " << originalFilename << std::endl;
+			std::cout << "Image data size: " << imageData.size() << std::endl;
 
-			uploadedFiles.push_back(uniqueFilename);
+			std::string uniqueFilename = generateUniqueFilename(uploadDir, originalFilename, uploadedFiles);
+			std::string savedFilename = uploadDir + "/" + uniqueFilename;
+			std::cout << "Saving file to: " << savedFilename << std::endl;
 
-			std::string successContent = readFile("HTMLFiles/uploadSuccessful.html");
-			res.setStatusCode(200);
-			res.setBody(successContent);
-			res.setHeader("Content-Type", "text/html");
-		} else {
-			std::cout << "Failed to open file for writing" << std::endl;
-			res.setStatusCode(500);
-			res.setBody("<html><body><h1>500 Internal Server Error</h1></body></html>");
-			res.setHeader("Content-Type", "text/html");
+			std::ofstream outFile(savedFilename.c_str(), std::ios::binary);
+			if (outFile.is_open()) {
+				outFile.write(imageData.c_str(), imageData.size());
+				outFile.close();
+				std::cout << "File saved successfully" << std::endl;
+				uploadedFiles.push_back(uniqueFilename);
+			} else {
+				std::cout << "Failed to open file for writing" << std::endl;
+				res.setStatusCode(500);
+				res.setBody("<html><body><h1>500 Internal Server Error</h1></body></html>");
+				res.setHeader("Content-Type", "text/html");
+				return;
+			}
 		}
+
+		std::string successContent = "<html><body><h1>Upload Successful</h1>";
+		successContent += "<p>Your files have been uploaded successfully.</p>";
+		successContent += "<h2>Uploaded Files</h2>";
+		successContent += generateUploadListHTML(uploadDir);
+		successContent += "<button onclick=\"location.href='/'\">Back to Home</button>";
+		successContent += "<button onclick=\"location.href='/upload'\">Upload Another File</button>";
+		successContent += "<button onclick=\"location.href='/form'\">Go to Form Page</button>";
+		successContent += "</body></html>";
+
+		res.setStatusCode(200);
+		res.setBody(successContent);
+		res.setHeader("Content-Type", "text/html");
 	} else if (req.getMethod() == "DELETE") {
 		std::cout << "Processing DELETE request" << std::endl;
 		std::string filename = extractFilenameFromUrl(req.getUrl());

@@ -6,9 +6,9 @@
 	<title>Image and Video Upload</title>
 </head>
 <body>
-	<h1>Upload Image or Video</h1>
+	<h1>Upload Images or Videos</h1>
 	<form id="uploadForm" enctype="multipart/form-data" method="POST">
-		<input type="file" id="fileInput" name="file" accept="image/*,video/quicktime" required>
+		<input type="file" id="fileInput" name="files" accept="image/*,video/quicktime" multiple required>
 		<progress id="progressBar" value="0" max="100" style="width: 100%;"></progress>
 		<button type="submit">Upload</button>
 	</form>
@@ -20,9 +20,12 @@
 			event.preventDefault(); // Prevent default form submission
 
 			const fileInput = document.getElementById('fileInput');
-			const file = fileInput.files[0];
+			const files = fileInput.files;
 			const formData = new FormData();
-			formData.append('file', file);
+
+			for (let i = 0; i < files.length; i++) {
+				formData.append('files', files[i]);
+			}
 
 			const xhr = new XMLHttpRequest();
 			xhr.open('POST', '/upload', true);
