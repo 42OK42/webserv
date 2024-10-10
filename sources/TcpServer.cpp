@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/30 15:38:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/10 16:47:21 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/10 18:14:54 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,10 +38,7 @@ std::string TcpServer::readFile(const std::string& filepath) {
 bool TcpServer::isRequestComplete(const std::vector<char>& buffer, int total_bytes_read) {
 	std::string headers(buffer.begin(), buffer.begin() + total_bytes_read);
 	size_t pos = headers.find("\r\n\r\n");
-	if (pos != std::string::npos) {
-		return true;
-	}
-	return false;
+	return pos != std::string::npos;
 }
 
 bool TcpServer::isBodyComplete(const std::vector<char>& buffer, int total_bytes_read) {
@@ -74,8 +71,7 @@ int TcpServer::readRequest(int client_socket, std::vector<char>& buffer) {
 		int bytes_read = recv(client_socket, &buffer[total_bytes_read], buffer.size() - total_bytes_read, 0);
 		if (bytes_read < 0) {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
-				// Keine Daten verfügbar, einfach weitermachen
-				continue;
+				continue; // Keine Daten verfügbar, einfach weitermachen
 			} else {
 				throw SocketReadFailed();
 			}
@@ -106,15 +102,42 @@ int TcpServer::readRequest(int client_socket, std::vector<char>& buffer) {
 	return total_bytes_read;
 }
 
-int TcpServer::startServer()
-{
+void* TcpServer::handleClient(void* args) {
+	ThreadArgs* threadArgs = static_cast<ThreadArgs*>(args);
+	int client_socket = threadArgs->client_socket;
+	Router* router = threadArgs->router;
+	TcpServer* server = threadArgs->server; // TcpServer-Zeiger
+	delete threadArgs; // Freigeben der Argumentstruktur
+
+	std::vector<char> buffer(8192);
+	int total_bytes_read = server->readRequest(client_socket, buffer); // Verwende den Server-Zeiger
+
+	std::cout << "Received..." << std::endl;
+
+	HttpRequest httpRequest(&buffer[0], total_bytes_read);
+	HttpResponse httpResponse(httpRequest);
+
+	// Process request with the router
+	router->handleRequest(httpRequest, httpResponse);
+
+	// Send response
+	std::string httpResponseString = httpResponse.toString();
+	send(client_socket, httpResponseString.c_str(), httpResponseString.size(), 0);
+
+	// Close connection
+	close(client_socket);
+
+	return NULL;
+}
+
+int TcpServer::startServer() {
 	std::cout << "Starting server..." << std::endl;
 
-	m_socket = socket(AF_INET, SOCK_STREAM, 0);
-	if (m_socket == -1) throw TcpServer::SocketCreationFailed();
+	server_socket = socket(AF_INET, SOCK_STREAM, 0);
+	if (server_socket == -1) throw TcpServer::SocketCreationFailed();
 
 	int opt = 1;
-	if (setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+	if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
 		throw TcpServer::SocketBindingFailed();
 	}
 
@@ -122,16 +145,16 @@ int TcpServer::startServer()
 	server_addr.sin_port = htons(8080);
 	server_addr.sin_addr.s_addr = INADDR_ANY;
 
-	if (bind(m_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
+	if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
 		throw TcpServer::SocketBindingFailed();
 
-	if (listen(m_socket, SOMAXCONN) < 0)
+	if (listen(server_socket, SOMAXCONN) < 0)
 		throw TcpServer::SocketlisteningFailed();
 
 	std::cout << "Server is listening on port 8080..." << std::endl;
 
 	// Initialize pollfd structures
-	fds[0].fd = m_socket;
+	fds[0].fd = server_socket;
 	fds[0].events = POLLIN;
 	nfds = 1;
 
@@ -148,10 +171,10 @@ int TcpServer::startServer()
 
 		for (int i = 0; i < nfds; i++) {
 			if (fds[i].revents & POLLIN) {
-				if (fds[i].fd == m_socket) {
+				if (fds[i].fd == server_socket) {
 					// Accept new connection
 					socklen_t client_addr_len = sizeof(client_addr);
-					client_socket = accept(m_socket, (struct sockaddr*)&client_addr, &client_addr_len);
+					client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &client_addr_len);
 					if (client_socket >= 0) {
 						fcntl(client_socket, F_SETFL, O_NONBLOCK);
 						fds[nfds].fd = client_socket;
@@ -159,24 +182,21 @@ int TcpServer::startServer()
 						nfds++;
 					}
 				} else {
-					// Read data from a client
-					std::vector<char> buffer(8192);
-					int total_bytes_read = readRequest(fds[i].fd, buffer);
+					// Create a new thread to handle the client request
+					pthread_t thread;
+					ThreadArgs* args = new ThreadArgs();
+					args->client_socket = fds[i].fd;
+					args->router = &router;
+					args->server = this;
 
-					std::cout << "Received..." << std::endl;
+					if (pthread_create(&thread, NULL, handleClient, args) != 0) {
+						std::cerr << "Failed to create thread" << std::endl;
+						close(fds[i].fd);
+					} else {
+						pthread_detach(thread); // Detach the thread to allow it to clean up after itself
+					}
 
-					HttpRequest httpRequest(&buffer[0], total_bytes_read);
-					HttpResponse httpResponse(httpRequest);
-
-					// Process request with the router
-					router.handleRequest(httpRequest, httpResponse);
-
-					// Send response
-					std::string httpResponseString = httpResponse.toString();
-					send(fds[i].fd, httpResponseString.c_str(), httpResponseString.size(), 0);
-
-					// Close connection
-					close(fds[i].fd);
+					// Remove the client socket from the poll list
 					fds[i] = fds[nfds - 1];
 					nfds--;
 				}

@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/30 15:38:08 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/10 15:22:40 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/10 18:13:37 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,17 +30,28 @@
 #include <netdb.h>
 #include <sstream>
 #include <vector>
+#include <pthread.h>
+#include <Router.hpp>
 
 class TcpServer
 {
 	private:
-		int	m_socket;
+		int	server_socket;
 		struct sockaddr_in	server_addr;
 		struct sockaddr_in client_addr;
 		int client_socket;
 
 		struct pollfd fds[200];
 		int nfds;
+
+		// Struktur für Thread-Argumente
+		struct ThreadArgs {
+			int client_socket;
+			Router* router;
+			TcpServer* server;
+		};
+
+		static void* handleClient(void* args);
 
 	public:
 		TcpServer();

@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:49 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/09 17:40:27 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/10 18:02:15 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,6 +67,8 @@ void Router::handleFormRoute(const HttpRequest& req, HttpResponse& res) {
 	}
 }
 
+#include "Helper.hpp" // Stelle sicher, dass die Helper-Funktionen inkludiert sind
+
 void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 	std::cout << "handleUploadRoute called" << std::endl;
 	std::cout << "Request URL: " << req.getUrl() << std::endl;
@@ -96,7 +98,9 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 		std::string uploadDir = "./uploads";
 		ensureDirectoryExists(uploadDir);
 
-		std::string savedFilename = uploadDir + "/" + originalFilename;
+		// Generiere einen eindeutigen Dateinamen
+		std::string uniqueFilename = generateUniqueFilename(uploadDir, originalFilename, uploadedFiles);
+		std::string savedFilename = uploadDir + "/" + uniqueFilename;
 		std::cout << "Saving file to: " << savedFilename << std::endl;
 
 		std::ofstream outFile(savedFilename.c_str(), std::ios::binary);
@@ -105,7 +109,7 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 			outFile.close();
 			std::cout << "File saved successfully" << std::endl;
 
-			uploadedFiles.push_back(savedFilename);
+			uploadedFiles.push_back(uniqueFilename);
 
 			std::string successContent = readFile("HTMLFiles/uploadSuccessful.html");
 			res.setStatusCode(200);
