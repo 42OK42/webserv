@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:28:34 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/09 15:56:23 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/09 18:13:00 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ class HttpRequest
 		std::string httpVersion;
 		std::map<std::string, std::string> headers;
 		std::string body;
-		std::string filename; // Variable für den Dateinamen
+		std::string filename;
 
 		void parse(const char* buffer, int bytesRead);
 		void parseMultipartData(const std::string& boundary);

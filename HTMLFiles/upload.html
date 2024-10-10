@@ -3,15 +3,49 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Image Upload</title>
+	<title>Image and Video Upload</title>
 </head>
 <body>
-	<h1>Upload Image</h1>
-	<form id="uploadForm" enctype="multipart/form-data" action="/upload" method="POST">
-		<input type="file" id="fileInput" name="file" accept="image/*" required>
+	<h1>Upload Image or Video</h1>
+	<form id="uploadForm" enctype="multipart/form-data" method="POST">
+		<input type="file" id="fileInput" name="file" accept="image/*,video/quicktime" required>
+		<progress id="progressBar" value="0" max="100" style="width: 100%;"></progress>
 		<button type="submit">Upload</button>
 	</form>
 	<button onclick="location.href='/'">Back to Home</button>
 	<button onclick="location.href='/form'">Go to Form Page</button>
+
+	<script>
+		document.getElementById('uploadForm').addEventListener('submit', function(event) {
+			event.preventDefault(); // Prevent default form submission
+
+			const fileInput = document.getElementById('fileInput');
+			const file = fileInput.files[0];
+			const formData = new FormData();
+			formData.append('file', file);
+
+			const xhr = new XMLHttpRequest();
+			xhr.open('POST', '/upload', true);
+
+			// Update progress bar
+			xhr.upload.onprogress = function(event) {
+				if (event.lengthComputable) {
+					const percentComplete = (event.loaded / event.total) * 100;
+					document.getElementById('progressBar').value = percentComplete;
+				}
+			};
+
+			xhr.onload = function() {
+				if (xhr.status === 200) {
+					alert('Upload successful!');
+					location.href = '/';
+				} else {
+					alert('Upload failed.');
+				}
+			};
+
+			xhr.send(formData);
+		});
+	</script>
 </body>
 </html>
