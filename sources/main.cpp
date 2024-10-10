@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 14:18:42 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/10 18:37:57 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/10 19:26:38 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,12 +15,20 @@
 #include "../includes/Parser.hpp"
 #include "../includes/ServerConfig.hpp"
 
-int main()
+int main(int argc, char **argv)
 {
 	//TcpServer server;
 
-    ServerConfig server;
+    if (argc > 2)
+    {
+        std::cout << "Wrong number of arguments" << std::endl;
+        return (0);
+    }
+    else if (argc == 1)
+         std::cout << "Starting server with default config." << std::endl;
 
+
+    ServerConfig server;
     Parser parser;
     std::stringstream configBuffer;
 
@@ -43,6 +51,6 @@ int main()
 		std::cerr << e.what() << std::endl;
 	}
 
-
 	return 0;
 }
+
