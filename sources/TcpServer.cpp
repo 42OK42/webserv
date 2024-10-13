@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   TcpServer.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ggiertzu <ggiertzu@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/30 15:38:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 17:37:49 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/13 23:27:25 by ggiertzu         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,9 +71,9 @@ int TcpServer::startServer()
 		std::cout << "Received..." << std::endl;
 
 		HttpRequest httpRequest(buffer, bytes_read);
-		
-		//httpRequest.print();
-		
+
+		// httpRequest.print();
+
 		HttpResponse httpResponse(httpRequest);
 
 		// Process request with the router

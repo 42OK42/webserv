@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Router.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ggiertzu <ggiertzu@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:49 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/09 17:40:27 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/14 00:48:32 by ggiertzu         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,9 @@
 #include "Helper.hpp"
 #include <sstream>
 #include <ctime>
+
+char **get_env(const std::map<std::string, std::string> &headers);
+int	gen_cgi_res(const HttpRequest& req, HttpResponse& res);
 
 void Router::addRoute(const std::string& path, RouteHandler handler) {
 	routes[path] = handler;
@@ -60,6 +63,12 @@ void Router::handleFormRoute(const HttpRequest& req, HttpResponse& res) {
 		res.setStatusCode(200);
 		res.setBody(content);
 		res.setHeader("Content-Type", "text/html");
+	} else if (req.getMethod() == "POST") {
+		// include cgi routing here +++++++++++++++++++++++++++++++++++++
+		gen_cgi_res(req, res);
+		// res.setStatusCode(405);
+		// res.setBody("<html><body><h1>Looking for cgi?</h1></body></html>");
+		// res.setHeader("Content-Type", "text/html");
 	} else {
 		res.setStatusCode(405);
 		res.setBody("<html><body><h1>405 Method Not Allowed</h1></body></html>");
