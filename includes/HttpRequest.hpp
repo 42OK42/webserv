@@ -5,8 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/10/08 16:28:34 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/09 18:13:00 by okrahl           ###   ########.fr       */
+/*   Created: 2024/10/14 16:10:56 by okrahl            #+#    #+#             */
+/*   Updated: 2024/10/14 19:07:11 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,40 +15,56 @@
 
 #include <string>
 #include <map>
+#include <vector>
 #include <sstream>
+#include <fstream>
 #include <iostream>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <poll.h>
+#include <errno.h>
+#include <stdexcept>
+#include <sys/stat.h>
+#include <unistd.h>
 
-class HttpRequest
-{
-	public:
 
-		HttpRequest(const char* buffer, int bytesRead);
+class HttpRequest {
+public:
+    HttpRequest();
 
-		const std::string& getMethod() const;
-		const std::string& getUrl() const;
-		const std::string& getHttpVersion() const;
-		const std::map<std::string, std::string>& getHeaders() const;
-		const std::string& getBody() const;
-		std::string getHeader(const std::string& name) const;
-		std::string getHost() const;
-		std::string getUserAgent() const;
-		std::string getConnection() const;
-		std::string getAccept() const;
-		const std::string& getFilename() const;
+    const std::string& getMethod() const;
+    const std::string& getUrl() const;
+    const std::string& getHttpVersion() const;
+    const std::map<std::string, std::string>& getHeaders() const; // Korrektur hier
+    const std::string& getBody() const;
+    const std::string& getFilename() const;
+    std::vector<std::string> getFilenames() const;
+    std::vector<std::string> getFileData() const;
+    std::string getBoundary() const;
 
-		void print() const;
+    std::string getHeader(const std::string& name) const;
+    std::string getHost() const;
+    std::string getUserAgent() const;
+    std::string getConnection() const;
+    std::string getAccept() const;
 
-	private:
+    bool isRequestComplete(const std::vector<char>& buffer, int total_bytes_read);
+    bool isBodyComplete(const std::vector<char>& buffer, int total_bytes_read);
+    int readChunk(int client_socket, std::vector<char>& buffer, int total_bytes_read);
+    bool readRequest(int client_socket);
+    void processBody(const std::string& upload_dir, const std::vector<char>& buffer, int total_bytes_read);
+    void print() const;
 
-		std::string method;
-		std::string url;
-		std::string httpVersion;
-		std::map<std::string, std::string> headers;
-		std::string body;
-		std::string filename;
-
-		void parse(const char* buffer, int bytesRead);
-		void parseMultipartData(const std::string& boundary);
+private:
+    std::string method;
+    std::string url;
+    std::string httpVersion;
+    std::map<std::string, std::string> headers;
+    std::string body;
+    std::string filename;
+    std::vector<std::string> filenames;
+    std::vector<std::string> fileData;
+    std::string boundary;
 };
 
-#endif
+#endif // HTTPREQUEST_HPP

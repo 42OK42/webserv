@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/14 14:30:47 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/14 14:46:40 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,6 @@ class Router
 		void handleHomeRoute(const HttpRequest& req, HttpResponse& res);
 		void handleUploadRoute(const HttpRequest& req, HttpResponse& res);
 		void handleFormRoute(const HttpRequest& req, HttpResponse& res);
-		void handleDeleteRoute(const HttpRequest& req, HttpResponse& res);
 		void handleUploadSuccessfulRoute(const HttpRequest& req, HttpResponse& res);
 };
 

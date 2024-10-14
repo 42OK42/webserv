@@ -6,12 +6,12 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/30 15:38:08 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/10 18:13:37 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/14 16:06:15 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef TcpServer_HPP
-#define TcpServer_HPP
+#ifndef TCPSERVER_HPP
+#define TCPSERVER_HPP
 
 #include <fstream> 
 #include <string>
@@ -30,38 +30,29 @@
 #include <netdb.h>
 #include <sstream>
 #include <vector>
-#include <pthread.h>
-#include <Router.hpp>
+#include "Router.hpp"
+#include "HttpRequest.hpp"
 
 class TcpServer
 {
 	private:
-		int	server_socket;
-		struct sockaddr_in	server_addr;
+		int server_socket;
+		struct sockaddr_in server_addr;
 		struct sockaddr_in client_addr;
 		int client_socket;
 
 		struct pollfd fds[200];
 		int nfds;
 
-		// Struktur für Thread-Argumente
-		struct ThreadArgs {
-			int client_socket;
-			Router* router;
-			TcpServer* server;
-		};
-
-		static void* handleClient(void* args);
+		std::string readFile(const std::string& filepath);
+		bool isRequestComplete(const std::vector<char>& buffer, int total_bytes_read);
+		bool isBodyComplete(const std::vector<char>& buffer, int total_bytes_read);
 
 	public:
 		TcpServer();
 		~TcpServer();
 
 		int startServer();
-		std::string readFile(const std::string& filepath);
-		bool isRequestComplete(const std::vector<char>& buffer, int total_bytes_read);
-		bool isBodyComplete(const std::vector<char>& buffer, int total_bytes_read);
-		int readRequest(int client_socket, std::vector<char>& buffer);
 
 		class SocketCreationFailed : public std::exception {
 			public:
@@ -71,7 +62,7 @@ class TcpServer
 			public:
 				virtual const char* what() const throw();
 		};
-		class SocketlisteningFailed : public std::exception {
+		class SocketListeningFailed : public std::exception {
 			public:
 				virtual const char* what() const throw();
 		};

@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:49 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/10 18:59:22 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/14 16:57:14 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,8 +20,8 @@ void Router::addRoute(const std::string& path, RouteHandler handler) {
 }
 
 void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
-	std::cout << "Request URL: " << request.getUrl() << std::endl;
-	std::cout << "Request Method: " << request.getMethod() << std::endl;
+	//std::cout << "Request URL: " << request.getUrl() << std::endl;
+	//std::cout << "Request Method: " << request.getMethod() << std::endl;
 
 	// Extract Path without Query-Parameter
 	std::string path = request.getUrl();
@@ -68,9 +68,9 @@ void Router::handleFormRoute(const HttpRequest& req, HttpResponse& res) {
 }
 
 void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
-	std::cout << "handleUploadRoute called" << std::endl;
-	std::cout << "Request URL: " << req.getUrl() << std::endl;
-	std::cout << "Request Method: " << req.getMethod() << std::endl;
+	//std::cout << "handleUploadRoute called" << std::endl;
+	//std::cout << "Request URL: " << req.getUrl() << std::endl;
+	//std::cout << "Request Method: " << req.getMethod() << std::endl;
 
 	if (req.getMethod() == "GET") {
 		std::string content = readFile("HTMLFiles/upload.html");
