@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/10 19:33:03 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/14 19:07:34 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,6 +72,9 @@ class ServerConfig
 		//ServerConfig( const Configuration& config ); //from parsing config file
 		~ServerConfig();
 
+
+		Location findLocation(std::string locationPath);
+
 		/*			Setters & Getters			*/
 		void			setPort( const std::vector<std::string>& tokens );
 		void			setHost( const std::vector<std::string>& tokens );
@@ -109,7 +112,7 @@ class ServerConfig
 
 		void print() const;
 
-
+		void setupServerSocket();
 		int startServer();
 		std::string readFile(const std::string& filepath);
 
@@ -130,6 +133,10 @@ class ServerConfig
 				virtual const char* what() const throw();
 		};
 		class SocketReadFailed : public std::exception {
+			public:
+				virtual const char* what() const throw();
+		};
+		class LocationNotFound : public std::exception {
 			public:
 				virtual const char* what() const throw();
 		};

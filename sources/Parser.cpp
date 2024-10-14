@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/10 19:41:03 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/14 19:05:46 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,20 +58,27 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 			continue;
 
 		key = removeSemicolon(key);
-        if (key == "listen")
-        {
-            std::string port;
-            iss >> port;
-            std::vector<std::string> portVector;
-            portVector.push_back(removeSemicolon(port));
-            server.setPort(portVector);
-        }
+		if (key == "listen")
+		{
+			std::string port;
+			std::vector<std::string> portVector;
+			while (iss >> port) {
+				port = removeSemicolon(port);
+				if (!port.empty())
+					portVector.push_back(port);
+			}
+			server.setPort(portVector);
+		}
 		if (key == "host")
         {
             std::string host;
-            iss >> host;
-            std::vector<std::string> hostVector;
-            hostVector.push_back(removeSemicolon(host));
+			std::vector<std::string> hostVector;
+            while (iss >> host)
+			{
+				host = removeSemicolon(host);
+				if (!host.empty())
+					hostVector.push_back(removeSemicolon(host));
+			}
             server.setHost(hostVector);
         }
 		else if (key == "server_name")
