@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/10 19:01:00 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/14 14:30:47 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,23 +23,25 @@
 
 class Router
 {
-public:
-	typedef void (Router::*RouteHandler)(const HttpRequest&, HttpResponse&);
+	public:
 
-	void addRoute(const std::string& path, RouteHandler handler);
-	void handleRequest(const HttpRequest& request, HttpResponse& response);
+		typedef void (Router::*RouteHandler)(const HttpRequest&, HttpResponse&);
 
-	void initializeRoutes();
+		void addRoute(const std::string& path, RouteHandler handler);
+		void handleRequest(const HttpRequest& request, HttpResponse& response);
 
-private:
-	std::map<std::string, RouteHandler> routes;
-	std::vector<std::string> uploadedFiles; // Store filenames
+		void initializeRoutes();
 
-	void handleHomeRoute(const HttpRequest& req, HttpResponse& res);
-	void handleUploadRoute(const HttpRequest& req, HttpResponse& res);
-	void handleFormRoute(const HttpRequest& req, HttpResponse& res);
-	void handleDeleteRoute(const HttpRequest& req, HttpResponse& res);
-	void handleUploadSuccessfulRoute(const HttpRequest& req, HttpResponse& res);
+	private:
+
+		std::map<std::string, RouteHandler> routes;
+		std::vector<std::string> uploadedFiles;
+
+		void handleHomeRoute(const HttpRequest& req, HttpResponse& res);
+		void handleUploadRoute(const HttpRequest& req, HttpResponse& res);
+		void handleFormRoute(const HttpRequest& req, HttpResponse& res);
+		void handleDeleteRoute(const HttpRequest& req, HttpResponse& res);
+		void handleUploadSuccessfulRoute(const HttpRequest& req, HttpResponse& res);
 };
 
-#endif // ROUTER_HPP
+#endif
