@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/09 15:30:30 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/10 19:45:44 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/10 19:53:17 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,27 +89,6 @@ int ServerConfig::startServer()
 }
 
 
-const char* ServerConfig::SocketCreationFailed::what() const throw () {
-	return "Throwing exception: creating server socket";
-}
-
-const char* ServerConfig::SocketBindingFailed::what() const throw () {
-	return "Throwing exception: socket binding failed";
-}
-
-const char* ServerConfig::SocketlisteningFailed::what() const throw () {
-	return "Throwing exception: socket listening failed";
-}
-
-const char* ServerConfig::SocketAcceptFailed::what() const throw () {
-	return "Throwing exception: Failed to accept connection";
-}
-
-const char* ServerConfig::SocketReadFailed::what() const throw () {
-	return "Throwing exception: Failed to read from client";
-}
-
-
 
 
 /* ---------------------- Setters ---------------------- */
@@ -174,7 +153,7 @@ int ServerConfig::getListen(size_t idx) const {
     if (idx < _port.size()) {
         return _port[idx];
     }
-    return -1; // Return an invalid port if index is out of range
+    return -1;
 }
 
 size_t ServerConfig::getNbOfPorts() const {
@@ -252,12 +231,12 @@ void ServerConfig::addLocation(const std::string& path, const Location& location
 void ServerConfig::addErrorPage(int code, const std::string& page) {
         _errorPages[code] = page;
     }
-
-
+    
     const std::map<int, std::string>& ServerConfig::getErrorPages() const {
         return _errorPages;
     }
-/* DEBUG*/
+
+/*           Overload operator            */
 
 std::ostream& operator<<(std::ostream& os, const ServerConfig& server) {
 
@@ -294,5 +273,27 @@ std::ostream& operator<<(std::ostream& os, const ServerConfig& server) {
     }
 
     return os;
+}
+
+/*           Exceptions         */
+
+const char* ServerConfig::SocketCreationFailed::what() const throw () {
+	return "Throwing exception: creating server socket";
+}
+
+const char* ServerConfig::SocketBindingFailed::what() const throw () {
+	return "Throwing exception: socket binding failed";
+}
+
+const char* ServerConfig::SocketlisteningFailed::what() const throw () {
+	return "Throwing exception: socket listening failed";
+}
+
+const char* ServerConfig::SocketAcceptFailed::what() const throw () {
+	return "Throwing exception: Failed to accept connection";
+}
+
+const char* ServerConfig::SocketReadFailed::what() const throw () {
+	return "Throwing exception: Failed to read from client";
 }
 

@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:01:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/10 19:45:50 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/10 19:49:13 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,34 +93,23 @@ void Location::setCgiPath(const std::string& token)
 	_cgi_path = token;
 }
 
-// void Location::setMethods(const std::vector<std::string>& methods)
-// {
-// 	for (std::vector<std::string>::const_iterator it = methods.begin(); it != methods.end(); ++it)
-// 	{
-// 		if (!isValidMethod(*it))
-// 			throw InvalidMethodException();
-// 		else
-// 			_Methods.push_back(*it);
-// 	}
-// 	// _Methods = methods;
-// }
+
 void Location::setMethods(const std::vector<std::string>& methods)
 {
-    for (std::vector<std::string>::const_iterator it = methods.begin(); it != methods.end(); ++it)
-    {
-        try
-        {
-            if (!isValidMethod(*it))
-                throw InvalidMethodException();
-            else
-                _Methods.push_back(*it);
-        }
-        catch (const InvalidMethodException& e)
-        {
-            std::cerr << "Error: " << e.what() << std::endl;
-            // Optionally, you can break, skip this item, or perform other actions.
-        }
-    }
+	for (std::vector<std::string>::const_iterator it = methods.begin(); it != methods.end(); ++it)
+	{
+		try
+		{
+			if (!isValidMethod(*it))
+				throw InvalidMethodException();
+			else
+				_Methods.push_back(*it);
+		}
+		catch (const InvalidMethodException& e)
+		{
+			std::cerr << "Error: " << e.what() << std::endl;
+		}
+	}
 }
 
 /*			Getters			*/
@@ -163,21 +152,21 @@ const char* Location::InvalidMethodException::what() const throw ()
 	return ("Trowing exception : invalid method");
 }
 
-
+/*			 Overload operators			*/
 std::ostream& operator<<(std::ostream& os, const Location& location) {
-    os << "\n### Location ###" << std::endl;
+	os << "\n### Location ###" << std::endl;
 	os << "Path: " << location.getPath() << "\n";
-    os << "Root: " << location.getRoot() << "\n";
-    os << "Index: " << location.getIndex() << "\n";
-    os << "AutoIndex: " << (location.getAutoIndex() ? "on" : "off") << "\n";
-    os << "Allowed Methods: ";
+	os << "Root: " << location.getRoot() << "\n";
+	os << "Index: " << location.getIndex() << "\n";
+	os << "AutoIndex: " << (location.getAutoIndex() ? "on" : "off") << "\n";
+	os << "Allowed Methods: ";
 
-    const std::vector<std::string>& methods = location.getMethods();
-    for (size_t i = 0; i < methods.size(); ++i) {
-        os << methods[i] << " ";
-    }
+	const std::vector<std::string>& methods = location.getMethods();
+	for (size_t i = 0; i < methods.size(); ++i) {
+	os << methods[i] << " ";
+	}
 
-    os << std::endl;
-    return os;
+	os << std::endl;
+	return os;
 }
 
