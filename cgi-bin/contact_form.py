@@ -34,4 +34,6 @@ elif int(age) < 90:
 else:
 	print("; I bow before your wisdom!</p>")
 print("<p>We will reach out to you at {}</p>".format(email))
+print("<button onclick=\"location.href='/'\">Back to Home</button>")
+print("<button onclick=\"location.href='/upload'\">Go to Upload Page</button>")
 print("</body></html>")
