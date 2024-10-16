@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/09 15:30:30 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 16:30:31 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 18:09:45 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -262,6 +262,15 @@ void ServerConfig::setCgiBin(const std::vector<std::string>& tokens) {
 //     return _host;
 // }
 
+
+std::string ServerConfig::getHost() const {
+    return _host;
+}
+
+int ServerConfig::getPort() const {
+    return _port;
+}
+
 std::string ServerConfig::getServerName(size_t idx) const {
     if (idx < _serverNames.size()) {
         return _serverNames[idx];
@@ -334,7 +343,11 @@ Location ServerConfig::findLocation(std::string locationPath)
 
 std::ostream& operator<<(std::ostream& os, const ServerConfig& server) {
 
-    // os << "\n### Server ###" << std::endl;
+    os << "\n### Server ###" << std::endl;
+
+    os << "Port: " << server.getPort() << std::endl;
+    os << "Host: " << server.getHost() << std::endl;
+
     // os << "Ports: ";
     // for (size_t i = 0; i < server.getListen().size(); ++i) {
     //     os << server.getListen()[i] << " ";

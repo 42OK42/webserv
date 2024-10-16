@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 16:28:25 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 18:10:00 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,7 +81,11 @@ class ServerConfig
 		/*			Setters & Getters			*/
 		void setHost(const std::string& host);
 		void setPort(int port);
-		
+
+		std::string getHost() const;
+		int getPort() const;
+
+
 		//void			setPort( const std::vector<std::string>& tokens );
 		//void			setHost( const std::vector<std::string>& tokens );
 		void			setServerName( const std::vector<std::string>& tokens );
@@ -96,8 +100,8 @@ class ServerConfig
 		int							getListen( size_t idx ) const;
 		size_t						getNbOfPorts() const;
 		std::vector<int>			getListen( void ) const;
-		std::string					getHost( size_t idx ) const;
-		std::vector<std::string>	getHost( void ) const;
+		//std::string					getHost( size_t idx ) const;
+		//std::vector<std::string>	getHost( void ) const;
 		std::string					getServerName( size_t idx ) const;
 		std::vector<std::string>	getServerName( void ) const;
 		std::string					getRoot( void ) const;

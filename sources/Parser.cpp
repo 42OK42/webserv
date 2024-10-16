@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 16:32:08 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 18:14:34 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,23 +45,18 @@ void Parser::parseMultipleServers(std::vector<std::string> portVector, std::vect
 	std::vector<int> ports =  checkPorts(portVector);
 	std::vector<std::string> hosts = checkHosts(hostVector);
 
-    for (size_t i = 0; i < hosts.size(); ++i) {
-        for (size_t j = 0; j < ports.size(); ++j) {
-            ServerConfig server;
+	for (size_t i = 0; i < hosts.size(); ++i)
+	{
+		for (size_t j = 0; j < ports.size(); ++j)
+		{
+			ServerConfig server;
+			server.setHost(hosts[i]);
+			server.setPort(ports[j]);
+			_servers.push_back(server);
 
-            // Attribuer le port et le host à chaque serveur
-            server.setHost(hosts[i]);
-            server.setPort(ports[j]);
-
-            // Ajouter ce serveur à votre liste ou map de serveurs
-            servers.push_back(server);  // si vous avez un vecteur servers dans votre classe Parser
-            // ou, si vous avez une map, en utilisant la clé hôte + port
-            // std::string key = hosts[i] + ":" + std::to_string(ports[j]);
-            // serversMap[key] = server;
-
-            std::cout << "Created server on host " << hosts[i] << " and port " << ports[j] << std::endl;
-        }
-    }
+			std::cout << "Created server on host " << hosts[i] << " and port " << ports[j] << std::endl;
+		}
+	}
 }
 
 
@@ -181,8 +176,10 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 					hostVector.push_back(removeSemicolon(host));
 			}
             // server.setHost(hostVector);
+
         }
-		else if (key == "server_name")
+		parseMultipleServers(portVector, hostVector);
+		if (key == "server_name")
 		{
 			std::string name;
             iss >> name;
@@ -222,12 +219,13 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 
 
 	parseMultipleServers(portVector, hostVector);
+
 	std::cout << "Printing Server class ......\n";
 
 	std::cout << server << std::endl;
 	//server.print();
 
-	servers.push_back(server);
+	_servers.push_back(server);
 
 	// if (!server.serverName.empty())
 	// 	data.serverConfig = server;
@@ -301,12 +299,12 @@ bool Parser::parseLocation(std::stringstream& buffer, Location& location)
 /* Getters */
 
 const std::vector<ServerConfig>& Parser::getServers() const {
-    return servers;
+    return _servers;
 }
 
 ServerConfig& Parser::getFirstServer() {
-    if (servers.empty()) {
+    if (_servers.empty()) {
         throw std::runtime_error("No servers have been parsed.");
     }
-    return servers[0];
+    return _servers[0];
 }
