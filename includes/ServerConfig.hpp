@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 18:23:41 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 18:39:40 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,15 +43,13 @@
 class ServerConfig
 {
 	private:
-		// std::vector<int> 				_port;  // Port number to listen on (e.g., 8080)
-		// std::vector<std::string>		_host;  // Host (e.g., "127.0.0.1" or "localhost")
 
 		int								_port;
 		std::string						_host;
-		std::vector<std::string>		_serverNames;  // Server aliases (e.g., "example.com")
+		std::vector<std::string>		_serverNames;
 		std::string						_root; // Spécifie le répertoire racine à partir duquel le serveur sert les fichiers.
-		std::map<int, std::string>		_errorPages;  // Default error pages (e.g., 404 -> "/404.html")
-		size_t 							_clientMaxBodySize;  // Maximum allowed size for client request body
+		std::map<int, std::string>		_errorPages;
+		size_t 							_clientMaxBodySize;
 
 		std::map <std::string, Location>	_locations;
 
@@ -87,8 +85,6 @@ class ServerConfig
 		int getPort() const;
 
 
-		//void			setPort( const std::vector<std::string>& tokens );
-		//void			setHost( const std::vector<std::string>& tokens );
 		void			setServerName( const std::vector<std::string>& tokens );
 		void			setRoot( const std::vector<std::string>& tokens );
 		void			setErrorPage( const std::vector<std::string>& tokens );
@@ -97,12 +93,7 @@ class ServerConfig
 		void			setCgiExtension( const std::vector<std::string>& tokens );
 		void			setCgiBin( const std::vector<std::string>& tokens );
 
-
-		int							getListen( size_t idx ) const;
 		size_t						getNbOfPorts() const;
-		std::vector<int>			getListen( void ) const;
-		//std::string					getHost( size_t idx ) const;
-		//std::vector<std::string>	getHost( void ) const;
 		std::string					getServerName( size_t idx ) const;
 		std::vector<std::string>	getServerName( void ) const;
 		std::string					getRoot( void ) const;
@@ -121,7 +112,6 @@ class ServerConfig
 		void addLocation(const std::string& path, const Location& location);
 		const std::map<std::string, Location>& getLocations() const;
 
-		void print() const;
 
 		void setupServerSocket();
 		int startServer();

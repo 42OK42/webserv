@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/09 15:30:30 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 18:24:24 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 18:57:48 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,25 +35,32 @@ std::string ServerConfig::readFile(const std::string& filepath) {
 }
 
 
-// /* SHOULD ONLY GET ONE PORT AND ONE HOST AND SET THOSE */
-// void ServerConfig::setupServerSocket()
-// {
-// 	m_socket = socket(AF_INET, SOCK_STREAM, 0);
-// 	if (m_socket == -1)
-//         throw ServerConfig::SocketCreationFailed();
+void ServerConfig::setupServerSocket()
+{
+    m_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (m_socket == -1)
+        throw ServerConfig::SocketCreationFailed();
 
-// 	server_addr.sin_family = AF_INET;
-//     server_addr.sin_port = htons(_port[0]);
-//     server_addr.sin_addr.s_addr = inet_addr(_host[0].c_str());
-//     if (_host[0] == "localhost")
-//         server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(_port);
 
-// 	if (bind(m_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
-// 		throw ServerConfig::SocketBindingFailed();
+    // Set the IP address based on the host
+    if (_host == "localhost")
+        server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    else
+        server_addr.sin_addr.s_addr = inet_addr(_host.c_str());
 
-// 	if (listen(m_socket, SOMAXCONN) < 0)
-// 		throw ServerConfig::SocketlisteningFailed();
-// }
+    // Bind the socket to the address and port
+    if (bind(m_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
+        throw ServerConfig::SocketBindingFailed();
+
+    // Listen for incoming connections
+    if (listen(m_socket, SOMAXCONN) < 0)
+        throw ServerConfig::SocketlisteningFailed();
+
+    std::cout << "Server is listening on port " << _port << std::endl;
+}
+
 
 
 /* SHOULD DIVIDE THIS FUNCTION IN TWO DIFFERENT FUNCTION, THE SOCKET PART THEN THE LISTENING */
@@ -84,7 +91,7 @@ int ServerConfig::startServer()
 		throw ServerConfig::SocketlisteningFailed();
 
     //std::cout << "Server is listening on port " << _port[0] << std::endl;
-	//std::cout << "Server is listening on port 8080..." << std::endl;
+
 
 	socklen_t client_addr_len = sizeof(client_addr);
 

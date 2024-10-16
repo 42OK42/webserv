@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 14:18:42 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 18:27:48 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 18:59:24 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #include "../includes/Location.hpp"
 #include "../includes/Parser.hpp"
 #include "../includes/ServerConfig.hpp"
+#include "../includes/Webserver.hpp"
 
 int main(int argc, char **argv)
 {
@@ -40,6 +41,11 @@ int main(int argc, char **argv)
         std::cerr << "Error while parsing." << std::endl;
         return 1;
     }
+
+    std::vector<ServerConfig> servers = parser.getServers();
+
+    Webserver webserver(servers);
+    webserver.initializeServers();
 
     // server = parser.getFirstServer();
 	// try
