@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/09 15:30:30 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 18:09:45 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 18:24:24 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,9 @@
 
 // #include "Parser.hpp"
 
-// Destructeur
+ServerConfig::ServerConfig() {}
+
+
 ServerConfig::~ServerConfig() {}
 
 

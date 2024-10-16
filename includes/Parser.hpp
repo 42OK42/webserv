@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:21 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 18:10:40 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 18:25:29 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,7 @@ class Parser
 
     private:
         std::vector<ServerConfig> _servers;
+        ServerConfig              _serverTemplate;
 
     public:
         Parser();

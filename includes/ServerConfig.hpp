@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 18:10:00 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 18:23:41 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,6 +73,7 @@ class ServerConfig
 
 	public:
 		//ServerConfig( const Configuration& config ); //from parsing config file
+		ServerConfig();
 		~ServerConfig();
 
 
