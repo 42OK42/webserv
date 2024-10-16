@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/14 19:05:46 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 15:54:08 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,16 @@ std::string Parser::removeSemicolon(const std::string& str)
 	return str;
 }
 
+// void Parser::parseMultipleServers(std::string server)
+// {
+
+// }
+
+/*
+
+		if (startsWith(line, "#") || line.empty())
+			continue;	// skip comments and empty lines
+*/
 bool Parser::ParseConfigStream(std::stringstream& buffer)
 {
 	ServerConfig server;
