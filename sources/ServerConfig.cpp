@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/09 15:30:30 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/14 19:23:54 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 15:57:44 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -128,38 +128,38 @@ int ServerConfig::startServer()
     - Check if there is any duplicates, in that case, it ignores the duplicate and does not
         add it to the ports lists
 */
-void ServerConfig::setPort(const std::vector<std::string>& tokens)
-{
+// void ServerConfig::setPort(const std::vector<std::string>& tokens)
+// {
 
-    for (size_t i = 0; i < tokens.size(); ++i) {
-        std::cout << "Token " << i + 1 << ": " << tokens[i] << std::endl;
-    }
+//     for (size_t i = 0; i < tokens.size(); ++i) {
+//         std::cout << "Token " << i + 1 << ": " << tokens[i] << std::endl;
+//     }
 
-    _port.clear();
-    if (!tokens.empty())
-    {
-        for (size_t i = 0; i < tokens.size(); ++i)
-        {
-            int port = atoi(tokens[i].c_str());
-            bool isDuplicate = false;
-            for (size_t j = 0; j < _port.size(); ++j)
-            {
-                if (_port[j] == port)
-                {
-                    isDuplicate = true;
-                    break;
-                }
-            }
-            if (!isDuplicate)
-            {
-            _port.push_back(port);
-            }
-        }
-    }
-    else
-        _port[0] = 8080;
+//     _port.clear();
+//     if (!tokens.empty())
+//     {
+//         for (size_t i = 0; i < tokens.size(); ++i)
+//         {
+//             int port = atoi(tokens[i].c_str());
+//             bool isDuplicate = false;
+//             for (size_t j = 0; j < _port.size(); ++j)
+//             {
+//                 if (_port[j] == port)
+//                 {
+//                     isDuplicate = true;
+//                     break;
+//                 }
+//             }
+//             if (!isDuplicate)
+//             {
+//             _port.push_back(port);
+//             }
+//         }
+//     }
+//     else
+//         _port[0] = 8080;
 
-}
+//}
 
 
 /* If there is no host specified, it is set to localhost */

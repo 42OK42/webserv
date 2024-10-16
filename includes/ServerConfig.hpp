@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/14 19:07:34 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 15:55:41 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,8 +43,11 @@
 class ServerConfig
 {
 	private:
-		std::vector<int> 				_port;  // Port number to listen on (e.g., 8080)
-		std::vector<std::string>		_host;  // Host (e.g., "127.0.0.1" or "localhost")
+		// std::vector<int> 				_port;  // Port number to listen on (e.g., 8080)
+		// std::vector<std::string>		_host;  // Host (e.g., "127.0.0.1" or "localhost")
+
+		int								_port;
+		std::string						_host;
 		std::vector<std::string>		_serverNames;  // Server aliases (e.g., "example.com")
 		std::string						_root; // Spécifie le répertoire racine à partir duquel le serveur sert les fichiers.
 		std::map<int, std::string>		_errorPages;  // Default error pages (e.g., 404 -> "/404.html")

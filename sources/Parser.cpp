@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 15:54:08 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 15:56:52 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,10 +40,10 @@ std::string Parser::removeSemicolon(const std::string& str)
 	return str;
 }
 
-// void Parser::parseMultipleServers(std::string server)
-// {
+void Parser::parseMultipleServers(std::vector<std::string> portVector, std::vector<std::string> hostVector )
+{
 
-// }
+}
 
 /*
 
@@ -77,7 +77,7 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 				if (!port.empty())
 					portVector.push_back(port);
 			}
-			server.setPort(portVector);
+			// server.setPort(portVector);
 		}
 		if (key == "host")
         {
@@ -89,7 +89,7 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 				if (!host.empty())
 					hostVector.push_back(removeSemicolon(host));
 			}
-            server.setHost(hostVector);
+            // server.setHost(hostVector);
         }
 		else if (key == "server_name")
 		{
@@ -128,6 +128,8 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 			server.addLocation(path, location);
 		}
 	}
+
+
 
 	std::cout << "Printing Server class ......\n";
 
