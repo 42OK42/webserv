@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 18:39:40 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 20:14:50 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,11 +93,9 @@ class ServerConfig
 		void			setCgiExtension( const std::vector<std::string>& tokens );
 		void			setCgiBin( const std::vector<std::string>& tokens );
 
-		size_t						getNbOfPorts() const;
 		std::string					getServerName( size_t idx ) const;
 		std::vector<std::string>	getServerName( void ) const;
 		std::string					getRoot( void ) const;
-
 		int							getClientMaxBodySize( void ) const;
 		bool						isCgiEnabled( void ) const;
 		std::string					getCgiExtension( void ) const;
@@ -116,6 +114,7 @@ class ServerConfig
 		void setupServerSocket();
 		int startServer();
 		std::string readFile(const std::string& filepath);
+		
 
 		class SocketCreationFailed : public std::exception {
 			public:

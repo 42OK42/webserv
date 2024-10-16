@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/09 15:30:30 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 20:04:34 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 20:14:28 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -141,71 +141,15 @@ int ServerConfig::startServer()
 
 
 /* ---------------------- Setters ---------------------- */
-/*
-    - Check if any port(s) are provided, if none are provided it is set to 8080 (default)
-    - Check if there is any duplicates, in that case, it ignores the duplicate and does not
-        add it to the ports lists
-*/
-// void ServerConfig::setPort(const std::vector<std::string>& tokens)
-// {
 
-//     for (size_t i = 0; i < tokens.size(); ++i) {
-//         std::cout << "Token " << i + 1 << ": " << tokens[i] << std::endl;
-//     }
-
-//     _port.clear();
-//     if (!tokens.empty())
-//     {
-//         for (size_t i = 0; i < tokens.size(); ++i)
-//         {
-//             int port = atoi(tokens[i].c_str());
-//             bool isDuplicate = false;
-//             for (size_t j = 0; j < _port.size(); ++j)
-//             {
-//                 if (_port[j] == port)
-//                 {
-//                     isDuplicate = true;
-//                     break;
-//                 }
-//             }
-//             if (!isDuplicate)
-//             {
-//             _port.push_back(port);
-//             }
-//         }
-//     }
-//     else
-//         _port[0] = 8080;
-
-//}
 
 void ServerConfig::setHost(const std::string& host) {
     _host = host;
 }
 
-// Setter for port
 void ServerConfig::setPort(int port) {
-    // Assurez-vous que le port est valide (entre 1 et 65535)
-    if (port < 1 || port > 65535) {
-        throw std::invalid_argument("Port number is out of valid range (1-65535)");
-    }
     _port = port;
 }
-
-// void ServerConfig::setHost(std::string tokens) {
-//     if (!tokens.empty())
-//         _host = tokens;
-//     else
-//         _host[0] = "localhost";
-// }
-
-/* If there is no host specified, it is set to localhost */
-// void ServerConfig::setHost(const std::vector<std::string>& tokens) {
-//     if (!tokens.empty())
-//         _host = tokens;
-//     else
-//         _host[0] = "localhost";
-// }
 
 void ServerConfig::setServerName(const std::vector<std::string>& tokens) {
     _serverNames = tokens;
@@ -253,33 +197,6 @@ void ServerConfig::setCgiBin(const std::vector<std::string>& tokens) {
 }
 
 /* ---------------------- Getters ---------------------- */
-
-// int ServerConfig::getListen(size_t idx) const {
-//     if (idx < _port.size()) {
-//         return _port[idx];
-//     }
-//     return -1;
-// }
-
-// size_t ServerConfig::getNbOfPorts() const {
-//     return _port.size();
-// }
-
-// std::vector<int> ServerConfig::getListen() const {
-//     return _port;
-// }
-
-// std::string ServerConfig::getHost(size_t idx) const {
-//     if (idx < _host.size()) {
-//         return _host[idx];
-//     }
-//     return "";
-// }
-
-// std::vector<std::string> ServerConfig::getHost() const {
-//     return _host;
-// }
-
 
 std::string ServerConfig::getHost() const {
     return _host;
@@ -366,16 +283,6 @@ std::ostream& operator<<(std::ostream& os, const ServerConfig& server) {
     os << "Port: " << server.getPort() << std::endl;
     os << "Host: " << server.getHost() << std::endl;
 
-    // os << "Ports: ";
-    // for (size_t i = 0; i < server.getListen().size(); ++i) {
-    //     os << server.getListen()[i] << " ";
-    // }
-    // os << std::endl;
-
-    // os << "Hosts: ";
-    // for (size_t i = 0; i < server.getHost().size(); ++i) {
-    //     os << server.getHost()[i] << " ";
-    // }
     os << std::endl;
 
     os << "Server Names: ";

@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 18:37:12 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 20:13:27 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -111,6 +111,8 @@ std::vector<int> Parser::checkPorts( std::vector<std::string>& tokens)
 		for (size_t i = 0; i < tokens.size(); ++i)
 		{
 			int port = atoi(tokens[i].c_str());
+			if (port < 1024 || port > 65535)
+				continue; 
 			bool isDuplicate = false;
 			for (size_t j = 0; j < ports.size(); ++j)
 			{
