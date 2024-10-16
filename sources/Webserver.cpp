@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 18:58:36 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 20:08:00 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,14 +36,23 @@ Webserver::~Webserver()
 
 void Webserver::initializeServers()
 {
-    for (size_t i = 0; i < _servers.size(); ++i) {
-        ServerConfig& server = _servers[i]; // Get the server configuration
+	for (size_t i = 0; i < _servers.size(); ++i)
+	{
+		ServerConfig& server = _servers[i]; // Get the server configuration
 
-        try {
-            server.setupServerSocket(); // Initialize the server socket for each configuration
-            std::cout << "Server initialized on " << server.getHost() << ":" << server.getPort() << std::endl;
-        } catch (const std::exception& e) {
-            std::cerr << "Error initializing server: " << e.what() << std::endl;
-        }
-    }
+		try
+		{
+			server.setupServerSocket(); // Initialize the server socket for each configuration
+			std::cout << "Server initialized on " << server.getHost() << ":" << server.getPort() << std::endl;
+		} catch (const std::exception& e) {
+			std::cerr << "Error initializing server: " << e.what() << std::endl;
+		}
+	}
 }
+
+
+
+
+/*			Exceptions 			*/
+
+

@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/09 15:30:30 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 18:57:48 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 20:04:34 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,6 +59,14 @@ void ServerConfig::setupServerSocket()
         throw ServerConfig::SocketlisteningFailed();
 
     std::cout << "Server is listening on port " << _port << std::endl;
+
+
+    	socklen_t client_addr_len = sizeof(client_addr);
+
+	// Initialize router
+	Router router;
+	router.initializeRoutes(); //@olli should it initialise from the location??
+
 }
 
 
@@ -97,7 +105,8 @@ int ServerConfig::startServer()
 
 	// Initialize router
 	Router router;
-	router.initializeRoutes();
+	router.initializeRoutes(); //@olli should it initialise from the location??
+
 
 	while (true) {
 		client_socket = accept(m_socket, (struct sockaddr*)&client_addr, &client_addr_len);
