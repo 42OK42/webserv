@@ -6,24 +6,35 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/30 15:38:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/09 17:37:49 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/16 15:31:57 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../includes/TcpServer.hpp"
+#include "TcpServer.hpp"
 #include "Router.hpp"
 #include "HttpResponse.hpp"
 #include "HttpRequest.hpp"
 
-TcpServer::TcpServer() {
+// Set the socket to non-blocking mode
+int set_nonblocking(int sockfd) {
+	int flags = fcntl(sockfd, F_GETFL, 0);
+	if (flags == -1) {
+		return -1;
+	}
+	return fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+}
+
+TcpServer::TcpServer() : m_socket(-1) {
 	std::cout << "\033[33m" << "Default constructor called" << "\033[0m" << std::endl;
 }
 
 TcpServer::~TcpServer() {
 	std::cout << "\033[32m" << "Destructor called" << "\033[0m" << std::endl;
+	if (m_socket != -1) {
+		close(m_socket);
+	}
 }
 
-// Function to read an HTML file
 std::string TcpServer::readFile(const std::string& filepath) {
 	std::ifstream file(filepath.c_str());
 	if (!file) {
@@ -35,8 +46,38 @@ std::string TcpServer::readFile(const std::string& filepath) {
 	return buffer.str();
 }
 
-int TcpServer::startServer()
-{
+bool TcpServer::readClientData(int client_fd) {
+	char buffer[1024];
+	int n = recv(client_fd, buffer, sizeof(buffer), 0);
+	if (n <= 0) {
+		// Connection closed or error
+		close(client_fd);
+		return false;
+	}
+
+	// Append data to client's buffer
+	client_data[client_fd].append(buffer, n);
+
+	// Check if the entire request has been received
+	std::string& data = client_data[client_fd];
+	size_t header_end_pos = data.find("\r\n\r\n");
+	if (header_end_pos != std::string::npos) {
+		size_t content_length = 0;
+		size_t content_length_pos = data.find("Content-Length:");
+		if (content_length_pos != std::string::npos) {
+			content_length_pos += 15; // Skip "Content-Length:"
+			content_length = std::atoi(data.c_str() + content_length_pos);
+		}
+
+		if (data.size() >= header_end_pos + 4 + content_length) {
+			return true; // Entire request has been received
+		}
+	}
+
+	return false; // Request not fully received yet
+}
+
+int TcpServer::startServer() {
 	std::cout << "Starting server..." << std::endl;
 
 	m_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -54,58 +95,86 @@ int TcpServer::startServer()
 
 	std::cout << "Server is listening on port 8080..." << std::endl;
 
-	socklen_t client_addr_len = sizeof(client_addr);
+	// Set the server socket to non-blocking mode
+	if (set_nonblocking(m_socket) == -1) throw TcpServer::SocketCreationFailed();
+
+	// Initialize pollfd structures
+	struct pollfd server_fd;
+	server_fd.fd = m_socket;
+	server_fd.events = POLLIN;
+	fds.push_back(server_fd);
 
 	// Initialize router
 	Router router;
 	router.initializeRoutes();
 
 	while (true) {
-		client_socket = accept(m_socket, (struct sockaddr*)&client_addr, &client_addr_len);
-		if (client_socket < 0) throw SocketAcceptFailed();
+		int ret = poll(&fds[0], fds.size(), -1); // -1 means wait indefinitely
+		if (ret < 0) {
+			perror("poll");
+			break;
+		}
 
-		char buffer[1024] = {0};
-		int bytes_read = recv(client_socket, buffer, sizeof(buffer), 0);
-		if (bytes_read < 0) throw SocketReadFailed();
+		for (size_t i = 0; i < fds.size(); ++i) {
+			if (fds[i].revents & POLLIN) {
+				if (fds[i].fd == m_socket) {
+					// Accept new connection
+					socklen_t client_addr_len = sizeof(client_addr);
+					int new_fd = accept(m_socket, (struct sockaddr*)&client_addr, &client_addr_len);
+					if (new_fd >= 0) {
+						if (set_nonblocking(new_fd) == -1) {
+							close(new_fd);
+							continue;
+						}
+						struct pollfd new_pollfd;
+						new_pollfd.fd = new_fd;
+						new_pollfd.events = POLLIN;
+						fds.push_back(new_pollfd);
+					}
+				} else {
+					// Read data from existing client socket
+					if (readClientData(fds[i].fd)) {
+						// Entire request has been received
+						HttpRequest httpRequest(client_data[fds[i].fd].c_str(), client_data[fds[i].fd].size());
+						HttpResponse httpResponse(httpRequest);
 
-		std::cout << "Received..." << std::endl;
+						// Process request with the router
+						router.handleRequest(httpRequest, httpResponse);
 
-		HttpRequest httpRequest(buffer, bytes_read);
-		
-		//httpRequest.print();
-		
-		HttpResponse httpResponse(httpRequest);
+						// Send response
+						std::string httpResponseString = httpResponse.toString();
+						send(fds[i].fd, httpResponseString.c_str(), httpResponseString.size(), 0);
 
-		// Process request with the router
-		router.handleRequest(httpRequest, httpResponse);
-
-		// Send response
-		std::string httpResponseString = httpResponse.toString();
-		send(client_socket, httpResponseString.c_str(), httpResponseString.size(), 0);
-
-		close(client_socket);
+						// Clean up
+						client_data.erase(fds[i].fd);
+						close(fds[i].fd);
+						fds.erase(fds.begin() + i);
+						--i;
+					}
+				}
+			}
+		}
 	}
 
 	return 0;
 }
 
-
-const char* TcpServer::SocketCreationFailed::what() const throw () {
+const char* TcpServer::SocketCreationFailed::what() const throw() {
 	return "Throwing exception: creating server socket";
 }
 
-const char* TcpServer::SocketBindingFailed::what() const throw () {
+const char* TcpServer::SocketBindingFailed::what() const throw() {
 	return "Throwing exception: socket binding failed";
 }
 
-const char* TcpServer::SocketlisteningFailed::what() const throw () {
+const char* TcpServer::SocketlisteningFailed::what() const throw() {
 	return "Throwing exception: socket listening failed";
 }
 
-const char* TcpServer::SocketAcceptFailed::what() const throw () {
+const char* TcpServer::SocketAcceptFailed::what() const throw() {
 	return "Throwing exception: Failed to accept connection";
 }
 
-const char* TcpServer::SocketReadFailed::what() const throw () {
+const char* TcpServer::SocketReadFailed::what() const throw() {
 	return "Throwing exception: Failed to read from client";
 }

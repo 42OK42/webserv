@@ -3,23 +3,19 @@
 /*                                                        :::      ::::::::   */
 /*   TcpServer.hpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/30 15:38:08 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/02 17:16:45 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 15:31:34 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef TcpServer_HPP
 #define TcpServer_HPP
 
-#include <fstream> 
+#include <fstream>
 #include <string>
 #include <iostream>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <iostream>
-#include <cstring>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -34,16 +30,19 @@
 #include <cstdlib>
 #include <netdb.h>
 #include <sstream>
-#include <string.h>
 #include <vector>
+#include <map>
 
-class TcpServer
-{
+class TcpServer {
 	private:
-		int	m_socket; //return a socket decriptor
-		struct sockaddr_in	server_addr;
-		struct sockaddr_in client_addr; //contains Ip adress and client port
-		int client_socket;
+		int m_socket; // Server socket descriptor
+		struct sockaddr_in server_addr;
+		struct sockaddr_in client_addr; // Contains client IP address and port
+		std::vector<struct pollfd> fds; // Poll file descriptors
+		std::map<int, std::string> client_data; // Map to store client data
+
+		// New function for reading client data in chunks
+		bool readClientData(int client_fd);
 
 	public:
 		TcpServer();
@@ -72,10 +71,8 @@ class TcpServer
 			public:
 				virtual const char* what() const throw();
 		};
-
-
 };
 
 std::ostream &operator<<(std::ostream &o, TcpServer const &i);
 
-#endif // TcpServer_HPP
+#endif

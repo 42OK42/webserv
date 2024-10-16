@@ -6,14 +6,20 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:49 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/09 17:40:27 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/16 15:50:07 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Router.hpp"
 #include "Helper.hpp"
-#include <sstream>
-#include <ctime>
+
+Router::Router() {
+	// Konstruktor-Implementierung (falls erforderlich)
+}
+
+Router::~Router() {
+	// Destruktor-Implementierung (falls erforderlich)
+}
 
 void Router::addRoute(const std::string& path, RouteHandler handler) {
 	routes[path] = handler;
@@ -79,44 +85,22 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 		res.setHeader("Content-Type", "text/html");
 	} else if (req.getMethod() == "POST") {
 		std::cout << "Processing POST request" << std::endl;
-		std::string originalFilename = req.getFilename();
-		std::cout << "Original filename: " << originalFilename << std::endl;
 
-		if (originalFilename.empty()) {
-			std::cout << "Filename not found" << std::endl;
+		const std::vector<std::string>& filenames = req.getFilenames();
+		if (filenames.empty()) {
+			std::cout << "No files uploaded" << std::endl;
 			res.setStatusCode(400);
-			res.setBody("Bad Request: Filename not found");
+			res.setBody("Bad Request: No files uploaded");
 			res.setHeader("Content-Type", "text/plain");
 			return;
 		}
 
-		std::string imageData = req.getBody();
-		std::cout << "Image data size: " << imageData.size() << std::endl;
+		saveUploadedFiles(req);
 
-		std::string uploadDir = "./uploads";
-		ensureDirectoryExists(uploadDir);
-
-		std::string savedFilename = uploadDir + "/" + originalFilename;
-		std::cout << "Saving file to: " << savedFilename << std::endl;
-
-		std::ofstream outFile(savedFilename.c_str(), std::ios::binary);
-		if (outFile.is_open()) {
-			outFile.write(imageData.c_str(), imageData.size());
-			outFile.close();
-			std::cout << "File saved successfully" << std::endl;
-
-			uploadedFiles.push_back(savedFilename);
-
-			std::string successContent = readFile("HTMLFiles/uploadSuccessful.html");
-			res.setStatusCode(200);
-			res.setBody(successContent);
-			res.setHeader("Content-Type", "text/html");
-		} else {
-			std::cout << "Failed to open file for writing" << std::endl;
-			res.setStatusCode(500);
-			res.setBody("<html><body><h1>500 Internal Server Error</h1></body></html>");
-			res.setHeader("Content-Type", "text/html");
-		}
+		std::string successContent = readFile("HTMLFiles/uploadSuccessful.html");
+		res.setStatusCode(200);
+		res.setBody(successContent);
+		res.setHeader("Content-Type", "text/html");
 	} else if (req.getMethod() == "DELETE") {
 		std::cout << "Processing DELETE request" << std::endl;
 		std::string filename = extractFilenameFromUrl(req.getUrl());
@@ -149,6 +133,33 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 		res.setStatusCode(405);
 		res.setBody("<html><body><h1>405 Method Not Allowed</h1></body></html>");
 		res.setHeader("Content-Type", "text/html");
+	}
+}
+
+void Router::saveUploadedFiles(const HttpRequest& req) {
+	const std::vector<std::string>& filenames = req.getFilenames();
+	const std::string& body = req.getBody();
+	size_t pos = 0;
+
+	// Create the uploads directory if it doesn't exist
+	ensureDirectoryExists("uploads");
+
+	for (size_t i = 0; i < filenames.size(); ++i) {
+		size_t start = body.find("\r\n\r\n", pos) + 4;
+		size_t end = body.find("\r\n--", start);
+		std::string fileContent = body.substr(start, end - start);
+		pos = end + 4;
+
+		std::string savedFilename = "uploads/" + filenames[i].substr(filenames[i].find_last_of("\\/") + 1);
+		std::ofstream outFile(savedFilename.c_str(), std::ios::binary);
+		if (outFile.is_open()) {
+			outFile.write(fileContent.c_str(), fileContent.size());
+			outFile.close();
+			std::cout << "File saved successfully: " << savedFilename << std::endl;
+			uploadedFiles.push_back(savedFilename);
+		} else {
+			std::cerr << "Failed to open file for writing: " << savedFilename << std::endl;
+		}
 	}
 }
 

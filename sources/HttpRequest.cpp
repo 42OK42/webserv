@@ -6,14 +6,16 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:27 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/08 16:30:41 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/16 15:48:40 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Helper.hpp"
 #include "HttpRequest.hpp"
+#include "Helper.hpp"
+#include <sstream>
+#include <iostream>
 
-HttpRequest::HttpRequest(const char* buffer, int bytesRead) : filename("") {
+HttpRequest::HttpRequest(const char* buffer, int bytesRead) {
 	parse(buffer, bytesRead);
 }
 
@@ -22,7 +24,7 @@ const std::string& HttpRequest::getUrl() const { return url; }
 const std::string& HttpRequest::getHttpVersion() const { return httpVersion; }
 const std::map<std::string, std::string>& HttpRequest::getHeaders() const { return headers; }
 const std::string& HttpRequest::getBody() const { return body; }
-const std::string& HttpRequest::getFilename() const { return filename; }
+const std::vector<std::string>& HttpRequest::getFilenames() const { return filenames; }
 
 std::string HttpRequest::getHeader(const std::string& name) const {
 	std::map<std::string, std::string>::const_iterator it = headers.find(name);
@@ -75,8 +77,11 @@ void HttpRequest::parseMultipartData(const std::string& boundary) {
 				std::istringstream headerLine(line);
 				if (std::getline(headerLine, key, ':') && std::getline(headerLine, value)) {
 					if (key == "Content-Disposition") {
-						filename = extractFilename(value); // Speichern des Dateinamens
-						std::cout << "Extracted filename: " << filename << std::endl;
+						std::string filename = extractFilename(value); // Speichern des Dateinamens
+						if (!filename.empty()) {
+							filenames.push_back(filename);
+							std::cout << "Extracted filename: " << filename << std::endl;
+						}
 					}
 				}
 			}
@@ -134,7 +139,10 @@ void HttpRequest::print() const {
 			std::cout << "  (truncated, total size: " << body.size() << " bytes)\n";
 		}
 	}
-	if (!filename.empty()) {
-		std::cout << "Filename: " << filename << "\n";
+	if (!filenames.empty()) {
+		std::cout << "Filenames:\n";
+		for (size_t i = 0; i < filenames.size(); ++i) {
+			std::cout << "  " << filenames[i] << "\n";
+		}
 	}
 }
