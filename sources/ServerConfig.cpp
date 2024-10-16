@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/09 15:30:30 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 15:57:44 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 16:30:31 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,12 +65,12 @@ int ServerConfig::startServer()
     /*need to create a socket for each port*/
 
 	server_addr.sin_family = AF_INET;
-	// server_addr.sin_port = htons(8080);
-    server_addr.sin_port = htons(_port[0]);
+	server_addr.sin_port = htons(8080);
+    //server_addr.sin_port = htons(_port[0]);
 
-	//server_addr.sin_addr.s_addr = INADDR_ANY;
+	server_addr.sin_addr.s_addr = INADDR_ANY;
 
-   server_addr.sin_addr.s_addr = inet_addr(_host[0].c_str());
+  // server_addr.sin_addr.s_addr = inet_addr(_host[0].c_str());
     // if (_host[0] == "localhost")
 	// 	server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
@@ -81,7 +81,7 @@ int ServerConfig::startServer()
 	if (listen(m_socket, SOMAXCONN) < 0)
 		throw ServerConfig::SocketlisteningFailed();
 
-    std::cout << "Server is listening on port " << _port[0] << std::endl;
+    //std::cout << "Server is listening on port " << _port[0] << std::endl;
 	//std::cout << "Server is listening on port 8080..." << std::endl;
 
 	socklen_t client_addr_len = sizeof(client_addr);
@@ -161,14 +161,33 @@ int ServerConfig::startServer()
 
 //}
 
+void ServerConfig::setHost(const std::string& host) {
+    _host = host;
+}
+
+// Setter for port
+void ServerConfig::setPort(int port) {
+    // Assurez-vous que le port est valide (entre 1 et 65535)
+    if (port < 1 || port > 65535) {
+        throw std::invalid_argument("Port number is out of valid range (1-65535)");
+    }
+    _port = port;
+}
+
+// void ServerConfig::setHost(std::string tokens) {
+//     if (!tokens.empty())
+//         _host = tokens;
+//     else
+//         _host[0] = "localhost";
+// }
 
 /* If there is no host specified, it is set to localhost */
-void ServerConfig::setHost(const std::vector<std::string>& tokens) {
-    if (!tokens.empty())
-        _host = tokens;
-    else
-        _host[0] = "localhost";
-}
+// void ServerConfig::setHost(const std::vector<std::string>& tokens) {
+//     if (!tokens.empty())
+//         _host = tokens;
+//     else
+//         _host[0] = "localhost";
+// }
 
 void ServerConfig::setServerName(const std::vector<std::string>& tokens) {
     _serverNames = tokens;
@@ -217,31 +236,31 @@ void ServerConfig::setCgiBin(const std::vector<std::string>& tokens) {
 
 /* ---------------------- Getters ---------------------- */
 
-int ServerConfig::getListen(size_t idx) const {
-    if (idx < _port.size()) {
-        return _port[idx];
-    }
-    return -1;
-}
+// int ServerConfig::getListen(size_t idx) const {
+//     if (idx < _port.size()) {
+//         return _port[idx];
+//     }
+//     return -1;
+// }
 
-size_t ServerConfig::getNbOfPorts() const {
-    return _port.size();
-}
+// size_t ServerConfig::getNbOfPorts() const {
+//     return _port.size();
+// }
 
-std::vector<int> ServerConfig::getListen() const {
-    return _port;
-}
+// std::vector<int> ServerConfig::getListen() const {
+//     return _port;
+// }
 
-std::string ServerConfig::getHost(size_t idx) const {
-    if (idx < _host.size()) {
-        return _host[idx];
-    }
-    return "";
-}
+// std::string ServerConfig::getHost(size_t idx) const {
+//     if (idx < _host.size()) {
+//         return _host[idx];
+//     }
+//     return "";
+// }
 
-std::vector<std::string> ServerConfig::getHost() const {
-    return _host;
-}
+// std::vector<std::string> ServerConfig::getHost() const {
+//     return _host;
+// }
 
 std::string ServerConfig::getServerName(size_t idx) const {
     if (idx < _serverNames.size()) {
@@ -315,17 +334,17 @@ Location ServerConfig::findLocation(std::string locationPath)
 
 std::ostream& operator<<(std::ostream& os, const ServerConfig& server) {
 
-    os << "\n### Server ###" << std::endl;
-    os << "Ports: ";
-    for (size_t i = 0; i < server.getListen().size(); ++i) {
-        os << server.getListen()[i] << " ";
-    }
-    os << std::endl;
+    // os << "\n### Server ###" << std::endl;
+    // os << "Ports: ";
+    // for (size_t i = 0; i < server.getListen().size(); ++i) {
+    //     os << server.getListen()[i] << " ";
+    // }
+    // os << std::endl;
 
-    os << "Hosts: ";
-    for (size_t i = 0; i < server.getHost().size(); ++i) {
-        os << server.getHost()[i] << " ";
-    }
+    // os << "Hosts: ";
+    // for (size_t i = 0; i < server.getHost().size(); ++i) {
+    //     os << server.getHost()[i] << " ";
+    // }
     os << std::endl;
 
     os << "Server Names: ";

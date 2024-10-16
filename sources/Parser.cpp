@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 15:56:52 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 16:32:08 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,8 +42,97 @@ std::string Parser::removeSemicolon(const std::string& str)
 
 void Parser::parseMultipleServers(std::vector<std::string> portVector, std::vector<std::string> hostVector )
 {
+	std::vector<int> ports =  checkPorts(portVector);
+	std::vector<std::string> hosts = checkHosts(hostVector);
+
+    for (size_t i = 0; i < hosts.size(); ++i) {
+        for (size_t j = 0; j < ports.size(); ++j) {
+            ServerConfig server;
+
+            // Attribuer le port et le host à chaque serveur
+            server.setHost(hosts[i]);
+            server.setPort(ports[j]);
+
+            // Ajouter ce serveur à votre liste ou map de serveurs
+            servers.push_back(server);  // si vous avez un vecteur servers dans votre classe Parser
+            // ou, si vous avez une map, en utilisant la clé hôte + port
+            // std::string key = hosts[i] + ":" + std::to_string(ports[j]);
+            // serversMap[key] = server;
+
+            std::cout << "Created server on host " << hosts[i] << " and port " << ports[j] << std::endl;
+        }
+    }
+}
+
+
+
+std::vector<std::string> Parser::checkHosts(std::vector<std::string>& tokens)
+{
+    std::vector<std::string> hosts;
+
+    for (size_t i = 0; i < tokens.size(); ++i)
+        std::cout << "Token " << i + 1 << ": " << tokens[i] << std::endl;
+
+    if (!tokens.empty())
+    {
+        for (size_t i = 0; i < tokens.size(); ++i)
+        {
+            std::string host = tokens[i];
+            bool isDuplicate = false;
+
+            for (size_t j = 0; j < hosts.size(); ++j)
+            {
+                if (hosts[j] == host)
+                {
+                    isDuplicate = true;
+                    break;
+                }
+            }
+            if (!isDuplicate)
+                hosts.push_back(host);
+        }
+    }
+    else
+
+        hosts.push_back("localhost");
+
+    return hosts;
+}
+
+
+std::vector<int> Parser::checkPorts( std::vector<std::string>& tokens)
+{
+
+	std::vector<int> ports;
+
+	for (size_t i = 0; i < tokens.size(); ++i)
+		std::cout << "Token " << i + 1 << ": " << tokens[i] << std::endl;
+
+	if (!tokens.empty())
+	{
+		for (size_t i = 0; i < tokens.size(); ++i)
+		{
+			int port = atoi(tokens[i].c_str());
+			bool isDuplicate = false;
+			for (size_t j = 0; j < ports.size(); ++j)
+			{
+				if (ports[j] == port)
+				{
+					isDuplicate = true;
+					break;
+				}
+			}
+			if (!isDuplicate)
+				ports.push_back(port);
+		}
+	}
+	else
+		ports[0] = 8080;
+
+	return (ports);
 
 }
+
 
 /*
 
@@ -60,6 +149,8 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 	std::string errorPage;
 	std::string sizeStr;
 	std::vector<std::string> locationVector;
+	std::vector<std::string> portVector;
+	std::vector<std::string> hostVector;
 
 	while (std::getline(buffer, line))
 	{
@@ -71,7 +162,7 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 		if (key == "listen")
 		{
 			std::string port;
-			std::vector<std::string> portVector;
+
 			while (iss >> port) {
 				port = removeSemicolon(port);
 				if (!port.empty())
@@ -82,7 +173,7 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 		if (key == "host")
         {
             std::string host;
-			std::vector<std::string> hostVector;
+
             while (iss >> host)
 			{
 				host = removeSemicolon(host);
@@ -130,7 +221,7 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 	}
 
 
-
+	parseMultipleServers(portVector, hostVector);
 	std::cout << "Printing Server class ......\n";
 
 	std::cout << server << std::endl;

@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 15:55:41 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 16:28:25 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,8 +79,11 @@ class ServerConfig
 		Location findLocation(std::string locationPath);
 
 		/*			Setters & Getters			*/
-		void			setPort( const std::vector<std::string>& tokens );
-		void			setHost( const std::vector<std::string>& tokens );
+		void setHost(const std::string& host);
+		void setPort(int port);
+		
+		//void			setPort( const std::vector<std::string>& tokens );
+		//void			setHost( const std::vector<std::string>& tokens );
 		void			setServerName( const std::vector<std::string>& tokens );
 		void			setRoot( const std::vector<std::string>& tokens );
 		void			setErrorPage( const std::vector<std::string>& tokens );
