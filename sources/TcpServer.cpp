@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/30 15:38:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 15:31:57 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/16 18:31:29 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,20 @@ int set_nonblocking(int sockfd) {
 		return -1;
 	}
 	return fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+}
+
+// Set the socket timeout
+void TcpServer::set_socket_timeout(int sockfd, int timeout_seconds) {
+	struct timeval timeout;
+	timeout.tv_sec = timeout_seconds;
+	timeout.tv_usec = 0;
+
+	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
+		perror("setsockopt SO_RCVTIMEO");
+	}
+	if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) < 0) {
+		perror("setsockopt SO_SNDTIMEO");
+	}
 }
 
 TcpServer::TcpServer() : m_socket(-1) {
@@ -51,6 +65,9 @@ bool TcpServer::readClientData(int client_fd) {
 	int n = recv(client_fd, buffer, sizeof(buffer), 0);
 	if (n <= 0) {
 		// Connection closed or error
+		if (n < 0) {
+			std::cerr << "Error reading from client socket: " << strerror(errno) << std::endl;
+		}
 		close(client_fd);
 		return false;
 	}
@@ -122,14 +139,18 @@ int TcpServer::startServer() {
 					socklen_t client_addr_len = sizeof(client_addr);
 					int new_fd = accept(m_socket, (struct sockaddr*)&client_addr, &client_addr_len);
 					if (new_fd >= 0) {
+						std::cout << "Accepted new connection: " << new_fd << std::endl;
 						if (set_nonblocking(new_fd) == -1) {
 							close(new_fd);
 							continue;
 						}
+						set_socket_timeout(new_fd, 300); // Set a 300-second timeout for read/write operations
 						struct pollfd new_pollfd;
 						new_pollfd.fd = new_fd;
 						new_pollfd.events = POLLIN;
 						fds.push_back(new_pollfd);
+					} else {
+						perror("accept");
 					}
 				} else {
 					// Read data from existing client socket
@@ -143,7 +164,11 @@ int TcpServer::startServer() {
 
 						// Send response
 						std::string httpResponseString = httpResponse.toString();
-						send(fds[i].fd, httpResponseString.c_str(), httpResponseString.size(), 0);
+						if (send(fds[i].fd, httpResponseString.c_str(), httpResponseString.size(), 0) < 0) {
+							std::cerr << "Error sending response: " << strerror(errno) << std::endl;
+						} else {
+							std::cout << "Response sent to client: " << fds[i].fd << std::endl;
+						}
 
 						// Clean up
 						client_data.erase(fds[i].fd);

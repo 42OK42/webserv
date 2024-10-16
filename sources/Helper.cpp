@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 17:55:55 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/09 17:12:51 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/16 17:39:23 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,4 +49,23 @@ std::string extractFilenameFromUrl(const std::string& url) {
 		return url.substr(pos + 9);
 	}
 	return "";
+}
+
+unsigned long long getAvailableSpace(const std::string& path) {
+	struct statvfs stat;
+
+	std::cout << "Checking available space for path: " << path << std::endl;
+
+	if (statvfs(path.c_str(), &stat) != 0) {
+		// Error handling
+		std::cerr << "Error getting filesystem statistics for path: " << path << std::endl;
+		return 0;
+	}
+
+	std::cout << "statvfs successful" << std::endl;
+	std::cout << "f_bavail: " << stat.f_bavail << std::endl;
+	std::cout << "f_frsize: " << stat.f_frsize << std::endl;
+
+	// Available blocks * size per block = available space in bytes
+	return stat.f_bavail * stat.f_frsize;
 }
