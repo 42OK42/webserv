@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/16 18:53:53 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/17 16:24:43 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,8 +26,10 @@ void Router::addRoute(const std::string& path, RouteHandler handler) {
 }
 
 void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
-	std::cout << "Request URL: " << request.getUrl() << std::endl;
-	std::cout << "Request Method: " << request.getMethod() << std::endl;
+	//std::cout << "Request URL: " << request.getUrl() << std::endl;
+	//std::cout << "Request Method: " << request.getMethod() << std::endl;
+	// std::cout << "printing request(handle request):" << std::endl;
+	// request.print();
 
 	// Extract Path without Query-Parameter
 	std::string path = request.getUrl();
@@ -150,17 +152,17 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 		std::cout << "Response: 405 Method Not Allowed (Upload Route)" << std::endl;
 	}
 }
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <vector>
-#include <string>
-#include "HttpRequest.hpp"
 
 void Router::saveUploadedFiles(const HttpRequest& req) {
 	const std::vector<std::string>& filenames = req.getFilenames();
 	const std::string& body = req.getBody();
 	size_t pos = 0;
+
+	// Ausgabe des gesamten Bodys
+	std::cout << "Full body received (first 1000 chars): " << body.substr(0, 1000) << std::endl;
+	if (body.size() > 1000) {
+		std::cout << "  (truncated, total size: " << body.size() << " bytes)\n";
+	}
 
 	// Create the uploads_webserv directory if it doesn't exist
 	ensureDirectoryExists("/home/okrahl/sgoinfre/uploads_webserv");

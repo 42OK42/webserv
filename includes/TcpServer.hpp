@@ -6,13 +6,14 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/30 15:38:08 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 17:19:19 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/17 17:32:53 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef TCPSERVER_HPP
 #define TCPSERVER_HPP
 
+#include "ServerConfig.hpp" // Inkludieren Sie den ServerConfig-Header
 #include <string>
 #include <map>
 #include <vector>
@@ -29,7 +30,8 @@
 #include <poll.h>
 #include <stdexcept>
 
-class TcpServer {
+class TcpServer
+{
 private:
 	int m_socket;
 	struct sockaddr_in server_addr;
@@ -42,6 +44,8 @@ private:
 
 public:
 	TcpServer();
+	TcpServer(const ServerConfig& config); // Passender Konstruktor
+	TcpServer& operator=(const ServerConfig& config); // Passender Zuweisungsoperator
 	~TcpServer();
 	int startServer();
 	std::string readFile(const std::string& filepath);

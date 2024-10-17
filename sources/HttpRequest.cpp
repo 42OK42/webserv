@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:27 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/16 15:48:40 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/17 15:53:34 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,16 +52,26 @@ std::string HttpRequest::getAccept() const {
 
 void HttpRequest::parseMultipartData(const std::string& boundary) {
 	std::string delimiter = "--" + boundary;
+	std::string endDelimiter = delimiter + "--";
 	size_t pos = 0;
 	size_t end = body.find(delimiter, pos);
+
+	std::cout << "Parsing multipart data with boundary: " << boundary << std::endl;
 
 	while (end != std::string::npos) {
 		size_t start = pos + delimiter.length() + 2; // Skip the delimiter and CRLF
 		pos = end + delimiter.length();
 		end = body.find(delimiter, pos);
 
+		// Check for end delimiter
+		if (body.substr(pos, endDelimiter.length()) == endDelimiter) {
+			std::cout << "End of multipart data found." << std::endl;
+			break;
+		}
+
 		std::string part = body.substr(start, end - start);
-		
+		std::cout << "Found part from " << start << " to " << end << " (length: " << part.length() << ")" << std::endl;
+
 		size_t headerEnd = part.find("\r\n\r\n");
 		if (headerEnd != std::string::npos) {
 			std::string headers = part.substr(0, headerEnd);
@@ -85,6 +95,14 @@ void HttpRequest::parseMultipartData(const std::string& boundary) {
 					}
 				}
 			}
+
+			// Print the content of the part
+			std::cout << "Part content (first 100 chars): " << content.substr(0, 100) << std::endl;
+			if (content.size() > 100) {
+				std::cout << "  (truncated, total size: " << content.size() << " bytes)\n";
+			}
+		} else {
+			std::cerr << "Failed to find header end in part: " << part << std::endl;
 		}
 	}
 }
@@ -120,6 +138,7 @@ void HttpRequest::parse(const char* buffer, int bytesRead) {
 		size_t boundaryPos = contentType.find("boundary=");
 		if (boundaryPos != std::string::npos) {
 			std::string boundary = contentType.substr(boundaryPos + 9);
+			std::cout << "Boundary: " << boundary << std::endl;
 			parseMultipartData(boundary);
 		}
 	}

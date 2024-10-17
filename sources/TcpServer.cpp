@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/30 15:38:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 18:31:29 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/17 17:35:58 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #include "Router.hpp"
 #include "HttpResponse.hpp"
 #include "HttpRequest.hpp"
+#include "ServerConfig.hpp" // Inkludieren Sie den ServerConfig-Header
 
 // Set the socket to non-blocking mode
 int set_nonblocking(int sockfd) {
@@ -22,6 +23,28 @@ int set_nonblocking(int sockfd) {
 		return -1;
 	}
 	return fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+}
+
+TcpServer::TcpServer() : m_socket(-1) {
+	std::cout << "\033[33m" << "Default constructor called" << "\033[0m" << std::endl;
+}
+
+TcpServer::TcpServer(const ServerConfig& config) {
+	(void)config; // Markieren Sie den Parameter als bewusst ungenutzt
+	std::cout << "\033[33m" << "Parameterized constructor called" << "\033[0m" << std::endl;
+}
+
+TcpServer& TcpServer::operator=(const ServerConfig& config) {
+	(void)config; // Markieren Sie den Parameter als bewusst ungenutzt
+	std::cout << "\033[33m" << "Assignment operator called" << "\033[0m" << std::endl;
+	return *this;
+}
+
+TcpServer::~TcpServer() {
+	std::cout << "\033[32m" << "Destructor called" << "\033[0m" << std::endl;
+	if (m_socket != -1) {
+		close(m_socket);
+	}
 }
 
 // Set the socket timeout
@@ -38,17 +61,6 @@ void TcpServer::set_socket_timeout(int sockfd, int timeout_seconds) {
 	}
 }
 
-TcpServer::TcpServer() : m_socket(-1) {
-	std::cout << "\033[33m" << "Default constructor called" << "\033[0m" << std::endl;
-}
-
-TcpServer::~TcpServer() {
-	std::cout << "\033[32m" << "Destructor called" << "\033[0m" << std::endl;
-	if (m_socket != -1) {
-		close(m_socket);
-	}
-}
-
 std::string TcpServer::readFile(const std::string& filepath) {
 	std::ifstream file(filepath.c_str());
 	if (!file) {
@@ -61,6 +73,7 @@ std::string TcpServer::readFile(const std::string& filepath) {
 }
 
 bool TcpServer::readClientData(int client_fd) {
+	std::cout << "readClientData called for fd: " << client_fd << std::endl;
 	char buffer[1024];
 	int n = recv(client_fd, buffer, sizeof(buffer), 0);
 	if (n <= 0) {
@@ -72,8 +85,16 @@ bool TcpServer::readClientData(int client_fd) {
 		return false;
 	}
 
+	std::cout << "recv returned " << n << " bytes" << std::endl;
+
 	// Append data to client's buffer
 	client_data[client_fd].append(buffer, n);
+
+	// Print everything received
+	std::cout << "Received data from client (first 1000 chars): " << client_data[client_fd].substr(0, 1000) << std::endl;
+	if (client_data[client_fd].size() > 1000) {
+		std::cout << "  (truncated, total size: " << client_data[client_fd].size() << " bytes)\n";
+	}
 
 	// Check if the entire request has been received
 	std::string& data = client_data[client_fd];
@@ -84,11 +105,17 @@ bool TcpServer::readClientData(int client_fd) {
 		if (content_length_pos != std::string::npos) {
 			content_length_pos += 15; // Skip "Content-Length:"
 			content_length = std::atoi(data.c_str() + content_length_pos);
+			std::cout << "Content-Length: " << content_length << std::endl;
 		}
 
 		if (data.size() >= header_end_pos + 4 + content_length) {
+			std::cout << "Entire request has been received. Total size: " << data.size() << std::endl;
 			return true; // Entire request has been received
+		} else {
+			std::cout << "Request not fully received yet. Current size: " << data.size() << " Expected size: " << (header_end_pos + 4 + content_length) << std::endl;
 		}
+	} else {
+		std::cout << "header_end_pos not found" << std::endl;
 	}
 
 	return false; // Request not fully received yet
@@ -132,7 +159,10 @@ int TcpServer::startServer() {
 			break;
 		}
 
+		std::cout << "Poll returned with ret: " << ret << std::endl;
+
 		for (size_t i = 0; i < fds.size(); ++i) {
+			std::cout << "Checking fd: " << fds[i].fd << " revents: " << fds[i].revents << std::endl;
 			if (fds[i].revents & POLLIN) {
 				if (fds[i].fd == m_socket) {
 					// Accept new connection
@@ -154,9 +184,14 @@ int TcpServer::startServer() {
 					}
 				} else {
 					// Read data from existing client socket
+					std::cout << "Calling readClientData for fd: " << fds[i].fd << std::endl;
 					if (readClientData(fds[i].fd)) {
 						// Entire request has been received
+						std::cout << "Entire request received for fd: " << fds[i].fd << std::endl;
 						HttpRequest httpRequest(client_data[fds[i].fd].c_str(), client_data[fds[i].fd].size());
+
+						// std::cout << "printing request:" << std::endl;
+						// httpRequest.print();
 						HttpResponse httpResponse(httpRequest);
 
 						// Process request with the router
