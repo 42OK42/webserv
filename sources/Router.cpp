@@ -6,19 +6,24 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/17 16:24:43 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/18 19:04:05 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Router.hpp"
 #include "Helper.hpp"
+#include <algorithm>
+#include <fstream>
+#include <sstream>
+#include <sys/stat.h>
+#include <unistd.h>
 
-Router::Router() {
-	// Konstruktor-Implementierung (falls erforderlich)
+Router::Router(ServerConfig& serverConfig) : _serverConfig(serverConfig) {
+	// Constructor implementation (if needed)
 }
 
 Router::~Router() {
-	// Destruktor-Implementierung (falls erforderlich)
+	// Destructor implementation (if needed)
 }
 
 void Router::addRoute(const std::string& path, RouteHandler handler) {
@@ -26,12 +31,6 @@ void Router::addRoute(const std::string& path, RouteHandler handler) {
 }
 
 void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
-	//std::cout << "Request URL: " << request.getUrl() << std::endl;
-	//std::cout << "Request Method: " << request.getMethod() << std::endl;
-	// std::cout << "printing request(handle request):" << std::endl;
-	// request.print();
-
-	// Extract Path without Query-Parameter
 	std::string path = request.getUrl();
 	size_t queryPos = path.find('?');
 	if (queryPos != std::string::npos) {
@@ -43,14 +42,21 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 		RouteHandler handler = it->second;
 		(this->*handler)(request, response); // Call the member function
 	} else {
-		response.setStatusCode(404);
-		response.setBody("<html><body><h1>404 Not Found</h1></body></html>");
+		int errorCode = 404;
+		const std::map<int, std::string>& errorPages = _serverConfig.getErrorPages();
+		std::map<int, std::string>::const_iterator errorPageIt = errorPages.find(errorCode);
+
+		std::string errorPageContent;
+		if (errorPageIt != errorPages.end())
+			errorPageContent = readFile(errorPageIt->second);
+		else
+			errorPageContent = "<html><body><h1>404 Not Found</h1></body></html>";
+
+		response.setStatusCode(errorCode);
+		response.setBody(errorPageContent);
 		response.setHeader("Content-Type", "text/html");
 		std::cout << "Response: 404 Not Found" << std::endl;
 	}
-
-	// Print the response before sending
-	//response.printResponse();
 }
 
 void Router::handleHomeRoute(const HttpRequest& req, HttpResponse& res) {
@@ -209,4 +215,30 @@ void Router::initializeRoutes() {
 	addRoute("/", &Router::handleHomeRoute);
 	addRoute("/upload", &Router::handleUploadRoute);
 	addRoute("/form", &Router::handleFormRoute);
+}
+
+std::string Router::readFile(const std::string& filepath) {
+	std::ifstream file(filepath.c_str());
+	if (!file) {
+		std::cerr << "Could not open the file: " << filepath << std::endl;
+		return "";
+	}
+	std::stringstream buffer;
+	buffer << file.rdbuf();
+	return buffer.str();
+}
+
+std::string Router::extractFilenameFromUrl(const std::string& url) {
+	size_t pos = url.find_last_of('/');
+	if (pos == std::string::npos) {
+		return "";
+	}
+	return url.substr(pos + 1);
+}
+
+void Router::ensureDirectoryExists(const std::string& directory) {
+	struct stat st;
+	if (stat(directory.c_str(), &st) != 0) {
+		mkdir(directory.c_str(), 0700);
+	}
 }

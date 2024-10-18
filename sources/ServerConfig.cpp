@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/18 17:04:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/18 17:04:26 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/18 18:58:53 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,7 @@ int set_nonblocking(int sockfd) {
 	return fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
 }
 
-// Destructeur
+// Destructor
 ServerConfig::~ServerConfig() {
 	if (m_socket != -1) {
 		close(m_socket);
@@ -141,7 +141,7 @@ int ServerConfig::startServer() {
 	fds.push_back(server_fd);
 
 	// Initialize router
-	Router router;
+	Router router(*this);
 	router.initializeRoutes();
 
 	while (true) {
@@ -212,31 +212,31 @@ int ServerConfig::startServer() {
 /* ---------------------- Setters ---------------------- */
 
 void ServerConfig::setPort(const std::vector<std::string>& tokens) {
-    _port.clear();
-    for (size_t i = 0; i < tokens.size(); ++i) {
-        _port.push_back(atoi(tokens[i].c_str()));
-    }
+	_port.clear();
+	for (size_t i = 0; i < tokens.size(); ++i) {
+		_port.push_back(atoi(tokens[i].c_str()));
+	}
 }
 
 void ServerConfig::setHost(const std::vector<std::string>& tokens) {
-    _host = tokens;
+	_host = tokens;
 }
 
 void ServerConfig::setServerName(const std::vector<std::string>& tokens) {
-    _serverNames = tokens;
+	_serverNames = tokens;
 }
 
 void ServerConfig::setRoot(const std::vector<std::string>& tokens) {
-    if (!tokens.empty()) {
-        _root = tokens[0];
-    }
+	if (!tokens.empty()) {
+		_root = tokens[0];
+	}
 }
 
 void ServerConfig::setErrorPage(const std::vector<std::string>& tokens) {
-    if (tokens.size() >= 2) {
-        int code = atoi(tokens[0].c_str());
-         _errorPages[code] = tokens[1];
-    }
+	if (tokens.size() >= 2) {
+		int code = atoi(tokens[0].c_str());
+		 _errorPages[code] = tokens[1];
+	}
 }
 
 void ServerConfig::setClientMaxBodySize(size_t token) {
@@ -244,139 +244,139 @@ void ServerConfig::setClientMaxBodySize(size_t token) {
 }
 
 void ServerConfig::setCgiEnabled(const std::vector<std::string>& tokens) {
-    if (!tokens.empty()) {
-        std::string val = tokens[0];
-        _cgiEnabled = (val == "on" || val == "1" || val == "true");
-    }
+	if (!tokens.empty()) {
+		std::string val = tokens[0];
+		_cgiEnabled = (val == "on" || val == "1" || val == "true");
+	}
 }
 
 void ServerConfig::setCgiExtension(const std::vector<std::string>& tokens) {
-    if (!tokens.empty()) {
-        _cgiExtension = tokens[0];
-    }
+	if (!tokens.empty()) {
+		_cgiExtension = tokens[0];
+	}
 }
 
 void ServerConfig::setCgiBin(const std::vector<std::string>& tokens) {
-    if (!tokens.empty()) {
-        _cgiBin = tokens[0];
-    }
+	if (!tokens.empty()) {
+		_cgiBin = tokens[0];
+	}
 }
 
 /* ---------------------- Getters ---------------------- */
 
 int ServerConfig::getListen(size_t idx) const {
-    if (idx < _port.size()) {
-        return _port[idx];
-    }
-    return -1;
+	if (idx < _port.size()) {
+		return _port[idx];
+	}
+	return -1;
 }
 
 size_t ServerConfig::getNbOfPorts() const {
-    return _port.size();
+	return _port.size();
 }
 
 std::vector<int> ServerConfig::getListen() const {
-    return _port;
+	return _port;
 }
 
 std::string ServerConfig::getHost(size_t idx) const {
-    if (idx < _host.size()) {
-        return _host[idx];
-    }
-    return "";
+	if (idx < _host.size()) {
+		return _host[idx];
+	}
+	return "";
 }
 
 std::vector<std::string> ServerConfig::getHost() const {
-    return _host;
+	return _host;
 }
 
 std::string ServerConfig::getServerName(size_t idx) const {
-    if (idx < _serverNames.size()) {
-        return _serverNames[idx];
-    }
-    return "";
+	if (idx < _serverNames.size()) {
+		return _serverNames[idx];
+	}
+	return "";
 }
 
 std::vector<std::string> ServerConfig::getServerName() const {
-    return _serverNames;
+	return _serverNames;
 }
 
 std::string ServerConfig::getRoot() const {
-    return _root;
+	return _root;
 }
 
 int ServerConfig::getClientMaxBodySize() const {
-    return static_cast<int>(_clientMaxBodySize);
+	return static_cast<int>(_clientMaxBodySize);
 }
 
 bool ServerConfig::isCgiEnabled() const {
-    return _cgiEnabled;
+	return _cgiEnabled;
 }
 
 std::string ServerConfig::getCgiExtension() const {
-    return _cgiExtension;
+	return _cgiExtension;
 }
 
 std::string ServerConfig::getCgiBin() const {
-    return _cgiBin;
+	return _cgiBin;
 }
 
 /* ---------------- Locations Accessors ---------------- */
 
 const std::map<std::string, Location>& ServerConfig::getLocations() const {
-    return _locations; //returns the whole map
+	return _locations; //returns the whole map
 }
 
 void ServerConfig::addLocation(const std::string& path, const Location& location) {
-    _locations[path] = location;
+	_locations[path] = location;
 }
 
 /* ---------------- Error pages Accessors ---------------- */
 
 void ServerConfig::addErrorPage(int code, const std::string& page) {
-    _errorPages[code] = page;
+	_errorPages[code] = page;
 }
 
 const std::map<int, std::string>& ServerConfig::getErrorPages() const {
-    return _errorPages;
+	return _errorPages;
 }
 
 /*           Overload operator            */
 
 std::ostream& operator<<(std::ostream& os, const ServerConfig& server) {
-    os << "\n### Server ###" << std::endl;
-    os << "Ports: ";
-    for (size_t i = 0; i < server.getListen().size(); ++i) {
-        os << server.getListen()[i] << " ";
-    }
-    os << std::endl;
+	os << "\n### Server ###" << std::endl;
+	os << "Ports: ";
+	for (size_t i = 0; i < server.getListen().size(); ++i) {
+		os << server.getListen()[i] << " ";
+	}
+	os << std::endl;
 
-    os << "Hosts: ";
-    for (size_t i = 0; i < server.getHost().size(); ++i) {
-        os << server.getHost()[i] << " ";
-    }
-    os << std::endl;
+	os << "Hosts: ";
+	for (size_t i = 0; i < server.getHost().size(); ++i) {
+		os << server.getHost()[i] << " ";
+	}
+	os << std::endl;
 
-    os << "Server Names: ";
-    for (size_t i = 0; i < server.getServerName().size(); ++i) {
-        os << server.getServerName()[i] << " ";
-    }
-    os << std::endl;
+	os << "Server Names: ";
+	for (size_t i = 0; i < server.getServerName().size(); ++i) {
+		os << server.getServerName()[i] << " ";
+	}
+	os << std::endl;
 
-    os << "Root: " << server.getRoot() << std::endl;
+	os << "Root: " << server.getRoot() << std::endl;
 
-    os << "Error Pages:\n";
-    for (std::map<int, std::string>::const_iterator it = server.getErrorPages().begin(); it != server.getErrorPages().end(); ++it) {
-        os << "Error Code " << it->first << " -> " << it->second << std::endl;
-    }
+	os << "Error Pages:\n";
+	for (std::map<int, std::string>::const_iterator it = server.getErrorPages().begin(); it != server.getErrorPages().end(); ++it) {
+		os << "Error Code " << it->first << " -> " << it->second << std::endl;
+	}
 
-    os << "Locations: " << std::endl;
-    for (std::map<std::string, Location>::const_iterator it = server.getLocations().begin(); it != server.getLocations().end(); ++it) {
-        os << it->first << ":";
-        os << it->second;
-    }
+	os << "Locations: " << std::endl;
+	for (std::map<std::string, Location>::const_iterator it = server.getLocations().begin(); it != server.getLocations().end(); ++it) {
+		os << it->first << ":";
+		os << it->second;
+	}
 
-    return os;
+	return os;
 }
 
 /*           Exceptions         */
