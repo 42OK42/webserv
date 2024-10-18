@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 14:18:42 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 18:59:24 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/17 11:42:27 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,6 @@
 
 int main(int argc, char **argv)
 {
-	//TcpServer server;
     (void)argv;
 
     if (argc > 2)
@@ -44,19 +43,15 @@ int main(int argc, char **argv)
 
     std::vector<ServerConfig> servers = parser.getServers();
 
-    Webserver webserver(servers);
-    webserver.initializeServers();
-
-    // server = parser.getFirstServer();
-	// try
-	// {
-
-    //     server.startServer();
-	// }
-	// catch (const std::exception &e)
-	// {
-	// 	std::cerr << e.what() << std::endl;
-	// }
+    try
+    {
+            Webserver webserver(servers);
+             webserver.initializeServers();
+    }
+    catch (const std::exception &e)
+	{
+		std::cerr << e.what() << std::endl;
+	}
 
 	return 0;
 }
