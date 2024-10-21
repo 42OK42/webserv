@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/21 19:06:04 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/21 19:57:00 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,12 +72,19 @@ std::vector<std::string> Parser::checkHosts(std::vector<std::string>& tokens)
 {
 	std::vector<std::string> hosts;
 
+	bool isLocalHost = false;
+
 	if (!tokens.empty())
 	{
 		for (size_t i = 0; i < tokens.size(); ++i)
 		{
 			std::string host = tokens[i];
 			bool isDuplicate = false;
+			isLocalHost = false;
+			if (host == "localhost" || host == "127.0.0.1" )
+			{
+				isLocalHost = true;
+			}
 			for (size_t j = 0; j < hosts.size(); ++j)
 			{
 				if (hosts[j] == host)
@@ -86,9 +93,11 @@ std::vector<std::string> Parser::checkHosts(std::vector<std::string>& tokens)
 					break;
 				}
 			}
-			if (!isDuplicate)
+			if (!isDuplicate && !isLocalHost)
 				hosts.push_back(host);
 		}
+		if (isLocalHost)
+			hosts.push_back("localhost");
 	}
 	else
 		hosts.push_back("localhost");
