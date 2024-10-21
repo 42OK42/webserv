@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 20:13:27 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/21 16:40:23 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -112,7 +112,7 @@ std::vector<int> Parser::checkPorts( std::vector<std::string>& tokens)
 		{
 			int port = atoi(tokens[i].c_str());
 			if (port < 1024 || port > 65535)
-				continue; 
+				continue;
 			bool isDuplicate = false;
 			for (size_t j = 0; j < ports.size(); ++j)
 			{
@@ -210,6 +210,7 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 		}
 	}
 
+	serverTemplate.checkErrorPage();
 	_serverTemplate = serverTemplate;
 	parseMultipleServers(portVector, hostVector);
 

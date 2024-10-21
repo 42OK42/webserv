@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/18 20:39:52 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/21 18:25:23 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,9 @@
 
 #include "Location.hpp"
 #include <map>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <cstdlib>
 #include <fstream>
 #include <string>
@@ -29,14 +32,13 @@
 #include <sys/poll.h>
 #include <sys/ioctl.h>
 #include <exception>
-#include <unistd.h>
-#include <fcntl.h>
 #include <csignal>
 #include <cstdlib>
 #include <netdb.h>
 #include <sstream>
 #include <string.h>
 #include <vector>
+#include <limits.h>
 
 
 class ServerConfig
@@ -104,8 +106,9 @@ class ServerConfig
 
 		void addErrorPage(int code, const std::string& page);
 		const std::map<int, std::string>& getErrorPages() const;
-		// void  ServerConfig::checkErrorPage();
-
+		void  checkErrorPage();
+		std::string getExecutablePath();
+		std::string getErrorFilePath(int errorCode);
 
 		void addLocation(const std::string& path, const Location& location);
 		const std::map<std::string, Location>& getLocations() const;

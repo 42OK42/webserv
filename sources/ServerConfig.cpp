@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/09 15:30:30 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/18 20:40:15 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/21 18:31:13 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -249,7 +249,7 @@ void ServerConfig::addLocation(const std::string& path, const Location& location
     _locations[path] = location;
 }
 
-/* ---------------- Error pages Accessors ---------------- */
+/* ---------------- Error pages methods and accesors ---------------- */
 
 void ServerConfig::addErrorPage(int code, const std::string& page)
 {
@@ -260,11 +260,73 @@ void ServerConfig::addErrorPage(int code, const std::string& page)
         return _errorPages;
     }
 
+/*
+    Goes through the errorPage map and check if all the error pages are there and if their path is accesible
+    if the errorcode is not there or if the path is not accesible, the default page and path will be added
+*/
+void  ServerConfig::checkErrorPage()
+{
+    std::vector<int> errorsToCheck;
+    errorsToCheck.push_back(400);
+    errorsToCheck.push_back(403);
+    errorsToCheck.push_back(404);
+    errorsToCheck.push_back(405);
+    errorsToCheck.push_back(413);
+    errorsToCheck.push_back(415);
+    errorsToCheck.push_back(500);
 
-// void  ServerConfig::checkErrorPage()
-// {
+    std::map<int, std::string> defaultErrorPaths;
+    defaultErrorPaths[400] = "/default/error/400.html";
+    defaultErrorPaths[403] = "/default/error/403.html";
+    defaultErrorPaths[404] = "/default/error/404.html";
+    defaultErrorPaths[405] = "/default/error/405.html";
+    defaultErrorPaths[413] = "/default/error/413.html";
+    defaultErrorPaths[415] = "/default/error/415.html";
+    defaultErrorPaths[500] = "/default/error/500.html";
 
-// }
+    for (size_t i = 0; i < errorsToCheck.size(); ++i)
+    {
+        int errorCode = errorsToCheck[i];
+        if (_errorPages.find(errorCode) == _errorPages.end())
+        {
+            std::string defaultErrorPagePath = getErrorFilePath(errorCode);
+            _errorPages[errorCode] = defaultErrorPagePath;
+            std::cout << "Added default error page for code " << errorCode << ": " << defaultErrorPagePath << std::endl;
+        }
+        else
+        {
+            const std::string& filePath = _errorPages[errorCode];
+            if (access(filePath.c_str(), F_OK) == -1)
+            {
+                std::string defaultErrorPagePath = getErrorFilePath(errorCode);
+                _errorPages[errorCode] = defaultErrorPagePath;
+                std::cout << "Replaced with default error page: " << defaultErrorPagePath << std::endl;
+            }
+            else
+                std::cout << "Error page for code " << errorCode << " is valid: " << filePath << std::endl;
+        }
+    }
+}
+
+std::string ServerConfig::getExecutablePath() {
+    char result[PATH_MAX];
+    ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
+    return std::string(result, (count > 0) ? count : 0);
+}
+
+
+std::string ServerConfig::getErrorFilePath(int errorCode)
+{
+    std::string execPath = getExecutablePath();
+    std::string execDir = execPath.substr(0, execPath.find_last_of("/"));
+
+    std::ostringstream oss;
+    oss << errorCode;
+
+    std::string errorFilePath = execDir + "/default/error/" + oss.str() + ".html";
+
+    return errorFilePath;
+}
 
 /* ---------------- Methods ---------------- */
 
@@ -334,7 +396,6 @@ const char* ServerConfig::SocketAcceptFailed::what() const throw () {
 const char* ServerConfig::SocketReadFailed::what() const throw () {
 	return "Throwing exception: Failed to read from client";
 }
-
 
 const char* ServerConfig::LocationNotFound::what() const throw () {
 	return "Throwing exception: Location not found";
