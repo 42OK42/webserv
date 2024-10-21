@@ -6,16 +6,14 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:27 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/17 15:53:34 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/08 16:30:41 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "HttpRequest.hpp"
 #include "Helper.hpp"
-#include <sstream>
-#include <iostream>
+#include "HttpRequest.hpp"
 
-HttpRequest::HttpRequest(const char* buffer, int bytesRead) {
+HttpRequest::HttpRequest(const char* buffer, int bytesRead) : filename("") {
 	parse(buffer, bytesRead);
 }
 
@@ -24,7 +22,7 @@ const std::string& HttpRequest::getUrl() const { return url; }
 const std::string& HttpRequest::getHttpVersion() const { return httpVersion; }
 const std::map<std::string, std::string>& HttpRequest::getHeaders() const { return headers; }
 const std::string& HttpRequest::getBody() const { return body; }
-const std::vector<std::string>& HttpRequest::getFilenames() const { return filenames; }
+const std::string& HttpRequest::getFilename() const { return filename; }
 
 std::string HttpRequest::getHeader(const std::string& name) const {
 	std::map<std::string, std::string>::const_iterator it = headers.find(name);
@@ -52,26 +50,16 @@ std::string HttpRequest::getAccept() const {
 
 void HttpRequest::parseMultipartData(const std::string& boundary) {
 	std::string delimiter = "--" + boundary;
-	std::string endDelimiter = delimiter + "--";
 	size_t pos = 0;
 	size_t end = body.find(delimiter, pos);
-
-	std::cout << "Parsing multipart data with boundary: " << boundary << std::endl;
 
 	while (end != std::string::npos) {
 		size_t start = pos + delimiter.length() + 2; // Skip the delimiter and CRLF
 		pos = end + delimiter.length();
 		end = body.find(delimiter, pos);
 
-		// Check for end delimiter
-		if (body.substr(pos, endDelimiter.length()) == endDelimiter) {
-			std::cout << "End of multipart data found." << std::endl;
-			break;
-		}
-
 		std::string part = body.substr(start, end - start);
-		std::cout << "Found part from " << start << " to " << end << " (length: " << part.length() << ")" << std::endl;
-
+		
 		size_t headerEnd = part.find("\r\n\r\n");
 		if (headerEnd != std::string::npos) {
 			std::string headers = part.substr(0, headerEnd);
@@ -87,22 +75,11 @@ void HttpRequest::parseMultipartData(const std::string& boundary) {
 				std::istringstream headerLine(line);
 				if (std::getline(headerLine, key, ':') && std::getline(headerLine, value)) {
 					if (key == "Content-Disposition") {
-						std::string filename = extractFilename(value); // Speichern des Dateinamens
-						if (!filename.empty()) {
-							filenames.push_back(filename);
-							std::cout << "Extracted filename: " << filename << std::endl;
-						}
+						filename = extractFilename(value); // Speichern des Dateinamens
+						std::cout << "Extracted filename: " << filename << std::endl;
 					}
 				}
 			}
-
-			// Print the content of the part
-			std::cout << "Part content (first 100 chars): " << content.substr(0, 100) << std::endl;
-			if (content.size() > 100) {
-				std::cout << "  (truncated, total size: " << content.size() << " bytes)\n";
-			}
-		} else {
-			std::cerr << "Failed to find header end in part: " << part << std::endl;
 		}
 	}
 }
@@ -138,7 +115,6 @@ void HttpRequest::parse(const char* buffer, int bytesRead) {
 		size_t boundaryPos = contentType.find("boundary=");
 		if (boundaryPos != std::string::npos) {
 			std::string boundary = contentType.substr(boundaryPos + 9);
-			std::cout << "Boundary: " << boundary << std::endl;
 			parseMultipartData(boundary);
 		}
 	}
@@ -158,10 +134,7 @@ void HttpRequest::print() const {
 			std::cout << "  (truncated, total size: " << body.size() << " bytes)\n";
 		}
 	}
-	if (!filenames.empty()) {
-		std::cout << "Filenames:\n";
-		for (size_t i = 0; i < filenames.size(); ++i) {
-			std::cout << "  " << filenames[i] << "\n";
-		}
+	if (!filename.empty()) {
+		std::cout << "Filename: " << filename << "\n";
 	}
 }

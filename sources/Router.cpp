@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:49 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/21 18:49:54 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/18 20:37:00 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,8 +15,7 @@
 #include <sstream>
 #include <ctime>
 
-void Router::addRoute(const std::string& path, RouteHandler handler)
-{
+void Router::addRoute(const std::string& path, RouteHandler handler) {
 	routes[path] = handler;
 }
 
@@ -39,11 +38,7 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 		response.setStatusCode(404);
 		response.setBody("<html><body><h1>404 Not Found</h1></body></html>");
 		response.setHeader("Content-Type", "text/html");
-		std::cout << "Response: 404 Not Found" << std::endl;
 	}
-
-	// Print the response before sending
-	//response.printResponse();
 }
 
 void Router::handleHomeRoute(const HttpRequest& req, HttpResponse& res) {
@@ -144,7 +139,7 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 			res.setStatusCode(200);
 			res.setBody("File Deleted Successfully");
 		} else {
-			std::cout << "Error deleting file: " << strerror(errno) << std::endl;
+			std::cout << "Error deleting file: " << strerror(errno) << std::endl; //@olli oh oh oh
 			res.setStatusCode(404);
 			res.setBody("File Not Found");
 		}

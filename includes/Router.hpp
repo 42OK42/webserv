@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/16 15:50:28 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/09 17:33:36 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,40 +15,31 @@
 
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
-#include <vector>
-#include <map>
 #include <string>
-#include <sstream>
-#include <ctime>
-#include <sys/stat.h>
-#include <fstream>
-#include <iostream>
+#include <map>
+#include <vector>
 #include <algorithm>
-#include <cerrno>
 #include <cstring>
 
-class Router {
+class Router
+{
+public:
+	typedef void (Router::*RouteHandler)(const HttpRequest&, HttpResponse&);
 
-	public:
+	void addRoute(const std::string& path, RouteHandler handler);
+	void handleRequest(const HttpRequest& request, HttpResponse& response);
 
-		Router();
-		~Router();
+	void initializeRoutes();
 
-		void initializeRoutes();
-		void handleRequest(const HttpRequest& request, HttpResponse& response);
-		void saveUploadedFiles(const HttpRequest& request);
+private:
+	std::map<std::string, RouteHandler> routes;
+	std::vector<std::string> uploadedFiles; // Store filenames
 
-		typedef void (Router::*RouteHandler)(const HttpRequest&, HttpResponse&);
-		void addRoute(const std::string& path, RouteHandler handler);
-
-	private:
-
-		std::map<std::string, RouteHandler> routes;
-		std::vector<std::string> uploadedFiles;
-
-		void handleHomeRoute(const HttpRequest& req, HttpResponse& res);
-		void handleFormRoute(const HttpRequest& req, HttpResponse& res);
-		void handleUploadRoute(const HttpRequest& req, HttpResponse& res);
+	void handleHomeRoute(const HttpRequest& req, HttpResponse& res);
+	void handleUploadRoute(const HttpRequest& req, HttpResponse& res);
+	void handleFormRoute(const HttpRequest& req, HttpResponse& res);
+	void handleDeleteRoute(const HttpRequest& req, HttpResponse& res);
+	void handleUploadSuccessfulRoute(const HttpRequest& req, HttpResponse& res);
 };
 
-#endif
+#endif // ROUTER_HPP

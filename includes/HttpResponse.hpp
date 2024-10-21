@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 17:16:51 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/16 18:23:45 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/02 18:11:15 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,8 +16,6 @@
 #include <string>
 #include <map>
 #include "HttpRequest.hpp"
-#include <sstream>
-#include <iostream>
 
 class HttpResponse
 {
@@ -30,7 +28,6 @@ class HttpResponse
 		void setBody(const std::string& body);
 
 		std::string toString() const;
-		void printResponse() const;
 
 	private:
 
@@ -43,4 +40,4 @@ class HttpResponse
 		void setStatusMessage(int code);
 };
 
-#endif
+#endif // HTTPRESPONSE_HPP
