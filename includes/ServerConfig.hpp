@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 20:14:50 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/18 20:39:52 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,6 @@
 #include <sys/ioctl.h>
 #include <exception>
 #include <unistd.h>
-#include <cerrno>
 #include <fcntl.h>
 #include <csignal>
 #include <cstdlib>
@@ -105,6 +104,7 @@ class ServerConfig
 
 		void addErrorPage(int code, const std::string& page);
 		const std::map<int, std::string>& getErrorPages() const;
+		// void  ServerConfig::checkErrorPage();
 
 
 		void addLocation(const std::string& path, const Location& location);
@@ -114,7 +114,7 @@ class ServerConfig
 		void setupServerSocket();
 		int startServer();
 		std::string readFile(const std::string& filepath);
-		
+
 
 		class SocketCreationFailed : public std::exception {
 			public:

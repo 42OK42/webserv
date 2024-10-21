@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:49 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/14 17:56:50 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/18 20:37:00 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -139,7 +139,7 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 			res.setStatusCode(200);
 			res.setBody("File Deleted Successfully");
 		} else {
-			std::cout << "Error deleting file: " << strerror(errno) << std::endl;
+			std::cout << "Error deleting file: " << strerror(errno) << std::endl; //@olli oh oh oh
 			res.setStatusCode(404);
 			res.setBody("File Not Found");
 		}

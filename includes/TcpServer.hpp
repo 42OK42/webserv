@@ -6,14 +6,14 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/30 15:38:08 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/02 17:16:45 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/18 20:36:40 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef TcpServer_HPP
 #define TcpServer_HPP
 
-#include <fstream> 
+#include <fstream>
 #include <string>
 #include <iostream>
 #include <sys/socket.h>
@@ -28,7 +28,6 @@
 #include <sys/ioctl.h>
 #include <exception>
 #include <unistd.h>
-#include <cerrno>
 #include <fcntl.h>
 #include <csignal>
 #include <cstdlib>

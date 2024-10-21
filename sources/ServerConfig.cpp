@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/09 15:30:30 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 20:14:28 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/18 20:40:15 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,7 +61,7 @@ void ServerConfig::setupServerSocket()
     std::cout << "Server is listening on port " << _port << std::endl;
 
 
-    	socklen_t client_addr_len = sizeof(client_addr);
+    	// socklen_t client_addr_len = sizeof(client_addr);
 
 	// Initialize router
 	Router router;
@@ -114,7 +114,7 @@ int ServerConfig::startServer()
 
 		char buffer[1024] = {0};
 		int bytes_read = recv(client_socket, buffer, sizeof(buffer), 0);
-		if (bytes_read < 0) throw SocketReadFailed();
+		if (bytes_read < 0) throw SocketReadFailed(); //should check fro both, maybe diff errors
 
 		std::cout << "Received..." << std::endl;
 
@@ -251,16 +251,22 @@ void ServerConfig::addLocation(const std::string& path, const Location& location
 
 /* ---------------- Error pages Accessors ---------------- */
 
-void ServerConfig::addErrorPage(int code, const std::string& page) {
+void ServerConfig::addErrorPage(int code, const std::string& page)
+{
         _errorPages[code] = page;
-    }
+}
 
     const std::map<int, std::string>& ServerConfig::getErrorPages() const {
         return _errorPages;
     }
 
 
-/* Methods */
+// void  ServerConfig::checkErrorPage()
+// {
+
+// }
+
+/* ---------------- Methods ---------------- */
 
 /*Try to find a location with the given location path, if no location found throws an error */
 Location ServerConfig::findLocation(std::string locationPath)
