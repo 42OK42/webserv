@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/09 15:30:30 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/21 20:13:20 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/21 21:34:12 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -151,9 +151,20 @@ void ServerConfig::setupServerSocket()
 
 	while (true) {
 		int ret = poll(&fds[0], fds.size(), -1); // -1 means wait indefinitely
-		if (ret < 0) {
-			perror("poll");
-			break;
+		if (ret < 0)
+		{
+            if (errno == EINTR)
+			{ // poll interrupted by signal
+				std::cout << "\033[0;38;5;9m" << "Server on port "<< _port << " and host "<< _host << " is shutting down" << "\033[0m" << std::endl;
+
+				break;
+			}
+			else
+			{
+				perror("poll");
+				break;
+			}
+
 		}
 
 		std::cout << "Poll returned with ret: " << ret << std::endl;

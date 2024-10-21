@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 20:08:00 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/21 21:37:07 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,12 @@ Webserver::~Webserver()
 
 void Webserver::initializeServers()
 {
+
+	if (sigint_flag)
+	{
+		std::cerr << "SIGINT received. Not initializing servers." << std::endl;
+		return;  // If SIGINT was caught, do not reinitialize the servers.
+    }
 	for (size_t i = 0; i < _servers.size(); ++i)
 	{
 		ServerConfig& server = _servers[i]; // Get the server configuration
