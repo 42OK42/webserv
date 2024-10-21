@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/21 18:25:23 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/21 18:44:32 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,11 +51,7 @@ class ServerConfig
 		std::string						_root; // Spécifie le répertoire racine à partir duquel le serveur sert les fichiers.
 		std::map<int, std::string>		_errorPages;
 		size_t 							_clientMaxBodySize;
-
 		std::map <std::string, Location>	_locations;
-
-		//std::vector<RouteConfig> routes;  // Routes for the server
-
 
 		/* CGI */
 		bool							_cgiEnabled;
@@ -66,7 +62,9 @@ class ServerConfig
 		int	m_socket; //return a socket decriptor
 		struct sockaddr_in	server_addr;
 		struct sockaddr_in client_addr; //contains Ip adress and client port
-		int client_socket;
+		// int client_socket;
+		std::vector<struct pollfd> fds; // Poll file descriptors
+		std::map<int, std::string> client_data; // Client data buffer
 
 
 
@@ -115,8 +113,9 @@ class ServerConfig
 
 
 		void setupServerSocket();
-		int startServer();
 		std::string readFile(const std::string& filepath);
+		void set_socket_timeout(int sockfd, int timeout_seconds);
+		bool readClientData(int client_fd);
 
 
 		class SocketCreationFailed : public std::exception {
