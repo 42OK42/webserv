@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:54 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/10 19:34:56 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/16 20:17:51 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@
 class Location
 {
 	private:
-		std::string					_path;	// Le chemin URL (ex: "/uploads")
+		std::string					_path;
 		std::string					_root;	// Répertoire racine pour cette location
 		std::string					_index;	// Fichier à servir par défaut (ex: "index.html")
 		bool 						_autoIndex;
@@ -53,9 +53,6 @@ class Location
 		void setIndex(const std::string& token);
 		void setAutoIndex(const std::string& token);
 		void setMethods(const std::vector<std::string>& tokens);
-
-		//void	setMethods();
-		void print() const;
 
 		class InvalidAutoIndexException: public std::exception {
 			public:

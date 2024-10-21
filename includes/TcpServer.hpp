@@ -3,32 +3,39 @@
 /*                                                        :::      ::::::::   */
 /*   TcpServer.hpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/30 15:38:08 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/18 17:23:04 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/21 18:48:40 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 // #ifndef TCPSERVER_HPP
 // #define TCPSERVER_HPP
 
-// #include "ServerConfig.hpp" // Inkludieren Sie den ServerConfig-Header
-// #include <string>
-// #include <map>
-// #include <vector>
-// #include <iostream>
-// #include <fstream>
-// #include <sstream>
-// #include <cstring>
-// #include <sys/types.h>
-// #include <sys/socket.h>
-// #include <netinet/in.h>
-// #include <arpa/inet.h>
-// #include <unistd.h>
-// #include <fcntl.h>
-// #include <poll.h>
-// #include <stdexcept>
+#include <fstream>
+#include <string>
+#include <iostream>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <iostream>
+#include <cstring>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/poll.h>
+#include <sys/ioctl.h>
+#include <exception>
+#include <unistd.h>
+#include <cerrno>
+#include <fcntl.h>
+#include <csignal>
+#include <cstdlib>
+#include <netdb.h>
+#include <sstream>
+#include <string.h>
+#include <vector>
 
 // class TcpServer
 // {

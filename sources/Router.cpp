@@ -3,33 +3,26 @@
 /*                                                        :::      ::::::::   */
 /*   Router.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/17 16:24:43 by okrahl           ###   ########.fr       */
+/*   Created: 2024/10/08 14:54:49 by okrahl            #+#    #+#             */
+/*   Updated: 2024/10/21 18:49:54 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Router.hpp"
 #include "Helper.hpp"
+#include <sstream>
+#include <ctime>
 
-Router::Router() {
-	// Konstruktor-Implementierung (falls erforderlich)
-}
-
-Router::~Router() {
-	// Destruktor-Implementierung (falls erforderlich)
-}
-
-void Router::addRoute(const std::string& path, RouteHandler handler) {
+void Router::addRoute(const std::string& path, RouteHandler handler)
+{
 	routes[path] = handler;
 }
 
 void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
-	//std::cout << "Request URL: " << request.getUrl() << std::endl;
-	//std::cout << "Request Method: " << request.getMethod() << std::endl;
-	// std::cout << "printing request(handle request):" << std::endl;
-	// request.print();
+	std::cout << "Request URL: " << request.getUrl() << std::endl;
+	std::cout << "Request Method: " << request.getMethod() << std::endl;
 
 	// Extract Path without Query-Parameter
 	std::string path = request.getUrl();
@@ -59,12 +52,10 @@ void Router::handleHomeRoute(const HttpRequest& req, HttpResponse& res) {
 		res.setStatusCode(200);
 		res.setBody(content);
 		res.setHeader("Content-Type", "text/html");
-		std::cout << "Response: 200 OK (Home Route)" << std::endl;
 	} else {
 		res.setStatusCode(405);
 		res.setBody("<html><body><h1>405 Method Not Allowed</h1></body></html>");
 		res.setHeader("Content-Type", "text/html");
-		std::cout << "Response: 405 Method Not Allowed (Home Route)" << std::endl;
 	}
 }
 
@@ -74,12 +65,10 @@ void Router::handleFormRoute(const HttpRequest& req, HttpResponse& res) {
 		res.setStatusCode(200);
 		res.setBody(content);
 		res.setHeader("Content-Type", "text/html");
-		std::cout << "Response: 200 OK (Form Route)" << std::endl;
 	} else {
 		res.setStatusCode(405);
 		res.setBody("<html><body><h1>405 Method Not Allowed</h1></body></html>");
 		res.setHeader("Content-Type", "text/html");
-		std::cout << "Response: 405 Method Not Allowed (Form Route)" << std::endl;
 	}
 }
 
@@ -93,27 +82,46 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 		res.setStatusCode(200);
 		res.setBody(content);
 		res.setHeader("Content-Type", "text/html");
-		std::cout << "Response: 200 OK (Upload GET)" << std::endl;
 	} else if (req.getMethod() == "POST") {
 		std::cout << "Processing POST request" << std::endl;
+		std::string originalFilename = req.getFilename();
+		std::cout << "Original filename: " << originalFilename << std::endl;
 
-		const std::vector<std::string>& filenames = req.getFilenames();
-		if (filenames.empty()) {
-			std::cout << "No files uploaded" << std::endl;
+		if (originalFilename.empty()) {
+			std::cout << "Filename not found" << std::endl;
 			res.setStatusCode(400);
-			res.setBody("Bad Request: No files uploaded");
+			res.setBody("Bad Request: Filename not found");
 			res.setHeader("Content-Type", "text/plain");
-			std::cout << "Response: 400 Bad Request (No files uploaded)" << std::endl;
 			return;
 		}
 
-		saveUploadedFiles(req);
+		std::string imageData = req.getBody();
+		std::cout << "Image data size: " << imageData.size() << std::endl;
 
-		std::string successContent = readFile("HTMLFiles/uploadSuccessful.html");
-		res.setStatusCode(200);
-		res.setBody(successContent);
-		res.setHeader("Content-Type", "text/html");
-		std::cout << "Response: 200 OK (Upload POST)" << std::endl;
+		std::string uploadDir = "./uploads";
+		ensureDirectoryExists(uploadDir);
+
+		std::string savedFilename = uploadDir + "/" + originalFilename;
+		std::cout << "Saving file to: " << savedFilename << std::endl;
+
+		std::ofstream outFile(savedFilename.c_str(), std::ios::binary);
+		if (outFile.is_open()) {
+			outFile.write(imageData.c_str(), imageData.size());
+			outFile.close();
+			std::cout << "File saved successfully" << std::endl;
+
+			uploadedFiles.push_back(savedFilename);
+
+			std::string successContent = readFile("HTMLFiles/uploadSuccessful.html");
+			res.setStatusCode(200);
+			res.setBody(successContent);
+			res.setHeader("Content-Type", "text/html");
+		} else {
+			std::cout << "Failed to open file for writing" << std::endl;
+			res.setStatusCode(500);
+			res.setBody("<html><body><h1>500 Internal Server Error</h1></body></html>");
+			res.setHeader("Content-Type", "text/html");
+		}
 	} else if (req.getMethod() == "DELETE") {
 		std::cout << "Processing DELETE request" << std::endl;
 		std::string filename = extractFilenameFromUrl(req.getUrl());
@@ -124,11 +132,10 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 			res.setStatusCode(400);
 			res.setBody("Bad Request: Filename not found");
 			res.setHeader("Content-Type", "text/plain");
-			std::cout << "Response: 400 Bad Request (Filename not found)" << std::endl;
 			return;
 		}
 
-		std::string filePath = "/home/okrahl/sgoinfre/uploads_webserv/" + filename;
+		std::string filePath = "./uploads/" + filename;
 		std::cout << "Attempting to delete file: " << filePath << std::endl;
 
 		if (remove(filePath.c_str()) == 0) {
@@ -136,12 +143,10 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 			uploadedFiles.erase(std::remove(uploadedFiles.begin(), uploadedFiles.end(), filename), uploadedFiles.end());
 			res.setStatusCode(200);
 			res.setBody("File Deleted Successfully");
-			std::cout << "Response: 200 OK (File Deleted)" << std::endl;
 		} else {
 			std::cout << "Error deleting file: " << strerror(errno) << std::endl;
 			res.setStatusCode(404);
 			res.setBody("File Not Found");
-			std::cout << "Response: 404 Not Found (Error deleting file)" << std::endl;
 		}
 		res.setHeader("Content-Type", "text/plain");
 	} else {
@@ -149,59 +154,6 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 		res.setStatusCode(405);
 		res.setBody("<html><body><h1>405 Method Not Allowed</h1></body></html>");
 		res.setHeader("Content-Type", "text/html");
-		std::cout << "Response: 405 Method Not Allowed (Upload Route)" << std::endl;
-	}
-}
-
-void Router::saveUploadedFiles(const HttpRequest& req) {
-	const std::vector<std::string>& filenames = req.getFilenames();
-	const std::string& body = req.getBody();
-	size_t pos = 0;
-
-	// Ausgabe des gesamten Bodys
-	std::cout << "Full body received (first 1000 chars): " << body.substr(0, 1000) << std::endl;
-	if (body.size() > 1000) {
-		std::cout << "  (truncated, total size: " << body.size() << " bytes)\n";
-	}
-
-	// Create the uploads_webserv directory if it doesn't exist
-	ensureDirectoryExists("/home/okrahl/sgoinfre/uploads_webserv");
-
-	for (size_t i = 0; i < filenames.size(); ++i) {
-		// Find the start of the file content
-		size_t start = body.find("\r\n\r\n", pos) + 4;
-		if (start == std::string::npos) {
-			std::cerr << "Failed to find the start of the file content for file: " << filenames[i] << std::endl;
-			continue;
-		}
-
-		// Find the end of the file content
-		size_t end = body.find("\r\n--", start);
-		if (end == std::string::npos) {
-			std::cerr << "Failed to find the end of the file content for file: " << filenames[i] << std::endl;
-			continue;
-		}
-
-		// Extract the file content
-		std::string fileContent = body.substr(start, end - start);
-		pos = end + 4;
-
-		// Remove any trailing CRLF characters
-		if (fileContent.size() >= 2 && fileContent.compare(fileContent.size() - 2, 2, "\r\n") == 0) {
-			fileContent.erase(fileContent.size() - 2);
-		}
-
-		// Save the file
-		std::string savedFilename = "/home/okrahl/sgoinfre/uploads_webserv/" + filenames[i].substr(filenames[i].find_last_of("\\/") + 1);
-		std::ofstream outFile(savedFilename.c_str(), std::ios::binary);
-		if (outFile.is_open()) {
-			outFile.write(fileContent.c_str(), fileContent.size());
-			outFile.close();
-			std::cout << "File saved successfully: " << savedFilename << std::endl;
-			uploadedFiles.push_back(savedFilename);
-		} else {
-			std::cerr << "Failed to open file for writing: " << savedFilename << std::endl;
-		}
 	}
 }
 

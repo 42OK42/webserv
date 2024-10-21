@@ -3,47 +3,47 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 14:18:42 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/18 17:48:59 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/21 18:49:34 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/TcpServer.hpp"
 
 #include "../includes/TcpServer.hpp"
-#include "../includes/Location.hpp"
-#include "../includes/Parser.hpp"
-#include "../includes/ServerConfig.hpp"
 
-int main(int argc, char **argv)
+#include "../includes/TcpServer.hpp"
+
+
+int main()
 {
 	//TcpServer server;
-	(void)argv;
-	
-	if (argc > 2)
-	{
-		std::cout << "Wrong number of arguments" << std::endl;
-		return (0);
-	}
-	else if (argc == 1)
-		 std::cout << "Starting server with default config." << std::endl;
+    (void)argv;
+
+    if (argc > 2)
+    {
+        std::cout << "Wrong number of arguments" << std::endl;
+        return (0);
+    }
+    else if (argc == 1)
+         std::cout << "Starting server with default config." << std::endl;
 
 
-	ServerConfig server;
-	Parser parser;
-	std::stringstream configBuffer;
+    ServerConfig server;
+    Parser parser;
+    std::stringstream configBuffer;
 
-	if (!parser.readFile("server_conf/basic.conf", configBuffer)) {
-		return 1;
-	}
-	if (!parser.ParseConfigStream(configBuffer)) {
-		std::cerr << "Erreur lors de l'analyse de la configuration." << std::endl;
-		return 1;
-	}
+    if (!parser.readFile("server_conf/basic.conf", configBuffer)) {
+        return 1;
+    }
+    if (!parser.ParseConfigStream(configBuffer)) {
+        std::cerr << "Erreur lors de l'analyse de la configuration." << std::endl;
+        return 1;
+    }
 
-	server = parser.getFirstServer();
+    server = parser.getFirstServer();
 	try
 	{
 
