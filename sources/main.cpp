@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 14:18:42 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/21 19:05:02 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/21 20:13:10 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,16 @@
 #include "../includes/Parser.hpp"
 #include "../includes/ServerConfig.hpp"
 #include "../includes/Webserver.hpp"
+
+
+bool sigint_flag = false;
+
+void    handle_sigint(int sig) {
+    (void)sig;
+    sigint_flag = true;
+    return ;
+}
+
 
 int main(int argc, char **argv)
 {
@@ -41,11 +51,17 @@ int main(int argc, char **argv)
     }
 
     std::vector<ServerConfig> servers = parser.getServers();
-
+    signal(SIGINT, &handle_sigint);
     try
     {
+        while (!sigint_flag)
+        {
             Webserver webserver(servers);
             webserver.initializeServers();
+        }
+
+
+        std::cout << "\033[0;38;5;9m" << "Server is shutting down" << "\033[0m" << std::endl;
     }
     catch (const std::exception &e)
 	{

@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/21 19:03:31 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/21 20:10:09 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,7 +39,7 @@
 #include <string.h>
 #include <vector>
 #include <limits.h>
-
+extern bool sigint_flag;
 
 class ServerConfig
 {
