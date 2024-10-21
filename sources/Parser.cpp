@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/21 16:40:23 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/21 19:06:04 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -214,9 +214,9 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 	_serverTemplate = serverTemplate;
 	parseMultipleServers(portVector, hostVector);
 
-	std::cout << "Printing all configured servers:\n";
-	for (size_t i = 0; i < _servers.size(); ++i)
-		std::cout << _servers[i];
+	// std::cout << "Printing all configured servers:\n";
+	// for (size_t i = 0; i < _servers.size(); ++i)
+	// 	std::cout << _servers[i];
 
 	return true;
 }

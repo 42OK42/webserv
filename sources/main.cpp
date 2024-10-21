@@ -6,11 +6,10 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 14:18:42 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/17 11:42:27 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/21 19:05:02 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../includes/TcpServer.hpp"
 #include "../includes/Location.hpp"
 #include "../includes/Parser.hpp"
 #include "../includes/ServerConfig.hpp"
@@ -46,7 +45,7 @@ int main(int argc, char **argv)
     try
     {
             Webserver webserver(servers);
-             webserver.initializeServers();
+            webserver.initializeServers();
     }
     catch (const std::exception &e)
 	{

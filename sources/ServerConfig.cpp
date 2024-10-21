@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/09 15:30:30 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/21 18:43:53 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/21 19:06:36 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -135,8 +135,6 @@ void ServerConfig::setupServerSocket()
         throw ServerConfig::SocketlisteningFailed();
 
     std::cout << "Server is listening on port " << _port << std::endl;
-
-
 
 	// Set the server socket to non-blocking mode
 	if (set_nonblocking(m_socket) == -1) throw ServerConfig::SocketCreationFailed();

@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/21 18:44:32 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/21 19:03:31 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,7 +48,7 @@ class ServerConfig
 		int								_port;
 		std::string						_host;
 		std::vector<std::string>		_serverNames;
-		std::string						_root; // Spécifie le répertoire racine à partir duquel le serveur sert les fichiers.
+		std::string						_root;
 		std::map<int, std::string>		_errorPages;
 		size_t 							_clientMaxBodySize;
 		std::map <std::string, Location>	_locations;
