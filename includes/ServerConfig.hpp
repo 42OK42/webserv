@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerConfig.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/21 20:10:09 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/22 16:48:11 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,15 +54,19 @@ class ServerConfig
 		std::map <std::string, Location>	_locations;
 
 		/* CGI */
-		bool							_cgiEnabled;
-		std::string						_cgiExtension;
-		std::string						_cgiBin;
+		bool                            _cgiEnabled;
+		std::string                     _cgiExtension;
+		std::string                     _cgiBin;
 
 		/**/
 		int	m_socket; //return a socket decriptor
 		struct sockaddr_in	server_addr;
 		struct sockaddr_in client_addr; //contains Ip adress and client port
 		// int client_socket;
+		int m_socket; // Socket descriptor
+		struct sockaddr_in server_addr;
+		struct sockaddr_in client_addr; // Contains IP address and client port
+		int client_socket;
 		std::vector<struct pollfd> fds; // Poll file descriptors
 		std::map<int, std::string> client_data; // Client data buffer
 

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Router.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/10/08 14:54:49 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/18 20:37:00 by ecarlier         ###   ########.fr       */
+/*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
+/*   Updated: 2024/10/22 16:48:47 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,10 +20,6 @@ void Router::addRoute(const std::string& path, RouteHandler handler) {
 }
 
 void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
-	std::cout << "Request URL: " << request.getUrl() << std::endl;
-	std::cout << "Request Method: " << request.getMethod() << std::endl;
-
-	// Extract Path without Query-Parameter
 	std::string path = request.getUrl();
 	size_t queryPos = path.find('?');
 	if (queryPos != std::string::npos) {
@@ -35,8 +31,18 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 		RouteHandler handler = it->second;
 		(this->*handler)(request, response); // Call the member function
 	} else {
-		response.setStatusCode(404);
-		response.setBody("<html><body><h1>404 Not Found</h1></body></html>");
+		int errorCode = 404;
+		const std::map<int, std::string>& errorPages = _serverConfig.getErrorPages();
+		std::map<int, std::string>::const_iterator errorPageIt = errorPages.find(errorCode);
+
+		std::string errorPageContent;
+		if (errorPageIt != errorPages.end())
+			errorPageContent = readFile(errorPageIt->second);
+		else
+			errorPageContent = "<html><body><h1>404 Not Found</h1></body></html>";
+
+		response.setStatusCode(errorCode);
+		response.setBody(errorPageContent);
 		response.setHeader("Content-Type", "text/html");
 	}
 }

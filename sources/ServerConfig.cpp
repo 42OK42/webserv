@@ -5,8 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/10/09 15:30:30 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/22 15:19:14 by okrahl           ###   ########.fr       */
+/*   Created: 2024/10/18 17:04:09 by okrahl            #+#    #+#             */
+/*   Updated: 2024/10/22 16:50:32 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -148,8 +148,8 @@ void ServerConfig::setupServerSocket()
 	fds.push_back(server_fd);
 
 	// Initialize router
-	Router router;
-	router.initializeRoutes(); //@olli should it takes this from the location in the config file ?
+	Router router(*this);
+	router.initializeRoutes();
 
 	while (true) {
 		int ret = poll(&fds[0], fds.size(), -1); // -1 means wait indefinitely
@@ -248,7 +248,6 @@ void ServerConfig::setRoot(const std::vector<std::string>& tokens) {
 }
 
 void ServerConfig::setErrorPage(const std::vector<std::string>& tokens) {
-
 	if (tokens.size() >= 2) {
 		int code = atoi(tokens[0].c_str());
 		 _errorPages[code] = tokens[1];
