@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:28:34 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/16 15:48:27 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/22 17:37:23 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,8 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <sstream>
+#include <iostream>
 
 class HttpRequest {
 public:
@@ -28,11 +30,11 @@ public:
 	const std::string& getBody() const;
 	const std::vector<std::string>& getFilenames() const;
 
-	std::string getHeader(const std::string& name) const; // Hinzugefügt
-	std::string getHost() const; // Hinzugefügt
-	std::string getUserAgent() const; // Hinzugefügt
-	std::string getConnection() const; // Hinzugefügt
-	std::string getAccept() const; // Hinzugefügt
+	std::string getHeader(const std::string& name) const;
+	std::string getHost() const;
+	std::string getUserAgent() const;
+	std::string getConnection() const;
+	std::string getAccept() const;
 
 	void print() const;
 
@@ -42,7 +44,7 @@ private:
 	std::string httpVersion;
 	std::map<std::string, std::string> headers;
 	std::string body;
-	std::vector<std::string> filenames;
+	std::vector<std::string> filenames; // Mehrere Dateinamen
 
 	void parse(const char* buffer, int bytesRead);
 	void parseMultipartData(const std::string& boundary);

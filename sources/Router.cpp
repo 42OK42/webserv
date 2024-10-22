@@ -6,24 +6,21 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/22 17:23:07 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/22 18:23:26 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Router.hpp"
 #include "Helper.hpp"
-#include <algorithm>
-#include <fstream>
 #include <sstream>
-#include <sys/stat.h>
-#include <unistd.h>
+#include <ctime>
 
-Router::Router(ServerConfig& serverConfig) : _serverConfig(serverConfig) {
-	// Constructor implementation (if needed)
+Router::Router(ServerConfig& config) : _serverConfig(config) {
+	// Initialisierungscode
 }
 
 Router::~Router() {
-	// Destructor implementation (if needed)
+	// Bereinigungscode
 }
 
 void Router::addRoute(const std::string& path, RouteHandler handler) {
@@ -55,7 +52,6 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 		response.setStatusCode(errorCode);
 		response.setBody(errorPageContent);
 		response.setHeader("Content-Type", "text/html");
-		std::cout << "Response: 404 Not Found" << std::endl;
 	}
 }
 
@@ -65,12 +61,10 @@ void Router::handleHomeRoute(const HttpRequest& req, HttpResponse& res) {
 		res.setStatusCode(200);
 		res.setBody(content);
 		res.setHeader("Content-Type", "text/html");
-		std::cout << "Response: 200 OK (Home Route)" << std::endl;
 	} else {
 		res.setStatusCode(405);
 		res.setBody("<html><body><h1>405 Method Not Allowed</h1></body></html>");
 		res.setHeader("Content-Type", "text/html");
-		std::cout << "Response: 405 Method Not Allowed (Home Route)" << std::endl;
 	}
 }
 
@@ -80,12 +74,10 @@ void Router::handleFormRoute(const HttpRequest& req, HttpResponse& res) {
 		res.setStatusCode(200);
 		res.setBody(content);
 		res.setHeader("Content-Type", "text/html");
-		std::cout << "Response: 200 OK (Form Route)" << std::endl;
 	} else {
 		res.setStatusCode(405);
 		res.setBody("<html><body><h1>405 Method Not Allowed</h1></body></html>");
 		res.setHeader("Content-Type", "text/html");
-		std::cout << "Response: 405 Method Not Allowed (Form Route)" << std::endl;
 	}
 }
 
@@ -164,40 +156,33 @@ void Router::saveUploadedFiles(const HttpRequest& req) {
 	const std::string& body = req.getBody();
 	size_t pos = 0;
 
-	// Ausgabe des gesamten Bodys
 	std::cout << "Full body received (first 1000 chars): " << body.substr(0, 1000) << std::endl;
 	if (body.size() > 1000) {
 		std::cout << "  (truncated, total size: " << body.size() << " bytes)\n";
 	}
 
-	// Create the uploads_webserv directory if it doesn't exist
 	ensureDirectoryExists("/home/okrahl/sgoinfre/uploads_webserv");
 
 	for (size_t i = 0; i < filenames.size(); ++i) {
-		// Find the start of the file content
 		size_t start = body.find("\r\n\r\n", pos) + 4;
 		if (start == std::string::npos) {
 			std::cerr << "Failed to find the start of the file content for file: " << filenames[i] << std::endl;
 			continue;
 		}
 
-		// Find the end of the file content
 		size_t end = body.find("\r\n--", start);
 		if (end == std::string::npos) {
 			std::cerr << "Failed to find the end of the file content for file: " << filenames[i] << std::endl;
 			continue;
 		}
 
-		// Extract the file content
 		std::string fileContent = body.substr(start, end - start);
 		pos = end + 4;
 
-		// Remove any trailing CRLF characters
 		if (fileContent.size() >= 2 && fileContent.compare(fileContent.size() - 2, 2, "\r\n") == 0) {
 			fileContent.erase(fileContent.size() - 2);
 		}
 
-		// Save the file
 		std::string savedFilename = "/home/okrahl/sgoinfre/uploads_webserv/" + filenames[i].substr(filenames[i].find_last_of("\\/") + 1);
 		std::ofstream outFile(savedFilename.c_str(), std::ios::binary);
 		if (outFile.is_open()) {

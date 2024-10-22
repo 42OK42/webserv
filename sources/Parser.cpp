@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/10 19:41:03 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/21 19:57:00 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,16 +40,115 @@ std::string Parser::removeSemicolon(const std::string& str)
 	return str;
 }
 
+/*
+	Gets the vectors of hosts and ports and create a server with every possible combinaison
+*/
+void Parser::parseMultipleServers(std::vector<std::string> portVector, std::vector<std::string> hostVector )
+{
+	std::vector<int> ports =  checkPorts(portVector);
+	std::vector<std::string> hosts = checkHosts(hostVector);
+
+	for (size_t i = 0; i < hosts.size(); ++i)
+	{
+		for (size_t j = 0; j < ports.size(); ++j)
+		{
+			ServerConfig server = _serverTemplate;
+			server.setHost(hosts[i]);
+			server.setPort(ports[j]);
+			_servers.push_back(server);
+
+
+			std::cout << "Created server on host " << hosts[i] << " and port " << ports[j] << std::endl;
+		}
+	}
+}
+
+
+/*
+	Gets the vector of all the hosts and check for any duplicates
+	If no hosts are provided, localhost is assigned
+*/
+std::vector<std::string> Parser::checkHosts(std::vector<std::string>& tokens)
+{
+	std::vector<std::string> hosts;
+
+	bool isLocalHost = false;
+
+	if (!tokens.empty())
+	{
+		for (size_t i = 0; i < tokens.size(); ++i)
+		{
+			std::string host = tokens[i];
+			bool isDuplicate = false;
+			isLocalHost = false;
+			if (host == "localhost" || host == "127.0.0.1" )
+			{
+				isLocalHost = true;
+			}
+			for (size_t j = 0; j < hosts.size(); ++j)
+			{
+				if (hosts[j] == host)
+				{
+					isDuplicate = true;
+					break;
+				}
+			}
+			if (!isDuplicate && !isLocalHost)
+				hosts.push_back(host);
+		}
+		if (isLocalHost)
+			hosts.push_back("localhost");
+	}
+	else
+		hosts.push_back("localhost");
+
+	return hosts;
+}
+
+
+/*
+	Gets the vector of all the ports and check for any duplicates
+	If no ports are provided, port 8080 is assigned
+*/
+std::vector<int> Parser::checkPorts( std::vector<std::string>& tokens)
+{
+
+	std::vector<int> ports;
+
+	if (!tokens.empty())
+	{
+		for (size_t i = 0; i < tokens.size(); ++i)
+		{
+			int port = atoi(tokens[i].c_str());
+			if (port < 1024 || port > 65535)
+				continue;
+			bool isDuplicate = false;
+			for (size_t j = 0; j < ports.size(); ++j)
+			{
+				if (ports[j] == port)
+				{
+					isDuplicate = true;
+					break;
+				}
+			}
+			if (!isDuplicate)
+				ports.push_back(port);
+		}
+	}
+	else
+		ports[0] = 8080;
+
+	return (ports);
+
+}
+
+
 bool Parser::ParseConfigStream(std::stringstream& buffer)
 {
-	ServerConfig server;
-	std::string line;
-	std::string host;
-	std::string key;
+	ServerConfig serverTemplate;
+	std::string line, host, key, errorPage, sizeStr;
 	int errorCode;
-	std::string errorPage;
-	std::string sizeStr;
-	std::vector<std::string> locationVector;
+	std::vector<std::string> locationVector,portVector, hostVector,nameVector;
 
 	while (std::getline(buffer, line))
 	{
@@ -58,37 +157,45 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 			continue;
 
 		key = removeSemicolon(key);
-        if (key == "listen")
-        {
-            std::string port;
-            iss >> port;
-            std::vector<std::string> portVector;
-            portVector.push_back(removeSemicolon(port));
-            server.setPort(portVector);
-        }
+		if (key == "listen")
+		{
+			std::string port;
+
+			while (iss >> port) {
+				port = removeSemicolon(port);
+				if (!port.empty())
+					portVector.push_back(port);
+			}
+		}
 		if (key == "host")
-        {
-            std::string host;
-            iss >> host;
-            std::vector<std::string> hostVector;
-            hostVector.push_back(removeSemicolon(host));
-            server.setHost(hostVector);
-        }
-		else if (key == "server_name")
+		{
+			std::string host;
+
+			while (iss >> host)
+			{
+				host = removeSemicolon(host);
+				if (!host.empty())
+					hostVector.push_back(removeSemicolon(host));
+			}
+		}
+		if (key == "server_name")
 		{
 			std::string name;
-            iss >> name;
-            std::vector<std::string> nameVector;
-			nameVector.push_back(removeSemicolon(name));
-            server.setServerName(nameVector);
-        }
+			while (iss >> name)
+			{
+				name = removeSemicolon(name);
+				if (!name.empty())
+					nameVector.push_back(removeSemicolon(name));
+			}
+			serverTemplate.setServerName(nameVector);
+		}
 		else if (key == "error_page")
 		{
-          while (iss >> errorCode >> errorPage)
-            {
-                errorPage = removeSemicolon(errorPage);
-                server.addErrorPage(errorCode, errorPage);
-            }
+			while (iss >> errorCode >> errorPage)
+			{
+				errorPage = removeSemicolon(errorPage);
+				serverTemplate.addErrorPage(errorCode, errorPage);
+			}
 		}
 		else if (key == "client_max_body_size")
 		{
@@ -97,7 +204,7 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 			std::stringstream ss(sizeStr);
 			size_t size;
 			ss >> size;
-			server.setClientMaxBodySize(size * 1024 * 1024);
+			serverTemplate.setClientMaxBodySize(size * 1024 * 1024);
 		}
 		else if (key == "location")
 		{
@@ -108,20 +215,17 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 			Location location;
 			location.setPath(path);
 			parseLocation(buffer, location);
-			server.addLocation(path, location);
+			serverTemplate.addLocation(path, location);
 		}
 	}
 
-	std::cout << "Printing Server class ......\n";
+	serverTemplate.checkErrorPage();
+	_serverTemplate = serverTemplate;
+	parseMultipleServers(portVector, hostVector);
 
-	std::cout << server << std::endl;
-	//server.print();
-
-	servers.push_back(server);
-
-	// if (!server.serverName.empty())
-	// 	data.serverConfig = server;
-
+	// std::cout << "Printing all configured servers:\n";
+	// for (size_t i = 0; i < _servers.size(); ++i)
+	// 	std::cout << _servers[i];
 
 	return true;
 }
@@ -191,12 +295,12 @@ bool Parser::parseLocation(std::stringstream& buffer, Location& location)
 /* Getters */
 
 const std::vector<ServerConfig>& Parser::getServers() const {
-    return servers;
+    return _servers;
 }
 
 ServerConfig& Parser::getFirstServer() {
-    if (servers.empty()) {
+    if (_servers.empty()) {
         throw std::runtime_error("No servers have been parsed.");
     }
-    return servers[0];
+    return _servers[0];
 }

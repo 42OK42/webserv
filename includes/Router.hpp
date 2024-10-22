@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/22 17:22:43 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/22 18:23:32 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <algorithm>
 
 class Router;
 
@@ -30,8 +31,6 @@ private:
 	ServerConfig& _serverConfig;
 	std::map<std::string, RouteHandler> routes;
 	std::vector<std::string> uploadedFiles;
-
-	void saveUploadedFiles(const HttpRequest& req);
 
 public:
 	Router(ServerConfig& serverConfig);
@@ -44,6 +43,8 @@ public:
 	void handleFormRoute(const HttpRequest& req, HttpResponse& res);
 	void handleUploadRoute(const HttpRequest& req, HttpResponse& res);
 	void initializeRoutes();
+
+	void saveUploadedFiles(const HttpRequest& req); // Hinzugefügt
 };
 
-#endif
+#endif // ROUTER_HPP
