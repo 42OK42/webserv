@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/22 18:23:26 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/22 18:33:01 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,11 @@
 #include "Helper.hpp"
 #include <sstream>
 #include <ctime>
+#include <iostream>
+#include <fstream>
+#include <algorithm>
+#include <cerrno>
+#include <vector>
 
 Router::Router(ServerConfig& config) : _serverConfig(config) {
 	// Initialisierungscode
@@ -23,8 +28,11 @@ Router::~Router() {
 	// Bereinigungscode
 }
 
-void Router::addRoute(const std::string& path, RouteHandler handler) {
+void Router::addRoute(const std::string& path, RouteHandler handler, const std::string& uploadDir) {
 	routes[path] = handler;
+	if (!uploadDir.empty()) {
+		uploadDirs[path] = uploadDir;
+	}
 }
 
 void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
@@ -86,6 +94,8 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 	std::cout << "Request URL: " << req.getUrl() << std::endl;
 	std::cout << "Request Method: " << req.getMethod() << std::endl;
 
+	std::string uploadDir = uploadDirs["/upload"];
+
 	if (req.getMethod() == "GET") {
 		std::string content = readFile("HTMLFiles/upload.html");
 		res.setStatusCode(200);
@@ -105,7 +115,7 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 			return;
 		}
 
-		saveUploadedFiles(req);
+		saveUploadedFiles(req, uploadDir);
 
 		std::string successContent = readFile("HTMLFiles/uploadSuccessful.html");
 		res.setStatusCode(200);
@@ -126,7 +136,7 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 			return;
 		}
 
-		std::string filePath = "/home/okrahl/sgoinfre/uploads_webserv/" + filename;
+		std::string filePath = uploadDir + filename;
 		std::cout << "Attempting to delete file: " << filePath << std::endl;
 
 		if (remove(filePath.c_str()) == 0) {
@@ -151,7 +161,7 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 	}
 }
 
-void Router::saveUploadedFiles(const HttpRequest& req) {
+void Router::saveUploadedFiles(const HttpRequest& req, const std::string& uploadDir) {
 	const std::vector<std::string>& filenames = req.getFilenames();
 	const std::string& body = req.getBody();
 	size_t pos = 0;
@@ -161,7 +171,7 @@ void Router::saveUploadedFiles(const HttpRequest& req) {
 		std::cout << "  (truncated, total size: " << body.size() << " bytes)\n";
 	}
 
-	ensureDirectoryExists("/home/okrahl/sgoinfre/uploads_webserv");
+	ensureDirectoryExists(uploadDir);
 
 	for (size_t i = 0; i < filenames.size(); ++i) {
 		size_t start = body.find("\r\n\r\n", pos) + 4;
@@ -183,7 +193,7 @@ void Router::saveUploadedFiles(const HttpRequest& req) {
 			fileContent.erase(fileContent.size() - 2);
 		}
 
-		std::string savedFilename = "/home/okrahl/sgoinfre/uploads_webserv/" + filenames[i].substr(filenames[i].find_last_of("\\/") + 1);
+		std::string savedFilename = uploadDir + filenames[i].substr(filenames[i].find_last_of("\\/") + 1);
 		std::ofstream outFile(savedFilename.c_str(), std::ios::binary);
 		if (outFile.is_open()) {
 			outFile.write(fileContent.c_str(), fileContent.size());
@@ -198,6 +208,6 @@ void Router::saveUploadedFiles(const HttpRequest& req) {
 
 void Router::initializeRoutes() {
 	addRoute("/", &Router::handleHomeRoute);
-	addRoute("/upload", &Router::handleUploadRoute);
-	addRoute("/form", &Router::handleFormRoute);
+	addRoute("/upload", &Router::handleUploadRoute, "/home/okrahl/sgoinfre/uploads_webserv/");
+	addRoute("/form", &Router::handleFormRoute, "/home/okrahl/sgoinfre/forms/");
 }
