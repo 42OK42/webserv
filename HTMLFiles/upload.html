@@ -3,12 +3,12 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Image Upload</title>
+	<title>File Upload</title>
 </head>
 <body>
-	<h1>Upload Image</h1>
+	<h1>Upload Files</h1>
 	<form id="uploadForm" enctype="multipart/form-data" action="/upload" method="POST">
-		<input type="file" id="fileInput" name="file" accept="image/*" required>
+		<input type="file" id="fileInput" name="files" accept="image/*,video/*" required>
 		<button type="submit">Upload</button>
 	</form>
 	<button onclick="location.href='/'">Back to Home</button>
