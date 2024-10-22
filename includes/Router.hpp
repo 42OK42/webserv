@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/22 16:47:24 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/22 17:15:48 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <algorithm>
 
 class Router;
 
@@ -31,10 +32,6 @@ private:
 	std::map<std::string, RouteHandler> routes;
 	std::vector<std::string> uploadedFiles;
 
-	std::string readFile(const std::string& filepath);
-	void saveUploadedFiles(const HttpRequest& req);
-	std::string extractFilenameFromUrl(const std::string& url);
-	void ensureDirectoryExists(const std::string& directory);
 
 public:
 	Router(ServerConfig& serverConfig);

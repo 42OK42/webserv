@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/22 16:48:11 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/22 17:14:35 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,10 +63,6 @@ class ServerConfig
 		struct sockaddr_in	server_addr;
 		struct sockaddr_in client_addr; //contains Ip adress and client port
 		// int client_socket;
-		int m_socket; // Socket descriptor
-		struct sockaddr_in server_addr;
-		struct sockaddr_in client_addr; // Contains IP address and client port
-		int client_socket;
 		std::vector<struct pollfd> fds; // Poll file descriptors
 		std::map<int, std::string> client_data; // Client data buffer
 

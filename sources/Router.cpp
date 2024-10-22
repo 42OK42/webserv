@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/22 16:48:47 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/22 17:14:11 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,14 @@
 #include "Helper.hpp"
 #include <sstream>
 #include <ctime>
+
+Router::Router(ServerConfig& config) : _serverConfig(config) {
+    // Initialisierungscode
+}
+
+Router::~Router() {
+    // Bereinigungscode
+}
 
 void Router::addRoute(const std::string& path, RouteHandler handler) {
 	routes[path] = handler;
@@ -78,6 +86,9 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 	std::cout << "Request URL: " << req.getUrl() << std::endl;
 	std::cout << "Request Method: " << req.getMethod() << std::endl;
 
+	std::string uploadDir = "/home/okrahl/sgoinfre/uploads_webserv";
+	ensureDirectoryExists(uploadDir);
+
 	if (req.getMethod() == "GET") {
 		std::string content = readFile("HTMLFiles/upload.html");
 		res.setStatusCode(200);
@@ -98,9 +109,6 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 
 		std::string imageData = req.getBody();
 		std::cout << "Image data size: " << imageData.size() << std::endl;
-
-		std::string uploadDir = "./uploads";
-		ensureDirectoryExists(uploadDir);
 
 		std::string savedFilename = uploadDir + "/" + originalFilename;
 		std::cout << "Saving file to: " << savedFilename << std::endl;
@@ -136,7 +144,7 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 			return;
 		}
 
-		std::string filePath = "./uploads/" + filename;
+		std::string filePath = uploadDir + "/" + filename;
 		std::cout << "Attempting to delete file: " << filePath << std::endl;
 
 		if (remove(filePath.c_str()) == 0) {
@@ -145,7 +153,7 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 			res.setStatusCode(200);
 			res.setBody("File Deleted Successfully");
 		} else {
-			std::cout << "Error deleting file: " << strerror(errno) << std::endl; //@olli oh oh oh
+			std::cout << "Error deleting file: " << strerror(errno) << std::endl;
 			res.setStatusCode(404);
 			res.setBody("File Not Found");
 		}
