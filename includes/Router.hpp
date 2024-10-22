@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/22 17:15:48 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/22 17:38:26 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,6 @@ private:
 	std::map<std::string, RouteHandler> routes;
 	std::vector<std::string> uploadedFiles;
 
-
 public:
 	Router(ServerConfig& serverConfig);
 	~Router();
@@ -44,6 +43,8 @@ public:
 	void handleFormRoute(const HttpRequest& req, HttpResponse& res);
 	void handleUploadRoute(const HttpRequest& req, HttpResponse& res);
 	void initializeRoutes();
+
+	void saveUploadedFiles(const HttpRequest& req); // Hinzugefügt
 };
 
 #endif // ROUTER_HPP
