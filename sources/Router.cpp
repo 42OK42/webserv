@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/18 19:04:05 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/22 17:23:07 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -215,30 +215,4 @@ void Router::initializeRoutes() {
 	addRoute("/", &Router::handleHomeRoute);
 	addRoute("/upload", &Router::handleUploadRoute);
 	addRoute("/form", &Router::handleFormRoute);
-}
-
-std::string Router::readFile(const std::string& filepath) {
-	std::ifstream file(filepath.c_str());
-	if (!file) {
-		std::cerr << "Could not open the file: " << filepath << std::endl;
-		return "";
-	}
-	std::stringstream buffer;
-	buffer << file.rdbuf();
-	return buffer.str();
-}
-
-std::string Router::extractFilenameFromUrl(const std::string& url) {
-	size_t pos = url.find_last_of('/');
-	if (pos == std::string::npos) {
-		return "";
-	}
-	return url.substr(pos + 1);
-}
-
-void Router::ensureDirectoryExists(const std::string& directory) {
-	struct stat st;
-	if (stat(directory.c_str(), &st) != 0) {
-		mkdir(directory.c_str(), 0700);
-	}
 }
