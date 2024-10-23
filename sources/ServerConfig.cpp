@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/18 17:04:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/22 16:50:32 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/23 19:42:02 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -111,7 +111,7 @@ bool ServerConfig::readClientData(int client_fd) {
 	return false; // Request not fully received yet
 }
 
-void ServerConfig::setupServerSocket()
+int ServerConfig::setupServerSocket()
 {
 	m_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (m_socket == -1)
@@ -130,99 +130,20 @@ void ServerConfig::setupServerSocket()
 	if (bind(m_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
 		throw ServerConfig::SocketBindingFailed();
 
-	std::cout << "Server bound to port: " << _port << " (Olli)" << std::endl;
+	std::cout << "Server bound to port: " << _port << std::endl;
 
 	// Listen for incoming connections
 	if (listen(m_socket, SOMAXCONN) < 0)
-		throw ServerConfig::SocketlisteningFailed();
+		throw ServerConfig::SocketListeningFailed();
 
-	std::cout << "Server is listening on port: " << _port << " (Olli)" << std::endl;
+	std::cout << "Server is listening on port: " << _port << std::endl;
 
 	// Set the server socket to non-blocking mode
-	if (set_nonblocking(m_socket) == -1) throw ServerConfig::SocketCreationFailed();
+	if (set_nonblocking(m_socket) == -1)
+		throw ServerConfig::SocketCreationFailed();
 
-	// Initialize pollfd structures
-	struct pollfd server_fd;
-	server_fd.fd = m_socket;
-	server_fd.events = POLLIN;
-	fds.push_back(server_fd);
-
-	// Initialize router
-	Router router(*this);
-	router.initializeRoutes();
-
-	while (true) {
-		int ret = poll(&fds[0], fds.size(), -1); // -1 means wait indefinitely
-		if (ret < 0)
-		{
-			if (errno == EINTR)
-			{ // poll interrupted by signal
-				std::cout << "\033[0;38;5;9m" << "Server on port "<< _port << " and host "<< _host << " is shutting down" << "\033[0m" << std::endl;
-
-				break;
-			}
-			else
-			{
-				perror("poll");
-				break;
-			}
-
-		}
-
-		std::cout << "Poll returned with ret: " << ret << std::endl;
-
-		for (size_t i = 0; i < fds.size(); ++i) {
-			std::cout << "Checking fd: " << fds[i].fd << " revents: " << fds[i].revents << std::endl;
-			if (fds[i].revents & POLLIN) {
-				if (fds[i].fd == m_socket) {
-					// Accept new connection
-					socklen_t client_addr_len = sizeof(client_addr);
-					int new_fd = accept(m_socket, (struct sockaddr*)&client_addr, &client_addr_len);
-					if (new_fd >= 0) {
-						std::cout << "Accepted new connection: " << new_fd << std::endl;
-						if (set_nonblocking(new_fd) == -1) {
-							close(new_fd);
-							continue;
-						}
-						set_socket_timeout(new_fd, 300); // Set a 300-second timeout for read/write operations
-						struct pollfd new_pollfd;
-						new_pollfd.fd = new_fd;
-						new_pollfd.events = POLLIN;
-						fds.push_back(new_pollfd);
-					} else {
-						perror("accept");
-					}
-				} else {
-					// Read data from existing client socket
-					std::cout << "Calling readClientData for fd: " << fds[i].fd << std::endl;
-					if (readClientData(fds[i].fd)) {
-						// Entire request has been received
-						std::cout << "Entire request received for fd: " << fds[i].fd << std::endl;
-						HttpRequest httpRequest(client_data[fds[i].fd].c_str(), client_data[fds[i].fd].size());
-
-						HttpResponse httpResponse(httpRequest);
-
-						// Process request with the router
-						router.handleRequest(httpRequest, httpResponse);
-
-						// Send response
-						std::string httpResponseString = httpResponse.toString();
-						if (send(fds[i].fd, httpResponseString.c_str(), httpResponseString.size(), 0) < 0) {
-							std::cerr << "Error sending response: " << strerror(errno) << std::endl;
-						} else {
-							std::cout << "Response sent to client: " << fds[i].fd << std::endl;
-						}
-
-						// Clean up
-						client_data.erase(fds[i].fd);
-						close(fds[i].fd);
-						fds.erase(fds.begin() + i);
-						--i;
-					}
-				}
-			}
-		}
-	}
+	// Return the socket descriptor
+	return m_socket;
 }
 
 
@@ -399,6 +320,17 @@ std::string ServerConfig::getExecutablePath() {
 	return std::string(result, (count > 0) ? count : 0);
 }
 
+int ServerConfig::getSocket() const {
+	return m_socket;
+}
+
+std::string& ServerConfig::getClientData(int client_fd) {
+	return client_data[client_fd];
+}
+
+void ServerConfig::eraseClientData(int client_fd) {
+	client_data.erase(client_fd);
+}
 
 std::string ServerConfig::getErrorFilePath(int errorCode)
 {
@@ -470,10 +402,6 @@ const char* ServerConfig::SocketBindingFailed::what() const throw () {
 	return "Throwing exception: socket binding failed";
 }
 
-const char* ServerConfig::SocketlisteningFailed::what() const throw () {
-	return "Throwing exception: socket listening failed";
-}
-
 const char* ServerConfig::SocketAcceptFailed::what() const throw () {
 	return "Throwing exception: Failed to accept connection";
 }
@@ -484,5 +412,9 @@ const char* ServerConfig::SocketReadFailed::what() const throw () {
 
 const char* ServerConfig::LocationNotFound::what() const throw () {
 	return "Throwing exception: Location not found";
+}
+
+const char* ServerConfig::SocketListeningFailed::what() const throw () {
+	return "Throwing exception: socket listening failed";
 }
 

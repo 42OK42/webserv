@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/22 17:14:35 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/23 19:41:40 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,64 +59,56 @@ class ServerConfig
 		std::string                     _cgiBin;
 
 		/**/
-		int	m_socket; //return a socket decriptor
+		int	m_socket; //return a socket descriptor
 		struct sockaddr_in	server_addr;
-		struct sockaddr_in client_addr; //contains Ip adress and client port
-		// int client_socket;
 		std::vector<struct pollfd> fds; // Poll file descriptors
 		std::map<int, std::string> client_data; // Client data buffer
 
-
-
 	public:
-		//ServerConfig( const Configuration& config ); //from parsing config file
 		ServerConfig();
 		~ServerConfig();
 
-
 		Location findLocation(std::string locationPath);
 
-		/*			Setters & Getters			*/
+		/* Setters & Getters */
 		void setHost(const std::string& host);
 		void setPort(int port);
+		int getSocket() const;
+		std::string& getClientData(int client_fd);
+		void eraseClientData(int client_fd);
 
 		std::string getHost() const;
 		int getPort() const;
 
+		void setServerName(const std::vector<std::string>& tokens);
+		void setRoot(const std::vector<std::string>& tokens);
+		void setErrorPage(const std::vector<std::string>& tokens);
+		void setClientMaxBodySize(size_t token);
+		void setCgiEnabled(const std::vector<std::string>& tokens);
+		void setCgiExtension(const std::vector<std::string>& tokens);
+		void setCgiBin(const std::vector<std::string>& tokens);
 
-		void			setServerName( const std::vector<std::string>& tokens );
-		void			setRoot( const std::vector<std::string>& tokens );
-		void			setErrorPage( const std::vector<std::string>& tokens );
-		void 			setClientMaxBodySize(size_t token);
-		void			setCgiEnabled( const std::vector<std::string>& tokens );
-		void			setCgiExtension( const std::vector<std::string>& tokens );
-		void			setCgiBin( const std::vector<std::string>& tokens );
-
-		std::string					getServerName( size_t idx ) const;
-		std::vector<std::string>	getServerName( void ) const;
-		std::string					getRoot( void ) const;
-		int							getClientMaxBodySize( void ) const;
-		bool						isCgiEnabled( void ) const;
-		std::string					getCgiExtension( void ) const;
-		std::string					getCgiBin( void ) const;
-
-
+		std::string getServerName(size_t idx) const;
+		std::vector<std::string> getServerName(void) const;
+		std::string getRoot(void) const;
+		int getClientMaxBodySize(void) const;
+		bool isCgiEnabled(void) const;
+		std::string getCgiExtension(void) const;
+		std::string getCgiBin(void) const;
 
 		void addErrorPage(int code, const std::string& page);
 		const std::map<int, std::string>& getErrorPages() const;
-		void  checkErrorPage();
+		void checkErrorPage();
 		std::string getExecutablePath();
 		std::string getErrorFilePath(int errorCode);
 
 		void addLocation(const std::string& path, const Location& location);
 		const std::map<std::string, Location>& getLocations() const;
 
-
-		void setupServerSocket();
+		int setupServerSocket();  // Change return type to int
 		std::string readFile(const std::string& filepath);
 		void set_socket_timeout(int sockfd, int timeout_seconds);
 		bool readClientData(int client_fd);
-
 
 		class SocketCreationFailed : public std::exception {
 			public:
@@ -126,7 +118,7 @@ class ServerConfig
 			public:
 				virtual const char* what() const throw();
 		};
-		class SocketlisteningFailed : public std::exception {
+		class SocketListeningFailed : public std::exception {
 			public:
 				virtual const char* what() const throw();
 		};
@@ -142,10 +134,8 @@ class ServerConfig
 			public:
 				virtual const char* what() const throw();
 		};
-
 };
 
 std::ostream& operator<<(std::ostream& os, const ServerConfig& server);
 
-
-#endif // ServerConfig_HPP
+#endif // SERVERCONFIG_HPP
