@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:27 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/24 17:26:01 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/24 18:58:22 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -99,24 +99,22 @@ void HttpRequest::parse(const char* buffer, int bytesRead) {
 	std::map<std::string, std::string>::const_iterator it = headers.find("Host");
 	if (it != headers.end()) {
 		std::string hostHeader = it->second;
-		std::cout << "Parsed Host header: " << hostHeader << std::endl; // Debug-Ausgabe
 		size_t colonPos = hostHeader.find(':');
 		if (colonPos != std::string::npos) {
 			host = hostHeader.substr(0, colonPos);
 			std::istringstream iss(hostHeader.substr(colonPos + 1));
 			if (!(iss >> port)) {
-				port = -1;
+				throw std::runtime_error("Port not specified in Host header");
 			}
 		} else {
 			host = hostHeader;
-			port = -1;
+			throw std::runtime_error("Port not specified in Host header");
 		}
 	} else {
-		host = "";
-		port = -1;
-		std::cout << "Host header not found" << std::endl; // Debug-Ausgabe
+		throw std::runtime_error("Host header not found");
 	}
 
+	// Read body if Content-Length is present
 	if (headers.count("Content-Length")) {
 		int contentLength;
 		std::istringstream(headers["Content-Length"]) >> contentLength;

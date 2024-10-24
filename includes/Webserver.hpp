@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:21 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/23 19:43:29 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/24 19:00:02 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,9 @@
 #define WEBSERV_HPP
 
 #include "ServerConfig.hpp"
+#include "HttpResponse.hpp"
+#include "HttpRequest.hpp"
+#include "Router.hpp"
 #include <vector>
 #include <sys/poll.h>
 #include <unistd.h>
@@ -36,6 +39,11 @@ class Webserver
 		void setNonBlocking(int sockfd);
 		void setSocketTimeout(int sockfd, int timeout_seconds);
 
+		// Neue Methoden
+		bool isCompleteRequest(const std::string& requestData);
+		ServerConfig* findMatchingServer(const std::string& host, int port);
+		void processRequest(HttpRequest& httpRequest, ServerConfig* server, int client_fd);
+
 	public:
 		Webserver();
 		~Webserver();
@@ -44,4 +52,4 @@ class Webserver
 		void initializeServers();
 };
 
-#endif // WEBSERV_HPP
+#endif
