@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/21 19:57:00 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/24 17:36:44 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,6 +47,7 @@ void Parser::parseMultipleServers(std::vector<std::string> portVector, std::vect
 {
 	std::vector<int> ports =  checkPorts(portVector);
 	std::vector<std::string> hosts = checkHosts(hostVector);
+
 
 	for (size_t i = 0; i < hosts.size(); ++i)
 	{
@@ -136,99 +137,276 @@ std::vector<int> Parser::checkPorts( std::vector<std::string>& tokens)
 		}
 	}
 	else
-		ports[0] = 8080;
+		ports.push_back(8080);
 
 	return (ports);
 
 }
-
-
 bool Parser::ParseConfigStream(std::stringstream& buffer)
 {
-	ServerConfig serverTemplate;
-	std::string line, host, key, errorPage, sizeStr;
-	int errorCode;
-	std::vector<std::string> locationVector,portVector, hostVector,nameVector;
+    ServerConfig serverTemplate;   // Create a new server template for each server block
+    std::string line, key, errorPage, sizeStr;
+    int errorCode;
+    std::vector<std::string> locationVector, portVector, hostVector, nameVector;
+    bool insideServerBlock = false;
 
-	while (std::getline(buffer, line))
-	{
-		std::istringstream iss(line);
-		if (!(iss >> key))
-			continue;
+    while (std::getline(buffer, line))
+    {
+        std::istringstream iss(line);
+        if (!(iss >> key))
+            continue;
 
-		key = removeSemicolon(key);
-		if (key == "listen")
-		{
-			std::string port;
+        key = removeSemicolon(key);
 
-			while (iss >> port) {
-				port = removeSemicolon(port);
-				if (!port.empty())
-					portVector.push_back(port);
-			}
-		}
-		if (key == "host")
-		{
-			std::string host;
+        // Detect the beginning of a new server block
+        if (key == "server" && line.find("{") != std::string::npos) {
+            std::cout << "Entering new server block...\n";
+            if (insideServerBlock) {
+                // If we're already inside a server block, finish the current one
 
-			while (iss >> host)
-			{
-				host = removeSemicolon(host);
-				if (!host.empty())
-					hostVector.push_back(removeSemicolon(host));
-			}
-		}
-		if (key == "server_name")
-		{
-			std::string name;
-			while (iss >> name)
-			{
-				name = removeSemicolon(name);
-				if (!name.empty())
-					nameVector.push_back(removeSemicolon(name));
-			}
-			serverTemplate.setServerName(nameVector);
-		}
-		else if (key == "error_page")
-		{
-			while (iss >> errorCode >> errorPage)
-			{
-				errorPage = removeSemicolon(errorPage);
-				serverTemplate.addErrorPage(errorCode, errorPage);
-			}
-		}
-		else if (key == "client_max_body_size")
-		{
-			iss >> sizeStr;
-			sizeStr = removeSemicolon(sizeStr);
-			std::stringstream ss(sizeStr);
-			size_t size;
-			ss >> size;
-			serverTemplate.setClientMaxBodySize(size * 1024 * 1024);
-		}
-		else if (key == "location")
-		{
-			std::string	path;
-			iss >> path;
-			path = removeSemicolon(path);
+                std::cout << "Finished server block, pushing to servers.\n";
 
-			Location location;
-			location.setPath(path);
-			parseLocation(buffer, location);
-			serverTemplate.addLocation(path, location);
-		}
-	}
+				serverTemplate.checkErrorPage();
+				_serverTemplate = serverTemplate;
 
-	serverTemplate.checkErrorPage();
-	_serverTemplate = serverTemplate;
-	parseMultipleServers(portVector, hostVector);
+				parseMultipleServers(portVector, hostVector);
+                // _servers.push_back(serverTemplate); // Store the current server config
+                serverTemplate = ServerConfig();    // Reset for the next server
+                portVector.clear();  // Reset portVector and other vectors if necessary
+                hostVector.clear();
+                nameVector.clear();
+            }
+            insideServerBlock = true;  // Now inside a new server block
+            continue;
+        }
 
-	// std::cout << "Printing all configured servers:\n";
-	// for (size_t i = 0; i < _servers.size(); ++i)
-	// 	std::cout << _servers[i];
+        // Detect the end of a server block
+        if (line.find("}") != std::string::npos) {
+            if (insideServerBlock) {
+                std::cout << "Closing server block...\n";
+                // Finalize the current server block when encountering `}`
+				serverTemplate.checkErrorPage();
+				_serverTemplate = serverTemplate;
+				parseMultipleServers(portVector, hostVector);
 
-	return true;
+                // serverTemplate.checkErrorPage();
+				// parseMultipleServers(portVector, hostVector);
+                // _servers.push_back(serverTemplate); // Store the current server config
+                serverTemplate = ServerConfig();    // Reset for next server
+                insideServerBlock = false;          // Exit the server block
+                portVector.clear();  // Reset vectors for the next server block
+                hostVector.clear();
+                nameVector.clear();
+            }
+            continue;
+        }
+
+        if (insideServerBlock) {
+            if (key == "listen") {
+                std::string port;
+                while (iss >> port) {
+                    port = removeSemicolon(port);
+                    if (!port.empty()) {
+                        std::cout << "Adding port: " << port << std::endl;
+                        portVector.push_back(port);
+                    }
+                }
+            }
+            else if (key == "host") {
+                std::string host;
+                while (iss >> host) {
+                    host = removeSemicolon(host);
+                    if (!host.empty()) {
+                        std::cout << "Adding host: " << host << std::endl;
+                        hostVector.push_back(removeSemicolon(host));
+
+                    }
+                }
+            }
+            else if (key == "server_name") {
+                std::string name;
+                while (iss >> name) {
+                    name = removeSemicolon(name);
+                    if (!name.empty()) {
+                        std::cout << "Adding server_name: " << name << std::endl;
+						nameVector.push_back(removeSemicolon(name));
+						serverTemplate.setServerName(nameVector);
+
+                    }
+                }
+            }
+            else if (key == "error_page") {
+                while (iss >> errorCode >> errorPage) {
+                    errorPage = removeSemicolon(errorPage);
+                    std::cout << "Adding error page for code: " << errorCode << ", page: " << errorPage << std::endl;
+                    serverTemplate.addErrorPage(errorCode, errorPage);
+                }
+            }
+            else if (key == "client_max_body_size") {
+                iss >> sizeStr;
+                sizeStr = removeSemicolon(sizeStr);
+                std::stringstream ss(sizeStr);
+                size_t size;
+                ss >> size;
+                std::cout << "Setting client_max_body_size to: " << size << " MB\n";
+                serverTemplate.setClientMaxBodySize(size * 1024 * 1024); // MB to bytes
+            }
+            else if (key == "location") {
+                std::string path;
+                iss >> path;
+                path = removeSemicolon(path);
+
+                Location location;
+                location.setPath(path);
+                parseLocation(buffer, location);
+                std::cout << "Adding location: " << path << std::endl;
+                serverTemplate.addLocation(path, location);
+            }
+        }
+    }
+
+    // Ensure the last server is added if it wasn't closed by `}`
+    if (insideServerBlock) {
+
+        std::cout << "Finalizing last server block...\n";
+        serverTemplate.checkErrorPage();
+		_serverTemplate = serverTemplate;
+		parseMultipleServers(portVector, hostVector);
+        // _servers.push_back(serverTemplate);
+    }
+
+    if (_servers.empty()) {
+        std::cout << "Error: _servers is empty!\n";
+    } else {
+        std::cout << "Printing all configured servers:\n";
+        for (size_t i = 0; i < _servers.size(); ++i)
+            std::cout << _servers[i];  // Make sure you have a `<<` operator overload for ServerConfig
+    }
+
+    return true;
 }
+
+
+
+// bool Parser::ParseConfigStream(std::stringstream& buffer)
+// {
+// 	ServerConfig serverTemplate;
+// 	std::string line, host, key, errorPage, sizeStr;
+// 	int errorCode;
+// 	std::vector<std::string> locationVector,portVector, hostVector,nameVector;
+// 	bool insideServerBlock = false;
+
+
+// 	while (std::getline(buffer, line))
+// 	{
+// 		std::istringstream iss(line);
+// 		if (!(iss >> key))
+// 			continue;
+
+// 		key = removeSemicolon(key);
+
+
+//         // Detect the beginning of a new server block
+//         if (key == "server" && line.find("{") != std::string::npos) {
+//             if (insideServerBlock) {
+//                 // If we're already inside a server block, finish the current one
+//                 serverTemplate.checkErrorPage();
+//                 _servers.push_back(serverTemplate); // Store the current server config
+//                 serverTemplate = ServerConfig();    // Reset for the next server
+//                 portVector.clear();  // Reset portVector and other vectors if necessary
+//                 hostVector.clear();
+//                 nameVector.clear();
+//             }
+//             insideServerBlock = true;  // Now inside a new server block
+//             continue;
+//         }
+
+//         // Detect the end of a server block
+//         if (line.find("}") != std::string::npos) {
+//             if (insideServerBlock) {
+//                 // Finalize the current server block when encountering `}`
+//                 serverTemplate.checkErrorPage();
+//                 _servers.push_back(serverTemplate); // Store the current server config
+//                 serverTemplate = ServerConfig();    // Reset for next server
+//                 insideServerBlock = false;          // Exit the server block
+//                 portVector.clear();  // Reset vectors for the next server block
+//                 hostVector.clear();
+//                 nameVector.clear();
+//             }
+//             continue;
+//         }
+// 		if (key == "listen")
+// 		{
+// 			std::string port;
+
+// 			while (iss >> port) {
+// 				port = removeSemicolon(port);
+// 				if (!port.empty())
+// 					portVector.push_back(port);
+// 			}
+// 		}
+// 		if (key == "host")
+// 		{
+// 			std::string host;
+
+// 			while (iss >> host)
+// 			{
+// 				host = removeSemicolon(host);
+// 				if (!host.empty())
+// 					hostVector.push_back(removeSemicolon(host));
+// 			}
+// 		}
+// 		if (key == "server_name")
+// 		{
+// 			std::string name;
+// 			while (iss >> name)
+// 			{
+// 				name = removeSemicolon(name);
+// 				if (!name.empty())
+// 					nameVector.push_back(removeSemicolon(name));
+// 			}
+// 			//serverTemplate.setServerName(nameVector);
+// 		}
+// 		else if (key == "error_page")
+// 		{
+// 			while (iss >> errorCode >> errorPage)
+// 			{
+// 				errorPage = removeSemicolon(errorPage);
+// 				serverTemplate.addErrorPage(errorCode, errorPage);
+// 			}
+// 		}
+// 		else if (key == "client_max_body_size")
+// 		{
+// 			iss >> sizeStr;
+// 			sizeStr = removeSemicolon(sizeStr);
+// 			std::stringstream ss(sizeStr);
+// 			size_t size;
+// 			ss >> size;
+// 			serverTemplate.setClientMaxBodySize(size * 1024 * 1024);
+// 		}
+// 		else if (key == "location")
+// 		{
+// 			std::string	path;
+// 			iss >> path;
+// 			path = removeSemicolon(path);
+
+// 			Location location;
+// 			location.setPath(path);
+// 			parseLocation(buffer, location);
+// 			serverTemplate.addLocation(path, location);
+// 		}
+// 	}
+
+// 	serverTemplate.checkErrorPage();
+// 	_serverTemplate = serverTemplate;
+// 	parseMultipleServers(portVector, hostVector);
+
+// 	// std::cout << "Printing all configured servers:\n";
+// 	// for (size_t i = 0; i < _servers.size(); ++i)
+// 	// 	std::cout << _servers[i];
+
+// 	return true;
+// }
 
 bool Parser::parseLocation(std::stringstream& buffer, Location& location)
 {

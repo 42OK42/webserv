@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerConfig.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/18 17:04:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/23 19:42:02 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/24 17:39:50 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -158,8 +158,14 @@ void ServerConfig::setPort(int port) {
 	_port = port;
 }
 
+// void ServerConfig::setServerNames(const std::vector<std::string>& tokens) {
+// 	_serverNames = tokens;
+// }
+
 void ServerConfig::setServerName(const std::vector<std::string>& tokens) {
-	_serverNames = tokens;
+	if (!tokens.empty()) {
+		_serverName = tokens[0];
+	}
 }
 
 void ServerConfig::setRoot(const std::vector<std::string>& tokens) {
@@ -212,16 +218,21 @@ int ServerConfig::getPort() const {
 	return _port;
 }
 
-std::string ServerConfig::getServerName(size_t idx) const {
-	if (idx < _serverNames.size()) {
-		return _serverNames[idx];
-	}
-	return "";
+// std::string ServerConfig::getServerName(size_t idx) const {
+// 	if (idx < _serverNames.size()) {
+// 		return _serverNames[idx];
+// 	}
+// 	return "";
+// }
+
+// std::vector<std::string> ServerConfig::getServerName() const {
+// 	return _serverNames;
+// }
+
+std::string ServerConfig::getServerName() const {
+	return _serverName;
 }
 
-std::vector<std::string> ServerConfig::getServerName() const {
-	return _serverNames;
-}
 
 std::string ServerConfig::getRoot() const {
 	return _root;
@@ -297,7 +308,7 @@ void  ServerConfig::checkErrorPage()
 		{
 			std::string defaultErrorPagePath = getErrorFilePath(errorCode);
 			_errorPages[errorCode] = defaultErrorPagePath;
-			std::cout << "Added default error page for code " << errorCode << ": " << defaultErrorPagePath << std::endl;
+			//std::cout << "Added default error page for code " << errorCode << ": " << defaultErrorPagePath << std::endl;
 		}
 		else
 		{
@@ -306,7 +317,7 @@ void  ServerConfig::checkErrorPage()
 			{
 				std::string defaultErrorPagePath = getErrorFilePath(errorCode);
 				_errorPages[errorCode] = defaultErrorPagePath;
-				std::cout << "Replaced with default error page: " << defaultErrorPagePath << std::endl;
+			//	std::cout << "Replaced with default error page: " << defaultErrorPagePath << std::endl;
 			}
 			else
 				std::cout << "Error page for code " << errorCode << " is valid: " << filePath << std::endl;
@@ -365,15 +376,10 @@ std::ostream& operator<<(std::ostream& os, const ServerConfig& server) {
 
 	os << "\n### Server ###" << std::endl;
 
-	os << "Port: " << server.getPort() << std::endl;
-	os << "Host: " << server.getHost() << std::endl;
+	os << "\033[1m\033[31mPort: " << server.getPort() << "\033[0m" << std::endl;
+	os << "\033[1m\033[32mHost: " << server.getHost() << "\033[0m" << std::endl;
+	os << "\033[1m\033[34mServer name: " << server.getServerName() << "\033[0m" << std::endl;
 
-	os << std::endl;
-
-	os << "Server Names: ";
-	for (size_t i = 0; i < server.getServerName().size(); ++i) {
-		os << server.getServerName()[i] << " ";
-	}
 	os << std::endl;
 
 	os << "Root: " << server.getRoot() << std::endl;
