@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 14:18:42 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/24 17:14:34 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/24 18:33:12 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,15 +15,23 @@
 #include "../includes/ServerConfig.hpp"
 #include "../includes/Webserver.hpp"
 
-
 bool sigint_flag = false;
 
-void    handle_sigint(int sig) {
-    (void)sig;
-    sigint_flag = true;
-    return ;
+void handle_signal(int sig) {
+    if (sig == SIGINT) {
+        std::cout << "Interrupt signal received (SIGINT).\n";
+        sigint_flag = true;
+    } else if (sig == SIGTERM) {
+        std::cout << "Terminate signal received (SIGTERM).\n";
+        sigint_flag = true;
+    }
 }
 
+
+void signalHandler(int signum) {
+    std::cout << "Interrupt signal (" << signum << ") received.\n";
+    exit(signum);
+}
 
 int main(int argc, char **argv)
 {
@@ -51,7 +59,8 @@ int main(int argc, char **argv)
     }
 
     std::vector<ServerConfig> servers = parser.getServers();
-    signal(SIGINT, &handle_sigint);
+    signal(SIGINT, handle_signal);
+    signal(SIGTERM, handle_signal);
     try
     {
         while (!sigint_flag)
