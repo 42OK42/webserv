@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserver.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/24 16:36:14 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/24 18:53:03 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,6 @@
 Webserver::Webserver() {}
 
 Webserver::Webserver(const std::vector<ServerConfig>& servers) : _servers(servers) {
-    // Initialisierungen, falls nötig
 }
 
 Webserver::~Webserver() {
@@ -58,7 +57,7 @@ void Webserver::runEventLoop() {
 		int ret = poll(&fds[0], fds.size(), -1);
 		if (ret < 0) {
 			if (errno == EINTR) {
-				std::cout << "Shutting down servers due to interrupt signal." << std::endl;
+				std::cout << "\033[3mShutting down servers due to interrupt signal...\033[0m" << std::endl;
 				break;
 			} else {
 				perror("poll");
@@ -110,13 +109,13 @@ void Webserver::handleClientData(size_t index) {
 		HttpRequest httpRequest(server.getClientData(client_fd).c_str(), server.getClientData(client_fd).size());
 		HttpResponse httpResponse(httpRequest);
 		Router router(server);
-		
+
 		// Initialize routes if not already done
 		router.initializeRoutes();
-		
+
 		// Handle the request
 		router.handleRequest(httpRequest, httpResponse);
-		
+
 		// Send the response
 		std::string httpResponseString = httpResponse.toString();
 		if (send(client_fd, httpResponseString.c_str(), httpResponseString.size(), 0) < 0) {
@@ -124,7 +123,7 @@ void Webserver::handleClientData(size_t index) {
 		} else {
 			std::cout << "Response sent to client: " << client_fd << std::endl;
 		}
-		
+
 		// Clean up
 		server.eraseClientData(client_fd);
 		close(client_fd);

@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 14:18:42 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/24 18:33:12 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/24 18:53:21 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,13 +18,10 @@
 bool sigint_flag = false;
 
 void handle_signal(int sig) {
-    if (sig == SIGINT) {
-        std::cout << "Interrupt signal received (SIGINT).\n";
+    if (sig == SIGINT)
         sigint_flag = true;
-    } else if (sig == SIGTERM) {
-        std::cout << "Terminate signal received (SIGTERM).\n";
+    else if (sig == SIGTERM)
         sigint_flag = true;
-    }
 }
 
 
