@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/24 16:36:14 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/24 17:23:47 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@
 Webserver::Webserver() {}
 
 Webserver::Webserver(const std::vector<ServerConfig>& servers) : _servers(servers) {
-    // Initialisierungen, falls nötig
+	// Initialisierungen, falls nötig
 }
 
 Webserver::~Webserver() {
@@ -104,12 +104,29 @@ void Webserver::handleNewConnection(int server_socket) {
 
 void Webserver::handleClientData(size_t index) {
 	int client_fd = fds[index].fd;
-	ServerConfig& server = _servers[0]; // Assuming a single server configuration for simplicity
 
-	if (server.readClientData(client_fd)) {
-		HttpRequest httpRequest(server.getClientData(client_fd).c_str(), server.getClientData(client_fd).size());
+	// Assuming a method to get client data exists
+	std::string requestData = _servers[0].getClientData(client_fd); // Adjust this line
+
+	HttpRequest httpRequest(requestData.c_str(), requestData.size());
+
+	// Ensure HttpRequest has these methods or adjust accordingly
+	std::string requestHost = httpRequest.getHost();
+	int requestPort = 80; // Default to 80 if getPort() is not available
+
+	// Find the matching ServerConfig
+	ServerConfig* matchedServer = NULL; // Use NULL for pre-C++11
+
+	for (size_t i = 0; i < _servers.size(); ++i) {
+		if (_servers[i].getHost() == requestHost && _servers[i].getPort() == requestPort) {
+			matchedServer = &_servers[i];
+			break;
+		}
+	}
+
+	if (matchedServer != NULL) { // Use NULL for pre-C++11
 		HttpResponse httpResponse(httpRequest);
-		Router router(server);
+		Router router(*matchedServer);
 		
 		// Initialize routes if not already done
 		router.initializeRoutes();
@@ -125,11 +142,13 @@ void Webserver::handleClientData(size_t index) {
 			std::cout << "Response sent to client: " << client_fd << std::endl;
 		}
 		
-		// Clean up
-		server.eraseClientData(client_fd);
-		close(client_fd);
-		fds.erase(fds.begin() + index);
+		matchedServer->eraseClientData(client_fd);
+	} else {
+		std::cerr << "No matching server configuration found for host: " << requestHost << " and port: " << requestPort << std::endl;
 	}
+
+	close(client_fd);
+	fds.erase(fds.begin() + index);
 }
 
 void Webserver::setNonBlocking(int sockfd) {

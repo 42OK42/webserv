@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:27 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/22 17:36:06 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/24 17:26:01 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,8 @@ const std::string& HttpRequest::getHttpVersion() const { return httpVersion; }
 const std::map<std::string, std::string>& HttpRequest::getHeaders() const { return headers; }
 const std::string& HttpRequest::getBody() const { return body; }
 const std::vector<std::string>& HttpRequest::getFilenames() const { return filenames; }
+const std::string& HttpRequest::getHost() const { return host; }
+int HttpRequest::getPort() const { return port; }
 
 std::string HttpRequest::getHeader(const std::string& name) const {
 	std::map<std::string, std::string>::const_iterator it = headers.find(name);
@@ -76,18 +78,43 @@ void HttpRequest::parse(const char* buffer, int bytesRead) {
 	std::istringstream stream(rawRequest);
 	std::string line;
 
+	// Parse the request line
 	std::getline(stream, line);
 	std::istringstream startLine(line);
 	startLine >> method >> url >> httpVersion;
 
+	// Parse headers
 	while (std::getline(stream, line) && line != "\r") {
 		if (!line.empty() && line[line.size() - 1] == '\r') {
 			line.erase(line.size() - 1);
 		}
 		std::string key, value;
 		std::istringstream headerLine(line);
-		if (std::getline(headerLine, key, ':') && std::getline(headerLine, value))
+		if (std::getline(headerLine, key, ':') && std::getline(headerLine, value)) {
 			headers[key] = value.substr(1);
+		}
+	}
+
+	// Extract Host and Port
+	std::map<std::string, std::string>::const_iterator it = headers.find("Host");
+	if (it != headers.end()) {
+		std::string hostHeader = it->second;
+		std::cout << "Parsed Host header: " << hostHeader << std::endl; // Debug-Ausgabe
+		size_t colonPos = hostHeader.find(':');
+		if (colonPos != std::string::npos) {
+			host = hostHeader.substr(0, colonPos);
+			std::istringstream iss(hostHeader.substr(colonPos + 1));
+			if (!(iss >> port)) {
+				port = -1;
+			}
+		} else {
+			host = hostHeader;
+			port = -1;
+		}
+	} else {
+		host = "";
+		port = -1;
+		std::cout << "Host header not found" << std::endl; // Debug-Ausgabe
 	}
 
 	if (headers.count("Content-Length")) {
@@ -97,6 +124,7 @@ void HttpRequest::parse(const char* buffer, int bytesRead) {
 		stream.read(&body[0], contentLength);
 	}
 
+	// Parse multipart data if present
 	if (headers.count("Content-Type")) {
 		std::string contentType = headers["Content-Type"];
 		size_t boundaryPos = contentType.find("boundary=");

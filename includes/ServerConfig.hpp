@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/23 19:41:40 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/24 16:57:08 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -138,4 +138,4 @@ class ServerConfig
 
 std::ostream& operator<<(std::ostream& os, const ServerConfig& server);
 
-#endif // SERVERCONFIG_HPP
+#endif
