@@ -6,14 +6,14 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/23 19:43:05 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/24 16:36:14 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../includes/Webserver.hpp"
-#include "../includes/HttpRequest.hpp"
-#include "../includes/HttpResponse.hpp"
-#include "../includes/Router.hpp"
+#include "Webserver.hpp"
+#include "HttpRequest.hpp"
+#include "HttpResponse.hpp"
+#include "Router.hpp"
 #include <iostream>
 #include <vector>
 #include <sys/poll.h>
