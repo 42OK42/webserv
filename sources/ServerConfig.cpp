@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerConfig.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/18 17:04:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/25 13:06:49 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/24 18:17:19 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,6 +100,11 @@ bool ServerConfig::readClientData(int client_fd) {
 
 		if (data.size() >= header_end_pos + 4 + content_length) {
 			std::cout << "Entire request has been received. Total size: " << data.size() << std::endl;
+
+			// Parse and print the request
+			HttpRequest httpRequest(data.c_str(), data.size());
+			httpRequest.print();
+
 			return true; // Entire request has been received
 		} else {
 			std::cout << "Request not fully received yet. Current size: " << data.size() << " Expected size: " << (header_end_pos + 4 + content_length) << std::endl;

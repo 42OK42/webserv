@@ -3,59 +3,90 @@
 /*                                                        :::      ::::::::   */
 /*   ServerConfig.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/25 13:06:04 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/24 16:57:08 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef ServerConfig_HPP
-#define ServerConfig_HPP
+#ifndef SERVERCONFIG_HPP
+#define SERVERCONFIG_HPP
 
 #include "Location.hpp"
-#include <string>
-#include <iostream>
-#include <vector>
 #include <map>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <cstdlib>
+#include <fstream>
+#include <string>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <iostream>
+#include <cstring>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/poll.h>
+#include <sys/ioctl.h>
+#include <exception>
+#include <csignal>
+#include <cstdlib>
+#include <netdb.h>
+#include <sstream>
+#include <string.h>
+#include <vector>
+#include <limits.h>
+extern bool sigint_flag;
 
 class ServerConfig
 {
 	private:
-		std::vector<int> 				_port;  // Port number to listen on (e.g., 8080)
-		// get those from "listen" in config file
-		std::vector<std::string>		_host;  // Host (e.g., "127.0.0.1" or "localhost")
-		std::vector<std::string>		_serverNames;  // Server aliases (e.g., "example.com")
-		std::string						_root; // Spécifie le répertoire racine à partir duquel le serveur sert les fichiers.
-		std::map<int, std::string>		_errorPages;  // Default error pages (e.g., 404 -> "/404.html")
-		size_t 							_clientMaxBodySize;  // Maximum allowed size for client request body
-		//std::vector<RouteConfig> routes;  // Routes for the server
+
+		int								_port;
+		std::string						_host;
+		std::vector<std::string>		_serverNames;
+		std::string						_root;
+		std::map<int, std::string>		_errorPages;
+		size_t 							_clientMaxBodySize;
 		std::map <std::string, Location>	_locations;
 
 		/* CGI */
-		bool							_cgiEnabled;
-		std::string						_cgiExtension;
-		std::string						_cgiBin;
+		bool                            _cgiEnabled;
+		std::string                     _cgiExtension;
+		std::string                     _cgiBin;
 
-		/* Location */
-
-		//create a class location?
+		/**/
+		int	m_socket; //return a socket descriptor
+		struct sockaddr_in	server_addr;
+		std::vector<struct pollfd> fds; // Poll file descriptors
+		std::map<int, std::string> client_data; // Client data buffer
 
 	public:
-		//ServerConfig( const Configuration& config ); //from parsing config file
+		ServerConfig();
 		~ServerConfig();
 
-		/*			Setters & Getters			*/
-		void			setPort( const std::vector<std::string>& tokens );
-		void			setHost( const std::vector<std::string>& tokens );
-		void			setServerName( const std::vector<std::string>& tokens );
-		void			setRoot( const std::vector<std::string>& tokens );
-		void			setErrorPage( const std::vector<std::string>& tokens );
-		void			setClientMaxBodySize( const std::vector<std::string>& tokens );
-		void			setCgiEnabled( const std::vector<std::string>& tokens );
-		void			setCgiExtension( const std::vector<std::string>& tokens );
-		void			setCgiBin( const std::vector<std::string>& tokens );
+		Location findLocation(std::string locationPath);
 
+		/* Setters & Getters */
+		void setHost(const std::string& host);
+		void setPort(int port);
+		int getSocket() const;
+		std::string& getClientData(int client_fd);
+		void eraseClientData(int client_fd);
+
+		std::string getHost() const;
+		int getPort() const;
+
+		void setServerName(const std::vector<std::string>& tokens);
+		void setRoot(const std::vector<std::string>& tokens);
+		void setErrorPage(const std::vector<std::string>& tokens);
+		void setClientMaxBodySize(size_t token);
+		void setCgiEnabled(const std::vector<std::string>& tokens);
+		void setCgiExtension(const std::vector<std::string>& tokens);
+		void setCgiBin(const std::vector<std::string>& tokens);
 
 		std::string getServerName(size_t idx) const;
 		std::vector<std::string> getServerName(void) const;
@@ -107,4 +138,4 @@ class ServerConfig
 
 std::ostream& operator<<(std::ostream& os, const ServerConfig& server);
 
-#endif // SERVERCONFIG_HPP
+#endif
