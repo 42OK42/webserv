@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/28 16:07:40 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/28 17:00:26 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@
 #include <vector>
 #include <iostream>
 #include <algorithm>
+#include <dirent.h>
 
 class Router;
 
@@ -43,10 +44,12 @@ public:
 	void handleHomeRoute(const HttpRequest& req, HttpResponse& res);
 	void handleFormRoute(const HttpRequest& req, HttpResponse& res);
 	void handleUploadRoute(const HttpRequest& req, HttpResponse& res);
+	void handleUploadSuccessRoute(const HttpRequest& req, HttpResponse& res);
 	void initializeRoutes();
 
-	void saveUploadedFiles(const HttpRequest& req, const std::string& uploadDir); // Updated to include uploadDir
+	void saveUploadedFiles(const HttpRequest& req, const std::string& uploadDir);
 	void setErrorResponse(HttpResponse& response, int errorCode);
+	std::vector<std::string> getFilesInDirectory(const std::string& directory);
 };
 
-#endif // ROUTER_HPP
+#endif

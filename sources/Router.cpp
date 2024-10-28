@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/28 16:33:27 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/28 18:25:04 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <cerrno>
 #include <vector>
+#include <dirent.h> // For directory handling
 
 Router::Router(ServerConfig& config) : _serverConfig(config) {
 	// Initialization code
@@ -57,6 +58,7 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 	// Find the matching location
 	try {
 		Location location = _serverConfig.findLocation(path);
+		std::cout << "Found Location: " << path << std::endl;
 
 		// Check if the method is allowed
 		if (!location.isMethodAllowed(method)) {
@@ -67,14 +69,15 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 		// Execute the route if the method is allowed
 		std::map<std::string, RouteHandler>::const_iterator it = routes.find(path);
 		if (it != routes.end()) {
+			std::cout << "Found Route: " << path << std::endl;
 			RouteHandler handler = it->second;
 			(this->*handler)(request, response); // Call the member function
 		} else {
-			// Handle 404
+			std::cout << "Route not found: " << path << std::endl;
 			setErrorResponse(response, 404);
 		}
 	} catch (const ServerConfig::LocationNotFound& e) {
-		// Handle 404
+		std::cout << "Location not found: " << path << std::endl;
 		setErrorResponse(response, 404);
 	}
 }
@@ -157,11 +160,10 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 
 			saveUploadedFiles(req, uploadDir);
 
-			std::string successContent = readFile("HTMLFiles/uploadSuccessful.html");
-			res.setStatusCode(200);
-			res.setBody(successContent);
-			res.setHeader("Content-Type", "text/html");
-			std::cout << "Response: 200 OK (Upload POST)" << std::endl;
+			// Redirect to the success page
+			res.setStatusCode(302);
+			res.setHeader("Location", "/uploadSuccessful");
+			std::cout << "Response: 302 Redirect to /uploadSuccessful" << std::endl;
 		} else if (req.getMethod() == "DELETE") {
 			std::cout << "Processing DELETE request" << std::endl;
 			std::string filename = extractFilenameFromUrl(req.getUrl());
@@ -197,6 +199,66 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 	}
 }
 
+void Router::handleUploadSuccessRoute(const HttpRequest& req, HttpResponse& res) {
+	if (req.getMethod() == "GET") {
+		try {
+			Location uploadLocation = _serverConfig.findLocation("/uploadSuccessful");
+			std::string successFilePath = uploadLocation.getRoot() + "/uploadSuccessful.html";
+
+			std::cout << "Accessing file: " << successFilePath << std::endl;
+
+			std::string successContent = readFile(successFilePath);
+
+			// Get the list of files
+			Location uploadDirLocation = _serverConfig.findLocation("/upload");
+			std::string uploadDir = uploadDirLocation.getRoot();
+			std::vector<std::string> files = getFilesInDirectory(uploadDir);
+
+			// Convert file list to JSON
+			std::ostringstream json;
+			json << "[";
+			for (size_t i = 0; i < files.size(); ++i) {
+				if (i > 0) json << ", ";
+				json << "\"" << files[i] << "\"";
+			}
+			json << "]";
+
+			// Inject the file list into the HTML
+			std::string script = "<script>const fileList = " + json.str() + ";</script>";
+			size_t pos = successContent.find("</head>");
+			if (pos != std::string::npos) {
+				successContent.insert(pos, script);
+			}
+
+			res.setStatusCode(200);
+			res.setBody(successContent);
+			res.setHeader("Content-Type", "text/html");
+		} catch (const ServerConfig::LocationNotFound& e) {
+			setErrorResponse(res, 404);
+		} catch (const std::exception& e) {
+			std::cout << "Error reading file: " << e.what() << std::endl;
+			setErrorResponse(res, 404);
+		}
+	} else {
+		setErrorResponse(res, 405);
+	}
+}
+
+std::vector<std::string> Router::getFilesInDirectory(const std::string& directory) {
+	std::vector<std::string> files;
+	DIR* dir = opendir(directory.c_str());
+	if (dir) {
+		struct dirent* entry;
+		while ((entry = readdir(dir)) != NULL) { // Use NULL
+			if (entry->d_type == DT_REG) {
+				files.push_back(entry->d_name);
+			}
+		}
+		closedir(dir);
+	}
+	return files;
+}
+
 void Router::saveUploadedFiles(const HttpRequest& req, const std::string& uploadDir) {
 	const std::vector<std::string>& filenames = req.getFilenames();
 	const std::string& body = req.getBody();
@@ -229,7 +291,7 @@ void Router::saveUploadedFiles(const HttpRequest& req, const std::string& upload
 			fileContent.erase(fileContent.size() - 2);
 		}
 
-		std::string savedFilename = uploadDir + filenames[i].substr(filenames[i].find_last_of("\\/") + 1);
+		std::string savedFilename = uploadDir + "/" + filenames[i].substr(filenames[i].find_last_of("\\/") + 1);
 		std::ofstream outFile(savedFilename.c_str(), std::ios::binary);
 		if (outFile.is_open()) {
 			outFile.write(fileContent.c_str(), fileContent.size());
@@ -244,6 +306,7 @@ void Router::saveUploadedFiles(const HttpRequest& req, const std::string& upload
 
 void Router::initializeRoutes() {
 	addRoute("/", &Router::handleHomeRoute);
-	addRoute("/upload", &Router::handleUploadRoute, "/home/okrahl/sgoinfre/uploads_webserv/");
-	addRoute("/form", &Router::handleFormRoute, "/home/okrahl/sgoinfre/forms/");
+	addRoute("/upload", &Router::handleUploadRoute);
+	addRoute("/uploadSuccessful", &Router::handleUploadSuccessRoute);
+	addRoute("/form", &Router::handleFormRoute);
 }
