@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/22 18:32:38 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/28 16:07:40 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,6 +46,7 @@ public:
 	void initializeRoutes();
 
 	void saveUploadedFiles(const HttpRequest& req, const std::string& uploadDir); // Updated to include uploadDir
+	void setErrorResponse(HttpResponse& response, int errorCode);
 };
 
 #endif // ROUTER_HPP

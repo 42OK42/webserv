@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/28 15:16:10 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/28 16:15:45 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,11 +21,11 @@
 #include <vector>
 
 Router::Router(ServerConfig& config) : _serverConfig(config) {
-	// Initialisierungscode
+	// Initialization code
 }
 
 Router::~Router() {
-	// Bereinigungscode
+	// Cleanup code
 }
 
 void Router::addRoute(const std::string& path, RouteHandler handler, const std::string& uploadDir) {
@@ -44,55 +44,67 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 
 	std::string method = request.getMethod();
 
-	// Drucke alle gespeicherten Locations
+	// Print all stored locations
 	const std::map<std::string, Location>& locations = _serverConfig.getLocations();
 	std::cout << "Stored Locations:" << std::endl;
 	for (std::map<std::string, Location>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
 		std::cout << "Path: " << it->first << "\n" << it->second << std::endl;
 	}
 
-	// Zeige an, nach welcher Location gesucht wird
+	// Show which location is being searched for
 	std::cout << "Searching for Location: " << path << std::endl;
 
-	// Finde die passende Location
+	// Find the matching location
 	try {
 		Location location = _serverConfig.findLocation(path);
 
-		// Überprüfe, ob die Methode erlaubt ist
+		// Check if the method is allowed
 		if (!location.isMethodAllowed(method)) {
-			response.setStatusCode(405);
-			response.setBody("<html><body><h1>405 Method Not Allowed</h1></body></html>");
-			response.setHeader("Content-Type", "text/html");
+			setErrorResponse(response, 405);
 			return;
 		}
 
-		// Führe die Route aus, wenn die Methode erlaubt ist
+		// Execute the route if the method is allowed
 		std::map<std::string, RouteHandler>::const_iterator it = routes.find(path);
 		if (it != routes.end()) {
 			RouteHandler handler = it->second;
 			(this->*handler)(request, response); // Call the member function
 		} else {
 			// Handle 404
-			int errorCode = 404;
-			const std::map<int, std::string>& errorPages = _serverConfig.getErrorPages();
-			std::map<int, std::string>::const_iterator errorPageIt = errorPages.find(errorCode);
-
-			std::string errorPageContent;
-			if (errorPageIt != errorPages.end())
-				errorPageContent = readFile(errorPageIt->second);
-			else
-				errorPageContent = "<html><body><h1>404 Not Found</h1></body></html>";
-
-			response.setStatusCode(errorCode);
-			response.setBody(errorPageContent);
-			response.setHeader("Content-Type", "text/html");
+			setErrorResponse(response, 404);
 		}
 	} catch (const ServerConfig::LocationNotFound& e) {
 		// Handle 404
-		response.setStatusCode(404);
-		response.setBody("<html><body><h1>404 Not Found</h1></body></html>");
-		response.setHeader("Content-Type", "text/html");
+		setErrorResponse(response, 404);
 	}
+}
+
+void Router::setErrorResponse(HttpResponse& response, int errorCode) {
+	const std::map<int, std::string>& errorPages = _serverConfig.getErrorPages();
+
+	// Print all error pages
+	std::cout << "Available Error Pages:" << std::endl;
+	for (std::map<int, std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
+		std::cout << "Error Code: " << it->first << ", Path: " << it->second << std::endl;
+	}
+
+	// Print the error code being searched for
+	std::cout << "Searching for Error Page with code: " << errorCode << std::endl;
+
+	std::map<int, std::string>::const_iterator errorPageIt = errorPages.find(errorCode);
+
+	std::string errorPageContent;
+	if (errorPageIt != errorPages.end()) {
+		std::cout << "Found Error Page Path: " << errorPageIt->second << std::endl;
+		errorPageContent = _serverConfig.readFile(errorPageIt->second);
+	} else {
+		std::cout << "Error Page Not Found for code: " << errorCode << std::endl;
+		errorPageContent = "<html><body><h1>Error Page Not Found</h1></body></html>";
+	}
+
+	response.setStatusCode(errorCode);
+	response.setBody(errorPageContent);
+	response.setHeader("Content-Type", "text/html");
 }
 
 void Router::handleHomeRoute(const HttpRequest& req, HttpResponse& res) {
@@ -102,9 +114,7 @@ void Router::handleHomeRoute(const HttpRequest& req, HttpResponse& res) {
 		res.setBody(content);
 		res.setHeader("Content-Type", "text/html");
 	} else {
-		res.setStatusCode(405);
-		res.setBody("<html><body><h1>405 Method Not Allowed</h1></body></html>");
-		res.setHeader("Content-Type", "text/html");
+		setErrorResponse(res, 405);
 	}
 }
 
@@ -115,9 +125,7 @@ void Router::handleFormRoute(const HttpRequest& req, HttpResponse& res) {
 		res.setBody(content);
 		res.setHeader("Content-Type", "text/html");
 	} else {
-		res.setStatusCode(405);
-		res.setBody("<html><body><h1>405 Method Not Allowed</h1></body></html>");
-		res.setHeader("Content-Type", "text/html");
+		setErrorResponse(res, 405);
 	}
 }
 
@@ -140,10 +148,7 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 		const std::vector<std::string>& filenames = req.getFilenames();
 		if (filenames.empty()) {
 			std::cout << "No files uploaded" << std::endl;
-			res.setStatusCode(400);
-			res.setBody("Bad Request: No files uploaded");
-			res.setHeader("Content-Type", "text/plain");
-			std::cout << "Response: 400 Bad Request (No files uploaded)" << std::endl;
+			setErrorResponse(res, 400);
 			return;
 		}
 
@@ -161,10 +166,7 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 
 		if (filename.empty()) {
 			std::cout << "Filename not found in DELETE request" << std::endl;
-			res.setStatusCode(400);
-			res.setBody("Bad Request: Filename not found");
-			res.setHeader("Content-Type", "text/plain");
-			std::cout << "Response: 400 Bad Request (Filename not found)" << std::endl;
+			setErrorResponse(res, 400);
 			return;
 		}
 
@@ -179,17 +181,12 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 			std::cout << "Response: 200 OK (File Deleted)" << std::endl;
 		} else {
 			std::cout << "Error deleting file: " << strerror(errno) << std::endl;
-			res.setStatusCode(404);
-			res.setBody("File Not Found");
-			std::cout << "Response: 404 Not Found (Error deleting file)" << std::endl;
+			setErrorResponse(res, 404);
 		}
 		res.setHeader("Content-Type", "text/plain");
 	} else {
 		std::cout << "Method not allowed: " << req.getMethod() << std::endl;
-		res.setStatusCode(405);
-		res.setBody("<html><body><h1>405 Method Not Allowed</h1></body></html>");
-		res.setHeader("Content-Type", "text/html");
-		std::cout << "Response: 405 Method Not Allowed (Upload Route)" << std::endl;
+		setErrorResponse(res, 405);
 	}
 }
 
