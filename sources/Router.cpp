@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/28 16:15:45 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/28 16:33:27 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -134,59 +134,66 @@ void Router::handleUploadRoute(const HttpRequest& req, HttpResponse& res) {
 	std::cout << "Request URL: " << req.getUrl() << std::endl;
 	std::cout << "Request Method: " << req.getMethod() << std::endl;
 
-	std::string uploadDir = uploadDirs["/upload"];
+	// Retrieve the upload directory from the configuration
+	try {
+		Location uploadLocation = _serverConfig.findLocation("/upload");
+		std::string uploadDir = uploadLocation.getRoot();
 
-	if (req.getMethod() == "GET") {
-		std::string content = readFile("HTMLFiles/upload.html");
-		res.setStatusCode(200);
-		res.setBody(content);
-		res.setHeader("Content-Type", "text/html");
-		std::cout << "Response: 200 OK (Upload GET)" << std::endl;
-	} else if (req.getMethod() == "POST") {
-		std::cout << "Processing POST request" << std::endl;
-
-		const std::vector<std::string>& filenames = req.getFilenames();
-		if (filenames.empty()) {
-			std::cout << "No files uploaded" << std::endl;
-			setErrorResponse(res, 400);
-			return;
-		}
-
-		saveUploadedFiles(req, uploadDir);
-
-		std::string successContent = readFile("HTMLFiles/uploadSuccessful.html");
-		res.setStatusCode(200);
-		res.setBody(successContent);
-		res.setHeader("Content-Type", "text/html");
-		std::cout << "Response: 200 OK (Upload POST)" << std::endl;
-	} else if (req.getMethod() == "DELETE") {
-		std::cout << "Processing DELETE request" << std::endl;
-		std::string filename = extractFilenameFromUrl(req.getUrl());
-		std::cout << "Extracted filename: " << filename << std::endl;
-
-		if (filename.empty()) {
-			std::cout << "Filename not found in DELETE request" << std::endl;
-			setErrorResponse(res, 400);
-			return;
-		}
-
-		std::string filePath = uploadDir + filename;
-		std::cout << "Attempting to delete file: " << filePath << std::endl;
-
-		if (remove(filePath.c_str()) == 0) {
-			std::cout << "File deleted successfully" << std::endl;
-			uploadedFiles.erase(std::remove(uploadedFiles.begin(), uploadedFiles.end(), filename), uploadedFiles.end());
+		if (req.getMethod() == "GET") {
+			std::string content = readFile("HTMLFiles/upload.html");
 			res.setStatusCode(200);
-			res.setBody("File Deleted Successfully");
-			std::cout << "Response: 200 OK (File Deleted)" << std::endl;
+			res.setBody(content);
+			res.setHeader("Content-Type", "text/html");
+			std::cout << "Response: 200 OK (Upload GET)" << std::endl;
+		} else if (req.getMethod() == "POST") {
+			std::cout << "Processing POST request" << std::endl;
+
+			const std::vector<std::string>& filenames = req.getFilenames();
+			if (filenames.empty()) {
+				std::cout << "No files uploaded" << std::endl;
+				setErrorResponse(res, 400);
+				return;
+			}
+
+			saveUploadedFiles(req, uploadDir);
+
+			std::string successContent = readFile("HTMLFiles/uploadSuccessful.html");
+			res.setStatusCode(200);
+			res.setBody(successContent);
+			res.setHeader("Content-Type", "text/html");
+			std::cout << "Response: 200 OK (Upload POST)" << std::endl;
+		} else if (req.getMethod() == "DELETE") {
+			std::cout << "Processing DELETE request" << std::endl;
+			std::string filename = extractFilenameFromUrl(req.getUrl());
+			std::cout << "Extracted filename: " << filename << std::endl;
+
+			if (filename.empty()) {
+				std::cout << "Filename not found in DELETE request" << std::endl;
+				setErrorResponse(res, 400);
+				return;
+			}
+
+			std::string filePath = uploadDir + "/" + filename;
+			std::cout << "Attempting to delete file: " << filePath << std::endl;
+
+			if (remove(filePath.c_str()) == 0) {
+				std::cout << "File deleted successfully" << std::endl;
+				uploadedFiles.erase(std::remove(uploadedFiles.begin(), uploadedFiles.end(), filename), uploadedFiles.end());
+				res.setStatusCode(200);
+				res.setBody("File Deleted Successfully");
+				std::cout << "Response: 200 OK (File Deleted)" << std::endl;
+			} else {
+				std::cout << "Error deleting file: " << strerror(errno) << std::endl;
+				setErrorResponse(res, 404);
+			}
+			res.setHeader("Content-Type", "text/plain");
 		} else {
-			std::cout << "Error deleting file: " << strerror(errno) << std::endl;
-			setErrorResponse(res, 404);
+			std::cout << "Method not allowed: " << req.getMethod() << std::endl;
+			setErrorResponse(res, 405);
 		}
-		res.setHeader("Content-Type", "text/plain");
-	} else {
-		std::cout << "Method not allowed: " << req.getMethod() << std::endl;
-		setErrorResponse(res, 405);
+	} catch (const ServerConfig::LocationNotFound& e) {
+		std::cout << "Upload location not found." << std::endl;
+		setErrorResponse(res, 404);
 	}
 }
 
