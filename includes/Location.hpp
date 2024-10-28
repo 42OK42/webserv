@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Location.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:54 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/16 20:17:51 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/28 15:06:38 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,13 +16,14 @@
 #include <string>
 #include <iostream>
 #include <vector>
+#include <algorithm>
 
 class Location
 {
 	private:
 		std::string					_path;
-		std::string					_root;	// Répertoire racine pour cette location
-		std::string					_index;	// Fichier à servir par défaut (ex: "index.html")
+		std::string					_root;
+		std::string					_index;
 		bool 						_autoIndex;
 		std::vector<std::string>	_Methods;
 		std::string					_cgi_extension;
@@ -30,14 +31,12 @@ class Location
 
 	public:
 		Location();
-		// Location(const Location &copy);
-		// Location &operator=(const Location &copy);
 		~Location();
 
 		bool isValidMethod(const std::string& token);
 		bool isValidAutoIndex(const std::string& token);
 
-		/*Getters and Setters */
+		/* Getters and Setters */
 		std::string getPath() const;
 		std::string getRoot() const;
 		std::string getIndex() const;
@@ -54,6 +53,8 @@ class Location
 		void setAutoIndex(const std::string& token);
 		void setMethods(const std::vector<std::string>& tokens);
 
+		bool isMethodAllowed(const std::string& method) const;
+
 		class InvalidAutoIndexException: public std::exception {
 			public:
 				virtual const char* what() const throw();
@@ -66,4 +67,5 @@ class Location
 };
 
 std::ostream& operator<<(std::ostream& os, const Location& location);
-#endif // Location_HPP
+
+#endif // LOCATION_HPP

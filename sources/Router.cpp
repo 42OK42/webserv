@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/22 18:33:01 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/28 15:16:10 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,23 +42,55 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 		path = path.substr(0, queryPos);
 	}
 
-	std::map<std::string, RouteHandler>::const_iterator it = routes.find(path);
-	if (it != routes.end()) {
-		RouteHandler handler = it->second;
-		(this->*handler)(request, response); // Call the member function
-	} else {
-		int errorCode = 404;
-		const std::map<int, std::string>& errorPages = _serverConfig.getErrorPages();
-		std::map<int, std::string>::const_iterator errorPageIt = errorPages.find(errorCode);
+	std::string method = request.getMethod();
 
-		std::string errorPageContent;
-		if (errorPageIt != errorPages.end())
-			errorPageContent = readFile(errorPageIt->second);
-		else
-			errorPageContent = "<html><body><h1>404 Not Found</h1></body></html>";
+	// Drucke alle gespeicherten Locations
+	const std::map<std::string, Location>& locations = _serverConfig.getLocations();
+	std::cout << "Stored Locations:" << std::endl;
+	for (std::map<std::string, Location>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
+		std::cout << "Path: " << it->first << "\n" << it->second << std::endl;
+	}
 
-		response.setStatusCode(errorCode);
-		response.setBody(errorPageContent);
+	// Zeige an, nach welcher Location gesucht wird
+	std::cout << "Searching for Location: " << path << std::endl;
+
+	// Finde die passende Location
+	try {
+		Location location = _serverConfig.findLocation(path);
+
+		// Überprüfe, ob die Methode erlaubt ist
+		if (!location.isMethodAllowed(method)) {
+			response.setStatusCode(405);
+			response.setBody("<html><body><h1>405 Method Not Allowed</h1></body></html>");
+			response.setHeader("Content-Type", "text/html");
+			return;
+		}
+
+		// Führe die Route aus, wenn die Methode erlaubt ist
+		std::map<std::string, RouteHandler>::const_iterator it = routes.find(path);
+		if (it != routes.end()) {
+			RouteHandler handler = it->second;
+			(this->*handler)(request, response); // Call the member function
+		} else {
+			// Handle 404
+			int errorCode = 404;
+			const std::map<int, std::string>& errorPages = _serverConfig.getErrorPages();
+			std::map<int, std::string>::const_iterator errorPageIt = errorPages.find(errorCode);
+
+			std::string errorPageContent;
+			if (errorPageIt != errorPages.end())
+				errorPageContent = readFile(errorPageIt->second);
+			else
+				errorPageContent = "<html><body><h1>404 Not Found</h1></body></html>";
+
+			response.setStatusCode(errorCode);
+			response.setBody(errorPageContent);
+			response.setHeader("Content-Type", "text/html");
+		}
+	} catch (const ServerConfig::LocationNotFound& e) {
+		// Handle 404
+		response.setStatusCode(404);
+		response.setBody("<html><body><h1>404 Not Found</h1></body></html>");
 		response.setHeader("Content-Type", "text/html");
 	}
 }
