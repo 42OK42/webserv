@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/30 14:51:37 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/30 16:04:55 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,7 +48,6 @@ class ServerConfig
 		int								_port;
 		std::string						_host;
 		std::string						_serverName;
-		//std::vector<std::string>		_serverNames;
 		std::string						_root;
 		std::map<int, std::string>		_errorPages;
 		size_t 							_clientMaxBodySize;
