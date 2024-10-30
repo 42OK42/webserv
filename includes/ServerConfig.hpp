@@ -3,16 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   ServerConfig.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/24 16:57:08 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/30 16:22:21 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef SERVERCONFIG_HPP
 #define SERVERCONFIG_HPP
-
 #include "Location.hpp"
 #include <map>
 #include <unistd.h>
@@ -39,32 +38,32 @@
 #include <string.h>
 #include <vector>
 #include <limits.h>
-extern bool sigint_flag;
 
+extern bool sigint_flag;
 class ServerConfig
 {
 	private:
 
 		int								_port;
 		std::string						_host;
-		std::vector<std::string>		_serverNames;
+		std::string						_serverName;
 		std::string						_root;
 		std::map<int, std::string>		_errorPages;
 		size_t 							_clientMaxBodySize;
 		std::map <std::string, Location>	_locations;
 
 		/* CGI */
-		bool                            _cgiEnabled;
-		std::string                     _cgiExtension;
-		std::string                     _cgiBin;
+		bool							_cgiEnabled;
+		std::string						_cgiExtension;
+		std::string						_cgiBin;
 
-		/**/
-		int	m_socket; //return a socket descriptor
-		struct sockaddr_in	server_addr;
-		std::vector<struct pollfd> fds; // Poll file descriptors
-		std::map<int, std::string> client_data; // Client data buffer
+        int m_socket; //return a socket descriptor
+        struct sockaddr_in  server_addr;
+        std::vector<struct pollfd> fds; // Poll file descriptors
+        std::map<int, std::string> client_data; // Client data buffer
 
 	public:
+		//ServerConfig( const Configuration& config ); //from parsing config file
 		ServerConfig();
 		~ServerConfig();
 
@@ -88,8 +87,7 @@ class ServerConfig
 		void setCgiExtension(const std::vector<std::string>& tokens);
 		void setCgiBin(const std::vector<std::string>& tokens);
 
-		std::string getServerName(size_t idx) const;
-		std::vector<std::string> getServerName(void) const;
+		std::string getServerName(void) const;
 		std::string getRoot(void) const;
 		int getClientMaxBodySize(void) const;
 		bool isCgiEnabled(void) const;
@@ -138,4 +136,4 @@ class ServerConfig
 
 std::ostream& operator<<(std::ostream& os, const ServerConfig& server);
 
-#endif
+#endif // SERVERCONFIG_HPP
