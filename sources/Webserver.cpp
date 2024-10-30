@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/24 19:03:57 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/30 18:36:58 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -154,12 +154,24 @@ bool Webserver::isCompleteRequest(const std::string& requestData) {
 }
 
 ServerConfig* Webserver::findMatchingServer(const std::string& host, int port) {
-	for (size_t i = 0; i < _servers.size(); ++i) {
-		if (_servers[i].getHost() == host && _servers[i].getPort() == port) {
-			return &_servers[i];
-		}
-	}
-	return NULL;
+    for (size_t i = 0; i < _servers.size(); ++i) {
+        const ServerConfig& server = _servers[i];
+        
+        // Check if the port matches
+        if (server.getPort() == port) {
+            // Check if the host matches
+            if (server.getHost() == host) {
+                return &_servers[i];
+            }
+
+            // Check if the host matches any of the server names
+            const std::vector<std::string>& serverNames = server.getServerName();
+            if (std::find(serverNames.begin(), serverNames.end(), host) != serverNames.end()) {
+                return &_servers[i];
+            }
+        }
+    }
+    return NULL;
 }
 
 void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, int client_fd) {

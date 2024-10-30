@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/28 18:25:04 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/30 18:22:53 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@
 #include <algorithm>
 #include <cerrno>
 #include <vector>
-#include <dirent.h> // For directory handling
+#include <dirent.h>
 
 Router::Router(ServerConfig& config) : _serverConfig(config) {
 	// Initialization code

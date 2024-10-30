@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:27 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/24 18:58:22 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/30 18:41:49 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -108,7 +108,7 @@ void HttpRequest::parse(const char* buffer, int bytesRead) {
 			}
 		} else {
 			host = hostHeader;
-			throw std::runtime_error("Port not specified in Host header");
+			port = 8080; // Default HTTP port
 		}
 	} else {
 		throw std::runtime_error("Host header not found");

@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/18 17:04:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/24 18:17:19 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/10/30 18:11:23 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -130,6 +130,7 @@ int ServerConfig::setupServerSocket()
 		server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 	else
 		server_addr.sin_addr.s_addr = inet_addr(_host.c_str());
+		
 
 	// Bind the socket to the address and port
 	if (bind(m_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
