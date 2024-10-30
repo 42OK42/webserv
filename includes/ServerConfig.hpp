@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/24 16:57:25 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/10/30 14:51:37 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,7 +81,6 @@ class ServerConfig
 		std::string getHost() const;
 		int getPort() const;
 
-		// void setServerNames(const std::vector<std::string>& tokens);
 		void setServerName(const std::vector<std::string>& tokens);
 		void setRoot(const std::vector<std::string>& tokens);
 		void setErrorPage(const std::vector<std::string>& tokens);
@@ -90,8 +89,6 @@ class ServerConfig
 		void setCgiExtension(const std::vector<std::string>& tokens);
 		void setCgiBin(const std::vector<std::string>& tokens);
 
-		// std::string getServerName(size_t idx) const;
-		// std::vector<std::string> getServerNames(void) const;
 		std::string getServerName(void) const;
 		std::string getRoot(void) const;
 		int getClientMaxBodySize(void) const;
