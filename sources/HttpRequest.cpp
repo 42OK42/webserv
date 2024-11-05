@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:27 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/05 15:45:18 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/05 17:39:12 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,7 +64,7 @@ void HttpRequest::parseMultipartData(const std::string& boundary) {
 						std::string filename = extractFilename(value);
 						if (!filename.empty()) {
 							filenames.push_back(filename);
-							std::cout << "Extracted filename: " << filename << std::endl;
+							std::cout << "Found file in request: " << filename << std::endl;
 						}
 					}
 				}
@@ -104,14 +104,14 @@ void HttpRequest::parse(const char* buffer, int bytesRead) {
 			host = hostHeader.substr(0, colonPos);
 			std::istringstream iss(hostHeader.substr(colonPos + 1));
 			if (!(iss >> port)) {
-				throw std::runtime_error("Port not specified in Host header");
+				throw std::runtime_error("Invalid port in Host header");
 			}
 		} else {
 			host = hostHeader;
 			port = 8080; // Default HTTP port
 		}
 	} else {
-		throw std::runtime_error("Host header not found");
+		throw std::runtime_error("Missing Host header");
 	}
 
 	// Read body if Content-Length is present
@@ -134,23 +134,6 @@ void HttpRequest::parse(const char* buffer, int bytesRead) {
 }
 
 void HttpRequest::print() const {
-	std::cout << "Method: " << method << "\n";
-	std::cout << "URL: " << url << "\n";
-	// std::cout << "HTTP Version: " << httpVersion << "\n";
-	// std::cout << "Headers:\n";
-	// for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
-	// 	std::cout << "  " << it->first << ": " << it->second << "\n";
-	// }
-	// if (!body.empty()) {
-	// 	std::cout << "Body (first 100 chars): " << body.substr(0, 100) << "\n";
-	// 	if (body.size() > 100) {
-	// 		std::cout << "  (truncated, total size: " << body.size() << " bytes)\n";
-	// 	}
-	// }
-	// if (!filenames.empty()) {
-	// 	std::cout << "Filenames:\n";
-	// 	for (size_t i = 0; i < filenames.size(); ++i) {
-	// 		std::cout << "  " << filenames[i] << "\n";
-	// 	}
-	// }
+	std::cout << "Method: " << method << std::endl;
+	std::cout << "URL: " << url << std::endl;
 }

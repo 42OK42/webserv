@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/18 17:04:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/05 17:12:06 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/05 17:38:17 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,7 +54,7 @@ void ServerConfig::set_socket_timeout(int sockfd, int timeout_seconds) {
 std::string ServerConfig::readFile(const std::string& filepath) {
 	std::ifstream file(filepath.c_str());
 	if (!file) {
-		std::cerr << "Could not open the file: " << filepath << std::endl;
+		std::cerr << "Error: Could not open file: " << filepath << std::endl;
 		return "";
 	}
 	std::stringstream buffer;
@@ -63,25 +63,14 @@ std::string ServerConfig::readFile(const std::string& filepath) {
 }
 
 bool ServerConfig::readClientData(int client_fd) {
-	// std::cout << "readClientData called for fd: " << client_fd << std::endl;
 	char buffer[1024];
 	int n = recv(client_fd, buffer, sizeof(buffer), 0);
 	if (n <= 0) {
-		if (n < 0) {
-			// std::cerr << "Error reading from client socket: " << strerror(errno) << std::endl;
-		}
 		close(client_fd);
 		return false;
 	}
 
-	// std::cout << "recv returned " << n << " bytes" << std::endl;
 	client_data[client_fd].append(buffer, n);
-
-	// Print everything received
-	// std::cout << "Received data from client (first 1000 chars): " << client_data[client_fd].substr(0, 1000) << std::endl;
-	// if (client_data[client_fd].size() > 1000) {
-	//     std::cout << "  (truncated, total size: " << client_data[client_fd].size() << " bytes)\n";
-	// }
 
 	std::string& data = client_data[client_fd];
 	size_t header_end_pos = data.find("\r\n\r\n");
@@ -91,18 +80,11 @@ bool ServerConfig::readClientData(int client_fd) {
 		if (content_length_pos != std::string::npos) {
 			content_length_pos += 15;
 			content_length = std::atoi(data.c_str() + content_length_pos);
-			// std::cout << "Content-Length: " << content_length << std::endl;
 		}
 
 		if (data.size() >= header_end_pos + 4 + content_length) {
-			// std::cout << "Entire request has been received. Total size: " << data.size() << std::endl;
 			return true;
-		} else {
-			// std::cout << "Request not fully received yet. Current size: " << data.size() 
-			//           << " Expected size: " << (header_end_pos + 4 + content_length) << std::endl;
 		}
-	} else {
-		// std::cout << "header_end_pos not found" << std::endl;
 	}
 
 	return false;

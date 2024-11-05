@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/05 15:52:02 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/05 17:40:29 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,14 +37,15 @@ Webserver::~Webserver() {
 }
 
 void Webserver::initializeServers() {
-	std::set<int> initializedPorts;  // Nur ein Socket pro Port
+	std::set<int> initializedPorts;  // Track initialized ports to avoid duplicates
 
 	for (size_t i = 0; i < _servers.size(); ++i) {
 		ServerConfig& server = _servers[i];
 		int port = server.getPort();
 
+		// Skip if port already initialized
 		if (initializedPorts.find(port) != initializedPorts.end()) {
-			continue;  // Port bereits initialisiert
+			continue;
 		}
 
 		try {
@@ -62,7 +63,7 @@ void Webserver::initializeServers() {
 	}
 
 	if (!fds.empty()) {
-		// Zeige alle verfügbaren Server-Konfigurationen
+		// Display available server configurations
 		for (size_t i = 0; i < _servers.size(); ++i) {
 			std::cout << "Server configuration available: " 
 					  << _servers[i].getHost() << ":" 
@@ -82,126 +83,123 @@ void Webserver::initializeServers() {
 }
 
 void Webserver::runEventLoop() {
-	while (true) {
-		int ret = poll(&fds[0], fds.size(), -1);
-		if (ret < 0) {
-			if (errno == EINTR) {
-				std::cout << "Shutting down servers due to interrupt signal." << std::endl;
-				break;
-			} else {
-				perror("poll");
-				break;
-			}
+	int poll_count = poll(&fds[0], fds.size(), 1000);  // 1 second timeout
+	
+	if (poll_count < 0) {
+		if (errno != EINTR) {  // Ignore if interrupted by signal
+			std::cerr << "Poll error: " << strerror(errno) << std::endl;
 		}
-
-		for (size_t i = 0; i < fds.size(); ++i) {
-			if (fds[i].revents & POLLIN) {
-				if (isServerSocket(fds[i].fd)) {
-					handleNewConnection(fds[i].fd);
-				} else {
-					handleClientData(i);
-				}
+		return;
+	}
+	
+	// Check each file descriptor for events
+	for (size_t i = 0; i < fds.size(); ++i) {
+		if (fds[i].revents & POLLIN) {
+			if (isServerSocket(fds[i].fd)) {
+				handleNewConnection(fds[i].fd);
+			} else {
+				handleClientData(i);
 			}
 		}
 	}
 }
 
 bool Webserver::isServerSocket(int fd) {
-	for (std::vector<ServerConfig>::const_iterator it = _servers.begin(); it != _servers.end(); ++it) {
-		if (it->getSocket() == fd) return true;
+	for (size_t i = 0; i < _servers.size(); ++i) {
+		if (_servers[i].getSocket() == fd) {
+			return true;
+		}
 	}
 	return false;
 }
 
 void Webserver::handleNewConnection(int server_socket) {
 	struct sockaddr_in client_addr;
-	socklen_t client_addr_len = sizeof(client_addr);
-	int new_fd = accept(server_socket, (struct sockaddr*)&client_addr, &client_addr_len);
-	if (new_fd >= 0) {
-		setNonBlocking(new_fd);
-		setSocketTimeout(new_fd, 300);
-		struct pollfd new_pollfd;
-		new_pollfd.fd = new_fd;
-		new_pollfd.events = POLLIN;
-		fds.push_back(new_pollfd);
-		
-		client_to_server[new_fd] = server_socket;
-		std::cout << "\033[0;35m[Connection]\033[0m New client " << new_fd 
-				  << " connected to server socket " << server_socket << std::endl;
-	} else {
-		perror("accept");
+	socklen_t client_len = sizeof(client_addr);
+	
+	int new_fd = accept(server_socket, (struct sockaddr*)&client_addr, &client_len);
+	if (new_fd < 0) {
+		std::cerr << "Accept error: " << strerror(errno) << std::endl;
+		return;
 	}
+	
+	setNonBlocking(new_fd);
+	setSocketTimeout(new_fd, 60);  // 60 second timeout
+	
+	struct pollfd client_fd;
+	client_fd.fd = new_fd;
+	client_fd.events = POLLIN;
+	fds.push_back(client_fd);
+	
+	client_to_server[new_fd] = server_socket;
+	std::cout << "\033[0;35m[Connection]\033[0m New client " << new_fd 
+			  << " connected to server socket " << server_socket << std::endl;
 }
 
 void Webserver::handleClientData(size_t index) {
 	int client_fd = fds[index].fd;
-	
 	int server_socket = client_to_server[client_fd];
-	ServerConfig* currentServer = NULL;
 	
+	// Find server configuration for this connection
+	ServerConfig* server = NULL;
 	for (size_t i = 0; i < _servers.size(); ++i) {
 		if (_servers[i].getSocket() == server_socket) {
-			currentServer = &_servers[i];
+			server = &_servers[i];
 			break;
 		}
 	}
 	
-	if (!currentServer) {
-		std::cerr << "\033[0;31m[Error]\033[0m No server found for client " << client_fd << std::endl;
-		close(client_fd);
-		fds.erase(fds.begin() + index);
+	if (!server) {
+		std::cerr << "Error: No server configuration found for socket " << server_socket << std::endl;
 		return;
 	}
-
-	std::string& requestData = currentServer->getClientData(client_fd);
-
-	char buffer[1024];
-	int bytesRead = recv(client_fd, buffer, sizeof(buffer), 0);
-	if (bytesRead <= 0) {
-		if (bytesRead < 0) {
-			// std::cerr << "Error reading from client socket: " << strerror(errno) << std::endl;
+	
+	// Read and process client data
+	if (server->readClientData(client_fd)) {
+		try {
+			std::string& requestData = server->getClientData(client_fd);
+			HttpRequest httpRequest(requestData.c_str(), requestData.length());
+			
+			ServerConfig* matchingServer = findMatchingServer(httpRequest.getHost(), httpRequest.getPort());
+			if (matchingServer) {
+				processRequest(httpRequest, matchingServer, client_fd);
+			} else {
+				// Use default server if no match found
+				processRequest(httpRequest, server, client_fd);
+			}
+		} catch (const std::exception& e) {
+			std::cerr << "Error processing request: " << e.what() << std::endl;
 		}
-		close(client_fd);
-		fds.erase(fds.begin() + index);
-		return;
-	}
-
-	requestData.append(buffer, bytesRead);
-
-	if (isCompleteRequest(requestData)) {
-		HttpRequest httpRequest(requestData.c_str(), requestData.size());
-		httpRequest.print();
-
-		std::string requestHost = httpRequest.getHost();
-		int requestPort = httpRequest.getPort();
-
-		// Finde den richtigen Server basierend auf Host und Port
-		ServerConfig* matchedServer = findMatchingServer(requestHost, requestPort);
 		
-		if (matchedServer != NULL) {
-			processRequest(httpRequest, matchedServer, client_fd);
-		} else {
-			std::cerr << "No matching server configuration found for host: " 
-					  << requestHost << " and port: " << requestPort << std::endl;
-		}
-
+		// Close connection after processing
 		close(client_fd);
 		fds.erase(fds.begin() + index);
+		client_to_server.erase(client_fd);
 	}
 }
 
-bool Webserver::isCompleteRequest(const std::string& requestData) {
-	size_t headerEnd = requestData.find("\r\n\r\n");
-	if (headerEnd != std::string::npos) {
-		size_t contentLength = 0;
-		size_t contentLengthPos = requestData.find("Content-Length:");
-		if (contentLengthPos != std::string::npos) {
-			contentLengthPos += 15;
-			contentLength = std::atoi(requestData.c_str() + contentLengthPos);
-		}
-		return requestData.size() >= headerEnd + 4 + contentLength;
+void Webserver::setNonBlocking(int sockfd) {
+	int flags = fcntl(sockfd, F_GETFL, 0);
+	if (flags == -1) {
+		std::cerr << "Error getting socket flags: " << strerror(errno) << std::endl;
+		return;
 	}
-	return false;
+	if (fcntl(sockfd, F_SETFL, flags | O_NONBLOCK) == -1) {
+		std::cerr << "Error setting socket to non-blocking: " << strerror(errno) << std::endl;
+	}
+}
+
+void Webserver::setSocketTimeout(int sockfd, int timeout_seconds) {
+	struct timeval timeout;
+	timeout.tv_sec = timeout_seconds;
+	timeout.tv_usec = 0;
+	
+	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
+		std::cerr << "Error setting receive timeout: " << strerror(errno) << std::endl;
+	}
+	if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) < 0) {
+		std::cerr << "Error setting send timeout: " << strerror(errno) << std::endl;
+	}
 }
 
 ServerConfig* Webserver::findMatchingServer(const std::string& host, int port) {
@@ -248,27 +246,4 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 	}
 	
 	server->eraseClientData(client_fd);
-}
-
-void Webserver::setNonBlocking(int sockfd) {
-	int flags = fcntl(sockfd, F_GETFL, 0);
-	if (flags == -1) {
-		perror("fcntl");
-		return;
-	}
-	if (fcntl(sockfd, F_SETFL, flags | O_NONBLOCK) == -1) {
-		perror("fcntl");
-	}
-}
-
-void Webserver::setSocketTimeout(int sockfd, int timeout_seconds) {
-	struct timeval timeout;
-	timeout.tv_sec = timeout_seconds;
-	timeout.tv_usec = 0;
-	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
-		perror("setsockopt SO_RCVTIMEO");
-	}
-	if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) < 0) {
-		perror("setsockopt SO_SNDTIMEO");
-	}
 }
