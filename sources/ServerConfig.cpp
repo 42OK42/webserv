@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/18 17:04:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/05 15:24:46 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/05 17:12:06 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -121,13 +121,7 @@ int ServerConfig::setupServerSocket()
 
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(_port);
-
-	// Set the IP address based on the host
-	if (_host == "localhost")
-		server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-	else
-		server_addr.sin_addr.s_addr = inet_addr(_host.c_str());
-		
+	server_addr.sin_addr.s_addr = INADDR_ANY;
 
 	// Bind the socket to the address and port
 	if (bind(m_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)

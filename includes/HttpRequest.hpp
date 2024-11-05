@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:28:34 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/24 17:17:33 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/05 16:35:47 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,6 +49,8 @@ private:
 
 	std::string host;
 	int port;
+
+	std::string _boundary;
 
 	void parse(const char* buffer, int bytesRead);
 	void parseMultipartData(const std::string& boundary);

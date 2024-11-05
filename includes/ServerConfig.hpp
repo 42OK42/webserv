@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/24 16:57:08 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/05 16:30:36 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,7 @@ extern bool sigint_flag;
 class ServerConfig
 {
 	private:
+		static const std::string UPLOAD_DIR;
 
 		int								_port;
 		std::string						_host;
@@ -109,6 +110,8 @@ class ServerConfig
 		std::string readFile(const std::string& filepath);
 		void set_socket_timeout(int sockfd, int timeout_seconds);
 		bool readClientData(int client_fd);
+
+		static std::string getUploadDir() { return "/home/okrahl/sgoinfre/uploads_webserv/"; }
 
 		class SocketCreationFailed : public std::exception {
 			public:
