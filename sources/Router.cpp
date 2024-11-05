@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/05 14:35:42 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/05 15:56:11 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,11 +47,20 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 
 	try {
 		Location location = _serverConfig.findLocation(path);
+		std::cout << "\033[0;33m[Router]\033[0m Checking location config for " << path 
+				  << " on port " << _serverConfig.getPort() << std::endl;
 
 		if (!location.isMethodAllowed(method)) {
+			std::cout << "\033[0;31m[Router]\033[0m Method " << method 
+					  << " not allowed for " << path 
+					  << " on port " << _serverConfig.getPort() << std::endl;
 			setErrorResponse(response, 405);
 			return;
 		}
+
+		std::cout << "\033[0;32m[Router]\033[0m Method " << method 
+				  << " allowed for " << path 
+				  << " on port " << _serverConfig.getPort() << std::endl;
 
 		std::map<std::string, RouteHandler>::const_iterator it = routes.find(path);
 		if (it != routes.end()) {

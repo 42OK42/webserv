@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/18 17:04:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/05 14:27:11 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/05 15:24:46 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -113,6 +113,11 @@ int ServerConfig::setupServerSocket()
 	m_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (m_socket == -1)
 		throw ServerConfig::SocketCreationFailed();
+
+	int opt = 1;
+	if (setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+		throw ServerConfig::SocketCreationFailed();
+	}
 
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(_port);

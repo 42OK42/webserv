@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/05 14:30:37 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/05 15:52:02 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,8 @@
 #include <fcntl.h>
 #include <cstring>
 #include <csignal>
+#include <set>
+#include <utility>  // für std::pair
 
 Webserver::Webserver() {}
 
@@ -35,22 +37,48 @@ Webserver::~Webserver() {
 }
 
 void Webserver::initializeServers() {
+	std::set<int> initializedPorts;  // Nur ein Socket pro Port
+
 	for (size_t i = 0; i < _servers.size(); ++i) {
 		ServerConfig& server = _servers[i];
+		int port = server.getPort();
+
+		if (initializedPorts.find(port) != initializedPorts.end()) {
+			continue;  // Port bereits initialisiert
+		}
+
 		try {
 			int server_socket = server.setupServerSocket();
 			struct pollfd server_fd;
 			server_fd.fd = server_socket;
 			server_fd.events = POLLIN;
 			fds.push_back(server_fd);
-			std::cout << "Server initialized on " << server.getHost() << ":" << server.getPort() << std::endl;
+			initializedPorts.insert(port);
+			std::cout << "Socket initialized for port " << port << std::endl;
 		}
 		catch (const std::exception& e) {
-			std::cerr << "Error initializing server: " << e.what() << std::endl;
+			std::cerr << "Error initializing socket for port " << port << ": " << e.what() << std::endl;
 		}
 	}
 
-	runEventLoop();
+	if (!fds.empty()) {
+		// Zeige alle verfügbaren Server-Konfigurationen
+		for (size_t i = 0; i < _servers.size(); ++i) {
+			std::cout << "Server configuration available: " 
+					  << _servers[i].getHost() << ":" 
+					  << _servers[i].getPort() 
+					  << " (server_name: ";
+			const std::vector<std::string>& serverNames = _servers[i].getServerName();
+			for (size_t j = 0; j < serverNames.size(); ++j) {
+				std::cout << serverNames[j];
+				if (j < serverNames.size() - 1) std::cout << ", ";
+			}
+			std::cout << ")" << std::endl;
+		}
+		runEventLoop();
+	} else {
+		throw std::runtime_error("No server sockets could be initialized");
+	}
 }
 
 void Webserver::runEventLoop() {
@@ -90,13 +118,16 @@ void Webserver::handleNewConnection(int server_socket) {
 	socklen_t client_addr_len = sizeof(client_addr);
 	int new_fd = accept(server_socket, (struct sockaddr*)&client_addr, &client_addr_len);
 	if (new_fd >= 0) {
-		// std::cout << "Accepted new connection: " << new_fd << std::endl;
 		setNonBlocking(new_fd);
 		setSocketTimeout(new_fd, 300);
 		struct pollfd new_pollfd;
 		new_pollfd.fd = new_fd;
 		new_pollfd.events = POLLIN;
 		fds.push_back(new_pollfd);
+		
+		client_to_server[new_fd] = server_socket;
+		std::cout << "\033[0;35m[Connection]\033[0m New client " << new_fd 
+				  << " connected to server socket " << server_socket << std::endl;
 	} else {
 		perror("accept");
 	}
@@ -104,7 +135,25 @@ void Webserver::handleNewConnection(int server_socket) {
 
 void Webserver::handleClientData(size_t index) {
 	int client_fd = fds[index].fd;
-	std::string& requestData = _servers[0].getClientData(client_fd);
+	
+	int server_socket = client_to_server[client_fd];
+	ServerConfig* currentServer = NULL;
+	
+	for (size_t i = 0; i < _servers.size(); ++i) {
+		if (_servers[i].getSocket() == server_socket) {
+			currentServer = &_servers[i];
+			break;
+		}
+	}
+	
+	if (!currentServer) {
+		std::cerr << "\033[0;31m[Error]\033[0m No server found for client " << client_fd << std::endl;
+		close(client_fd);
+		fds.erase(fds.begin() + index);
+		return;
+	}
+
+	std::string& requestData = currentServer->getClientData(client_fd);
 
 	char buffer[1024];
 	int bytesRead = recv(client_fd, buffer, sizeof(buffer), 0);
@@ -126,12 +175,14 @@ void Webserver::handleClientData(size_t index) {
 		std::string requestHost = httpRequest.getHost();
 		int requestPort = httpRequest.getPort();
 
+		// Finde den richtigen Server basierend auf Host und Port
 		ServerConfig* matchedServer = findMatchingServer(requestHost, requestPort);
-
+		
 		if (matchedServer != NULL) {
 			processRequest(httpRequest, matchedServer, client_fd);
 		} else {
-			std::cerr << "No matching server configuration found for host: " << requestHost << " and port: " << requestPort << std::endl;
+			std::cerr << "No matching server configuration found for host: " 
+					  << requestHost << " and port: " << requestPort << std::endl;
 		}
 
 		close(client_fd);
@@ -154,23 +205,28 @@ bool Webserver::isCompleteRequest(const std::string& requestData) {
 }
 
 ServerConfig* Webserver::findMatchingServer(const std::string& host, int port) {
+	std::cout << "\033[0;33m[Router]\033[0m Searching server for " << host << ":" << port << std::endl;  // Gelb
+	
 	for (size_t i = 0; i < _servers.size(); ++i) {
 		const ServerConfig& server = _servers[i];
 		
-		// Check if the port matches
 		if (server.getPort() == port) {
-			// Check if the host matches
 			if (server.getHost() == host) {
+				std::cout << "\033[0;32m[Router]\033[0m Found matching server: " 
+						  << server.getHost() << ":" << server.getPort() << std::endl;  // Grün
 				return &_servers[i];
 			}
 
-			// Check if the host matches any of the server names
 			const std::vector<std::string>& serverNames = server.getServerName();
 			if (std::find(serverNames.begin(), serverNames.end(), host) != serverNames.end()) {
+				std::cout << "\033[0;32m[Router]\033[0m Found matching server by name: " 
+						  << server.getHost() << ":" << server.getPort() << std::endl;  // Grün
 				return &_servers[i];
 			}
 		}
 	}
+	
+	std::cout << "\033[0;31m[Router]\033[0m No matching server found!" << std::endl;  // Rot
 	return NULL;
 }
 

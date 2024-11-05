@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:27 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/30 18:41:49 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/05 15:45:18 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -136,21 +136,21 @@ void HttpRequest::parse(const char* buffer, int bytesRead) {
 void HttpRequest::print() const {
 	std::cout << "Method: " << method << "\n";
 	std::cout << "URL: " << url << "\n";
-	std::cout << "HTTP Version: " << httpVersion << "\n";
-	std::cout << "Headers:\n";
-	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
-		std::cout << "  " << it->first << ": " << it->second << "\n";
-	}
-	if (!body.empty()) {
-		std::cout << "Body (first 100 chars): " << body.substr(0, 100) << "\n";
-		if (body.size() > 100) {
-			std::cout << "  (truncated, total size: " << body.size() << " bytes)\n";
-		}
-	}
-	if (!filenames.empty()) {
-		std::cout << "Filenames:\n";
-		for (size_t i = 0; i < filenames.size(); ++i) {
-			std::cout << "  " << filenames[i] << "\n";
-		}
-	}
+	// std::cout << "HTTP Version: " << httpVersion << "\n";
+	// std::cout << "Headers:\n";
+	// for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
+	// 	std::cout << "  " << it->first << ": " << it->second << "\n";
+	// }
+	// if (!body.empty()) {
+	// 	std::cout << "Body (first 100 chars): " << body.substr(0, 100) << "\n";
+	// 	if (body.size() > 100) {
+	// 		std::cout << "  (truncated, total size: " << body.size() << " bytes)\n";
+	// 	}
+	// }
+	// if (!filenames.empty()) {
+	// 	std::cout << "Filenames:\n";
+	// 	for (size_t i = 0; i < filenames.size(); ++i) {
+	// 		std::cout << "  " << filenames[i] << "\n";
+	// 	}
+	// }
 }
