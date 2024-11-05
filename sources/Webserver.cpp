@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/30 18:36:58 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/05 14:30:37 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,7 +90,7 @@ void Webserver::handleNewConnection(int server_socket) {
 	socklen_t client_addr_len = sizeof(client_addr);
 	int new_fd = accept(server_socket, (struct sockaddr*)&client_addr, &client_addr_len);
 	if (new_fd >= 0) {
-		std::cout << "Accepted new connection: " << new_fd << std::endl;
+		// std::cout << "Accepted new connection: " << new_fd << std::endl;
 		setNonBlocking(new_fd);
 		setSocketTimeout(new_fd, 300);
 		struct pollfd new_pollfd;
@@ -110,7 +110,7 @@ void Webserver::handleClientData(size_t index) {
 	int bytesRead = recv(client_fd, buffer, sizeof(buffer), 0);
 	if (bytesRead <= 0) {
 		if (bytesRead < 0) {
-			std::cerr << "Error reading from client socket: " << strerror(errno) << std::endl;
+			// std::cerr << "Error reading from client socket: " << strerror(errno) << std::endl;
 		}
 		close(client_fd);
 		fds.erase(fds.begin() + index);
@@ -154,29 +154,29 @@ bool Webserver::isCompleteRequest(const std::string& requestData) {
 }
 
 ServerConfig* Webserver::findMatchingServer(const std::string& host, int port) {
-    for (size_t i = 0; i < _servers.size(); ++i) {
-        const ServerConfig& server = _servers[i];
-        
-        // Check if the port matches
-        if (server.getPort() == port) {
-            // Check if the host matches
-            if (server.getHost() == host) {
-                return &_servers[i];
-            }
+	for (size_t i = 0; i < _servers.size(); ++i) {
+		const ServerConfig& server = _servers[i];
+		
+		// Check if the port matches
+		if (server.getPort() == port) {
+			// Check if the host matches
+			if (server.getHost() == host) {
+				return &_servers[i];
+			}
 
-            // Check if the host matches any of the server names
-            const std::vector<std::string>& serverNames = server.getServerName();
-            if (std::find(serverNames.begin(), serverNames.end(), host) != serverNames.end()) {
-                return &_servers[i];
-            }
-        }
-    }
-    return NULL;
+			// Check if the host matches any of the server names
+			const std::vector<std::string>& serverNames = server.getServerName();
+			if (std::find(serverNames.begin(), serverNames.end(), host) != serverNames.end()) {
+				return &_servers[i];
+			}
+		}
+	}
+	return NULL;
 }
 
 void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, int client_fd) {
-	std::cout << "Processing request for server: " 
-			  << server->getHost() << ":" << server->getPort() << std::endl;
+	// std::cout << "Processing request for server: " 
+	//           << server->getHost() << ":" << server->getPort() << std::endl;
 
 	HttpResponse httpResponse(httpRequest);
 	Router router(*server);
@@ -186,9 +186,9 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 	
 	std::string httpResponseString = httpResponse.toString();
 	if (send(client_fd, httpResponseString.c_str(), httpResponseString.size(), 0) < 0) {
-		std::cerr << "Error sending response: " << strerror(errno) << std::endl;
+		// std::cerr << "Error sending response: " << strerror(errno) << std::endl;
 	} else {
-		std::cout << "Response sent to client: " << client_fd << std::endl;
+		// std::cout << "Response sent to client: " << client_fd << std::endl;
 	}
 	
 	server->eraseClientData(client_fd);

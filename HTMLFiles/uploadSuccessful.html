@@ -38,7 +38,7 @@
 
 		function deleteFile(filename) {
 			if (confirm(`Are you sure you want to delete ${filename}?`)) {
-				fetch(`/upload?filename=${encodeURIComponent(filename)}`, {
+				fetch(`/uploadSuccessful?filename=${encodeURIComponent(filename)}`, {
 					method: 'DELETE'
 				})
 				.then(response => response.text())
