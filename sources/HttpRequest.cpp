@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:27 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/05 17:39:12 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/05 18:03:52 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -134,6 +134,27 @@ void HttpRequest::parse(const char* buffer, int bytesRead) {
 }
 
 void HttpRequest::print() const {
+	std::cout << "\n=== HTTP Request Details ===" << std::endl;
 	std::cout << "Method: " << method << std::endl;
 	std::cout << "URL: " << url << std::endl;
+	std::cout << "HTTP Version: " << httpVersion << std::endl;
+	std::cout << "Host: " << host << ":" << port << std::endl;
+	
+	std::cout << "\nHeaders:" << std::endl;
+	for(std::map<std::string, std::string>::const_iterator it = headers.begin(); 
+		it != headers.end(); ++it) {
+		std::cout << "  " << it->first << ": " << it->second << std::endl;
+	}
+	
+	std::cout << "\nFiles Found:" << std::endl;
+	for(size_t i = 0; i < filenames.size(); ++i) {
+		std::cout << "  " << filenames[i] << std::endl;
+	}
+	
+	std::cout << "\nBody Size: " << body.size() << " bytes" << std::endl;
+	if (body.size() > 0) {
+		std::cout << "Body Preview (first 100 chars):" << std::endl;
+		std::cout << body.substr(0, 100) << std::endl;
+	}
+	std::cout << "==========================\n" << std::endl;
 }

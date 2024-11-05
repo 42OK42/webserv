@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/05 17:46:27 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/05 18:12:28 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,6 +52,14 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 	}
 
 	try {
+		// Zuerst prüfen, ob wir eine spezielle Route haben
+		std::map<std::string, RouteHandler>::iterator routeIt = routes.find(path);
+		if (routeIt != routes.end()) {
+			std::cout << "[Router] Found special route for: " << path << std::endl;
+			(this->*(routeIt->second))(request, response);
+			return;
+		}
+
 		Location location = _serverConfig.findLocation(path);
 		std::string fullPath = location.getRoot();
 		
@@ -67,18 +75,19 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 				std::cout << "\033[0;33m[Router]\033[0m Path is a directory" << std::endl;
 				
 				// Prüfe auf index-Datei
-				std::string indexPath = fullPath;
-				if (!location.getIndex().empty()) {
-					indexPath += "/" + location.getIndex();
-					std::cout << "\033[0;33m[Router]\033[0m Checking for index: " << indexPath << std::endl;
-					
-					if (stat(indexPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
-						std::cout << "\033[0;33m[Router]\033[0m Using index file" << std::endl;
-						std::string content = readFile(indexPath);
-						response.setStatusCode(200);
-						response.setBody(content);
-						response.setHeader("Content-Type", "text/html");
-						return;
+				if (request.getMethod() == "GET") {
+					std::string indexPath = fullPath;
+					if (!location.getIndex().empty()) {
+						indexPath += "/" + location.getIndex();
+						
+						if (stat(indexPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
+							std::cout << "\033[0;33m[Router]\033[0m Using index file" << std::endl;
+							std::string content = readFile(indexPath);
+							response.setStatusCode(200);
+							response.setBody(content);
+							response.setHeader("Content-Type", "text/html");
+							return;
+						}
 					}
 				}
 				
@@ -132,33 +141,84 @@ void Router::handleHomeRoute(const HttpRequest& req, HttpResponse& res) {
 }
 
 void Router::handleUploadRoute(const HttpRequest& request, HttpResponse& response) {
+	std::cout << "\n[Upload] === Starting handleUploadRoute ===" << std::endl;
+	
+	// Print complete request details
+	request.print();
+	
 	if (request.getMethod() == "POST") {
 		std::string uploadDir = "/home/okrahl/sgoinfre/uploads_webserv/";
 		
-		// Ensure upload directory exists
+		std::cout << "[Upload] Starting upload process..." << std::endl;
+		std::cout << "[Upload] Content-Type: " << request.getHeader("Content-Type") << std::endl;
+		std::cout << "[Upload] Content-Length: " << request.getHeader("Content-Length") << std::endl;
+		std::cout << "[Upload] Upload directory: " << uploadDir << std::endl;
+		
 		ensureDirectoryExists(uploadDir);
 		
-		// Save uploaded files
-		saveUploadedFiles(request, uploadDir);
+		const std::vector<std::string>& filenames = request.getFilenames();
+		std::cout << "[Upload] Number of files found: " << filenames.size() << std::endl;
 		
-		std::cout << "[Upload] Processing upload to: " << uploadDir << std::endl;
+		const std::string& body = request.getBody();
+		std::cout << "[Upload] Body size: " << body.size() << " bytes" << std::endl;
+		std::cout << "[Upload] First 100 chars of body: \n" << body.substr(0, 100) << std::endl;
 		
-		// Redirect to success page
+		size_t pos = 0;
+
+		for (size_t i = 0; i < filenames.size(); ++i) {
+			std::cout << "\n[Upload] Processing file " << (i+1) << ": " << filenames[i] << std::endl;
+			
+			size_t start = body.find("\r\n\r\n", pos) + 4;
+			std::cout << "[Upload] Content start position: " << start << std::endl;
+			if (start == std::string::npos) {
+				std::cout << "[Upload] ERROR: Could not find start of file content" << std::endl;
+				continue;
+			}
+			
+			size_t end = body.find("\r\n--", start);
+			if (end == std::string::npos) {
+				std::cout << "[Upload] Using body length as end position" << std::endl;
+				end = body.length();
+			}
+			std::cout << "[Upload] Content end position: " << end << std::endl;
+			
+			std::string fileContent = body.substr(start, end - start);
+			std::cout << "[Upload] File content size: " << fileContent.size() << " bytes" << std::endl;
+			pos = end + 4;
+
+			if (fileContent.size() >= 2 && fileContent.compare(fileContent.size() - 2, 2, "\r\n") == 0) {
+				fileContent.erase(fileContent.size() - 2);
+				std::cout << "[Upload] Removed trailing CRLF" << std::endl;
+			}
+
+			std::string savedFilename = uploadDir + filenames[i];
+			std::cout << "[Upload] Attempting to save file to: " << savedFilename << std::endl;
+			
+			std::ofstream outFile(savedFilename.c_str(), std::ios::binary);
+			if (outFile.is_open()) {
+				outFile.write(fileContent.c_str(), fileContent.size());
+				outFile.close();
+				std::cout << "[Upload] File saved successfully: " << savedFilename << std::endl;
+			} else {
+				std::cerr << "[Upload] Failed to save file: " << savedFilename << std::endl;
+				std::cerr << "[Upload] Error: " << strerror(errno) << std::endl;
+			}
+		}
+		
+		std::cout << "[Upload] Setting response for redirect" << std::endl;
 		response.setStatusCode(303);
 		response.setHeader("Location", "/uploadSuccessful");
 	} else if (request.getMethod() == "GET") {
-		// For GET requests, either show directory listing or upload form
+		std::cout << "[Upload] Handling GET request" << std::endl;
 		Location location = _serverConfig.findLocation("/upload");
 		if (location.getAutoIndex()) {
-			// Show directory listing of the upload directory
 			std::string uploadDir = "/home/okrahl/sgoinfre/uploads_webserv/";
-			std::cout << "[Router] Generating directory listing for: " << uploadDir << std::endl;
+			std::cout << "[Upload] Generating directory listing for: " << uploadDir << std::endl;
 			std::string dirListing = generateDirectoryListing(uploadDir, "/upload");
 			response.setStatusCode(200);
 			response.setBody(dirListing);
 			response.setHeader("Content-Type", "text/html");
 		} else {
-			// Show upload form
 			std::string formPath = location.getRoot() + "/upload.html";
 			std::cout << "[Upload] Serving upload form from: " << formPath << std::endl;
 			std::string content = readFile(formPath);
@@ -167,19 +227,30 @@ void Router::handleUploadRoute(const HttpRequest& request, HttpResponse& respons
 			response.setHeader("Content-Type", "text/html");
 		}
 	}
+	std::cout << "[Upload] === Finished handleUploadRoute ===" << std::endl;
 }
 
-void Router::handleUploadSuccessRoute(const HttpRequest& req, HttpResponse& res) {
-	if (req.getMethod() == "GET") {
+void Router::handleUploadSuccessRoute(const HttpRequest& request, HttpResponse& response) {
+	std::cout << "[UploadSuccess] Starting upload success route" << std::endl;
+	std::cout << "[UploadSuccess] Method: " << request.getMethod() << std::endl;
+	
+	if (request.getMethod() == "GET") {
 		Location location = _serverConfig.findLocation("/uploadSuccessful");
 		std::string root = location.getRoot();
-		std::string index = location.getIndex();
-		std::string fullPath = root + "/" + index;
+		std::string successPath = root + "/uploadSuccessful.html";
 		
-		std::cout << "\033[0;33m[Upload]\033[0m Serving success page from: " << fullPath << std::endl;
-		std::string successContent = readFile(fullPath);
+		std::cout << "[UploadSuccess] Loading success page from: " << successPath << std::endl;
+		std::string successContent = readFile(successPath);
 		
-		std::vector<std::string> files = getFilesInDirectory(ServerConfig::getUploadDir());
+		std::string uploadDir = "/home/okrahl/sgoinfre/uploads_webserv/";  // Hardcoded für Test
+		std::cout << "[UploadSuccess] Reading files from directory: " << uploadDir << std::endl;
+		
+		std::vector<std::string> files = getFilesInDirectory(uploadDir);
+		std::cout << "[UploadSuccess] Found " << files.size() << " files:" << std::endl;
+		for (size_t i = 0; i < files.size(); ++i) {
+			std::cout << "  - " << files[i] << std::endl;
+		}
+		
 		std::ostringstream json;
 		json << "[";
 		for (size_t i = 0; i < files.size(); ++i) {
@@ -187,36 +258,48 @@ void Router::handleUploadSuccessRoute(const HttpRequest& req, HttpResponse& res)
 			json << "\"" << files[i] << "\"";
 		}
 		json << "]";
-
+		
 		std::string script = "<script>const fileList = " + json.str() + ";</script>";
+		std::cout << "[UploadSuccess] Inserting script: " << script << std::endl;
+		
 		size_t pos = successContent.find("</head>");
 		if (pos != std::string::npos) {
 			successContent.insert(pos, script);
-		}
-
-		res.setStatusCode(200);
-		res.setBody(successContent);
-		res.setHeader("Content-Type", "text/html");
-	}
-	else if (req.getMethod() == "DELETE") {
-		std::string filename = extractFilenameFromUrl(req.getUrl());
-		if (filename.empty()) {
-			setErrorResponse(res, 400);
-			return;
-		}
-
-		std::string filePath = ServerConfig::getUploadDir() + filename;
-		
-		if (remove(filePath.c_str()) == 0) {
-			res.setStatusCode(200);
-			res.setBody("File Deleted Successfully");
+			std::cout << "[UploadSuccess] Script inserted successfully" << std::endl;
 		} else {
-			setErrorResponse(res, 404);
+			std::cout << "[UploadSuccess] ERROR: Could not find </head> tag!" << std::endl;
 		}
-		res.setHeader("Content-Type", "text/plain");
+
+		response.setStatusCode(200);
+		response.setBody(successContent);
+		response.setHeader("Content-Type", "text/html");
 	}
-	else {
-		setErrorResponse(res, 405);
+	else if (request.getMethod() == "DELETE") {
+		std::string uploadDir = "/home/okrahl/sgoinfre/uploads_webserv/";
+		std::string url = request.getUrl();
+		
+		// Nutze die Helper-Funktion
+		std::string filename = extractFilenameFromUrl(url);
+		
+		if (!filename.empty()) {
+			std::string fullPath = uploadDir + filename;
+			std::cout << "[UploadSuccess] Attempting to delete file: " << fullPath << std::endl;
+			
+			if (remove(fullPath.c_str()) == 0) {
+				std::cout << "[UploadSuccess] File deleted successfully" << std::endl;
+				response.setStatusCode(200);
+				response.setBody("File deleted successfully");
+			} else {
+				std::cerr << "[UploadSuccess] Error deleting file: " << strerror(errno) << std::endl;
+				response.setStatusCode(500);
+				response.setBody("Error deleting file");
+			}
+		} else {
+			std::cout << "[UploadSuccess] No filename provided in DELETE request" << std::endl;
+			response.setStatusCode(400);
+			response.setBody("No filename provided");
+		}
+		response.setHeader("Content-Type", "text/plain");
 	}
 }
 
@@ -252,61 +335,6 @@ std::vector<std::string> Router::getFilesInDirectory(const std::string& director
 		closedir(dir);
 	}
 	return files;
-}
-
-void Router::saveUploadedFiles(const HttpRequest& request, const std::string& uploadDir) {
-	const std::string& body = request.getBody();
-	std::string boundary = request.getHeader("Content-Type");
-	
-	std::cout << "[Upload] Starting file save process..." << std::endl;
-	
-	size_t boundaryPos = boundary.find("boundary=");
-	if (boundaryPos != std::string::npos) {
-		boundary = boundary.substr(boundaryPos + 9);
-		std::string delimiter = "--" + boundary;
-		
-		size_t pos = 0;
-		size_t end = body.find(delimiter, pos);
-		
-		while (end != std::string::npos) {
-			size_t start = pos + delimiter.length() + 2;
-			pos = end + delimiter.length();
-			end = body.find(delimiter, pos);
-			
-			if (end != std::string::npos) {
-				std::string part = body.substr(start, end - start);
-				size_t headerEnd = part.find("\r\n\r\n");
-				
-				if (headerEnd != std::string::npos) {
-					std::string headers = part.substr(0, headerEnd);
-					std::string content = part.substr(headerEnd + 4);
-					
-					size_t filenamePos = headers.find("filename=");
-					if (filenamePos != std::string::npos) {
-						std::string filename = extractFilename(headers);
-						if (!filename.empty()) {
-							if (content.size() >= 2 && content.substr(content.size()-2) == "\r\n") {
-								content = content.substr(0, content.size()-2);
-							}
-							
-							std::string filepath = uploadDir + filename;
-							std::cout << "[Upload] Attempting to save file: " << filepath << std::endl;
-							
-							std::ofstream file(filepath.c_str(), std::ios::binary);
-							if (file.is_open()) {
-								file.write(content.c_str(), content.size());
-								file.close();
-								std::cout << "[Upload] Successfully saved file: " << filepath << std::endl;
-							} else {
-								std::cerr << "[Upload] Failed to save file: " << filepath << std::endl;
-								std::cerr << "[Upload] Error: " << strerror(errno) << std::endl;
-							}
-						}
-					}
-				}
-			}
-		}
-	}
 }
 
 void Router::addRoute(const std::string& path, RouteHandler handler) {
