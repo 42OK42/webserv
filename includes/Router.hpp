@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/07 15:22:13 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/07 16:42:14 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,7 @@ private:
 	void handleHomeRoute(const HttpRequest& request, HttpResponse& response);
 	void handleUploadRoute(const HttpRequest& request, HttpResponse& response);
 	void handleUploadSuccessRoute(const HttpRequest& request, HttpResponse& response);
+	void handleFormRoute(const HttpRequest& request, HttpResponse& response);
 
 	// Neue Hilfsmethode für die Verzeichnisauflistung
 	std::string generateDirectoryListing(const std::string& dirPath, const std::string& requestPath);

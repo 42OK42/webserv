@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/07 16:36:59 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/07 16:45:49 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,7 @@ void Router::initializeRoutes() {
 	addRoute("/", &Router::handleHomeRoute);
 	addRoute("/upload", &Router::handleUploadRoute);
 	addRoute("/uploadSuccessful", &Router::handleUploadSuccessRoute);
-	
+	addRoute("/form", &Router::handleFormRoute);
 }
 
 void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
@@ -111,6 +111,22 @@ void Router::handleHomeRoute(const HttpRequest& req, HttpResponse& res) {
 		res.setHeader("Content-Type", "text/html");
 	} else {
 		setErrorResponse(res, 405);
+	}
+}
+
+void Router::handleFormRoute(const HttpRequest& request, HttpResponse& response) {
+	if (request.getMethod() == "GET") {
+		Location location = _serverConfig.findLocation("/form");
+		std::string root = location.getRoot();
+		std::string index = location.getIndex();
+		std::string fullPath = root + "/" + index;
+		
+		std::string content = readFile(fullPath);
+		response.setStatusCode(200);
+		response.setBody(content);
+		response.setHeader("Content-Type", "text/html");
+	} else {
+		setErrorResponse(response, 405);
 	}
 }
 
