@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Parser.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/30 16:36:39 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/07 15:21:58 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -144,118 +144,71 @@ std::vector<int> Parser::checkPorts( std::vector<std::string>& tokens)
 }
 bool Parser::ParseConfigStream(std::stringstream& buffer)
 {
-    ServerConfig serverTemplate;   // Create a new server template for each server block
-    std::string line, key, errorPage, sizeStr;
-    int errorCode;
-    std::vector<std::string> locationVector, portVector, hostVector, nameVector;
-    bool insideServerBlock = false;
+	std::string line;
+	ServerConfig* currentServer = NULL;
 
-    while (std::getline(buffer, line))
-    {
-        std::istringstream iss(line);
-        if (!(iss >> key))
-            continue;
+	while (std::getline(buffer, line))
+	{
+		std::istringstream iss(line);
+		std::string key;
+		if (!(iss >> key))
+			continue;
 
-        key = removeSemicolon(key);
+		key = removeSemicolon(key);
+		if (key == "listen")
+		{
+			std::string port;
 
-		if (key == "server") {
-            if (line.find("{") != std::string::npos) {
-                std::cout << "Entering new server block...\n";
-            } else {
-                std::string nextLine;
-                if (std::getline(buffer, nextLine) && nextLine.find("{") != std::string::npos) {
-                    std::cout << "Entering new server block...\n";
-                } else {
-                    std::cerr << "Error: Expected '{' after 'server' declaration.\n";
-                    return false; // Handle the error as appropriate
-                }
-            }
+			while (iss >> port) {
+				port = removeSemicolon(port);
+				if (!port.empty())
+					portVector.push_back(port);
+			}
+		}
+		if (key == "host")
+		{
+			std::string host;
 
-        if (insideServerBlock) {
-                // If we're already inside a server block, finish the current one
-                std::cout << "Finished server block, pushing to servers.\n";
-                serverTemplate.checkErrorPage();
-                _serverTemplate = serverTemplate;
-                parseMultipleServers(portVector, hostVector);
-                serverTemplate = ServerConfig();    // Reset for the next server
-                portVector.clear();  // Reset portVector and other vectors if necessary
-                hostVector.clear();
-                nameVector.clear();
-            }
-            insideServerBlock = true;  // Now inside a new server block
-            continue;
-        }
-
-        // Detect the end of a server block
-        if (line.find("}") != std::string::npos) {
-            if (insideServerBlock) {
-                std::cout << "Closing server block...\n";
-				serverTemplate.checkErrorPage();
-				_serverTemplate = serverTemplate;
-				parseMultipleServers(portVector, hostVector);
-                serverTemplate = ServerConfig();    // Reset for next server
-                insideServerBlock = false;          // Exit the server block
-                portVector.clear();  // Reset vectors for the next server block
-                hostVector.clear();
-                nameVector.clear();
-            }
-            continue;
-        }
-
-        if (insideServerBlock) {
-            if (key == "listen") {
-                std::string port;
-                while (iss >> port) {
-                    port = removeSemicolon(port);
-                    if (!port.empty()) {
-                        std::cout << "Adding port: " << port << std::endl;
-                        portVector.push_back(port);
-                    }
-                }
-            }
-            else if (key == "host") {
-                std::string host;
-                while (iss >> host) {
-                    host = removeSemicolon(host);
-                    if (!host.empty()) {
-                        std::cout << "Adding host: " << host << std::endl;
-                        hostVector.push_back(removeSemicolon(host));
-
-                    }
-                }
-            }
-            else if (key == "server_name") {
-                std::string name;
-                while (iss >> name) {
-                    name = removeSemicolon(name);
-                    if (!name.empty()) {
-                        std::cout << "Adding server_name: " << name << std::endl;
-						nameVector.push_back(removeSemicolon(name));
-						serverTemplate.setServerName(nameVector);
-
-                    }
-                }
-            }
-            else if (key == "error_page") {
-                while (iss >> errorCode >> errorPage) {
-                    errorPage = removeSemicolon(errorPage);
-                    std::cout << "Adding error page for code: " << errorCode << ", page: " << errorPage << std::endl;
-                    serverTemplate.addErrorPage(errorCode, errorPage);
-                }
-            }
-            else if (key == "client_max_body_size") {
-                iss >> sizeStr;
-                sizeStr = removeSemicolon(sizeStr);
-                std::stringstream ss(sizeStr);
-                size_t size;
-                ss >> size;
-                std::cout << "Setting client_max_body_size to: " << size << " MB\n";
-                serverTemplate.setClientMaxBodySize(size * 1024 * 1024); // MB to bytes
-            }
-            else if (key == "location") {
-                std::string path;
-                iss >> path;
-                path = removeSemicolon(path);
+			while (iss >> host)
+			{
+				host = removeSemicolon(host);
+				if (!host.empty())
+					hostVector.push_back(removeSemicolon(host));
+			}
+		}
+		if (key == "server_name")
+		{
+			std::string name;
+			while (iss >> name)
+			{
+				name = removeSemicolon(name);
+				if (!name.empty())
+					nameVector.push_back(removeSemicolon(name));
+			}
+			serverTemplate.setServerName(nameVector);
+		}
+		else if (key == "error_page")
+		{
+			while (iss >> errorCode >> errorPage)
+			{
+				errorPage = removeSemicolon(errorPage);
+				serverTemplate.addErrorPage(errorCode, errorPage);
+			}
+		}
+		else if (key == "client_max_body_size")
+		{
+			iss >> sizeStr;
+			sizeStr = removeSemicolon(sizeStr);
+			std::stringstream ss(sizeStr);
+			size_t size;
+			ss >> size;
+			serverTemplate.setClientMaxBodySize(size * 1024 * 1024);
+		}
+		else if (key == "location")
+		{
+			std::string	path;
+			iss >> path;
+			path = removeSemicolon(path);
 
                 Location location;
                 location.setPath(path);
@@ -267,19 +220,13 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
     }
     if (insideServerBlock) {
 
-        std::cout << "Finalizing last server block...\n";
-        serverTemplate.checkErrorPage();
-		_serverTemplate = serverTemplate;
-		parseMultipleServers(portVector, hostVector);
-    }
+	serverTemplate.checkErrorPage();
+	_serverTemplate = serverTemplate;
+	parseMultipleServers(portVector, hostVector);
 
-    if (_servers.empty()) {
-        std::cout << "Error: _servers is empty!\n";
-    } else {
-        std::cout << "Printing all configured servers:\n";
-        for (size_t i = 0; i < _servers.size(); ++i)
-            std::cout << _servers[i];
-    }
+	// std::cout << "Printing all configured servers:\n";
+	// for (size_t i = 0; i < _servers.size(); ++i)
+	// 	std::cout << _servers[i];
 
     return true;
 }

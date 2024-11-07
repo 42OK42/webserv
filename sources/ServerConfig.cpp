@@ -6,14 +6,14 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/18 17:04:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/30 18:57:29 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/07 15:17:29 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../includes/ServerConfig.hpp"
-#include "../includes/Router.hpp"
-#include "../includes/HttpResponse.hpp"
-#include "../includes/HttpRequest.hpp"
+#include "ServerConfig.hpp"
+#include "Router.hpp"
+#include "HttpResponse.hpp"
+#include "HttpRequest.hpp"
 
 // #include "Parser.hpp"
 
@@ -54,7 +54,7 @@ void ServerConfig::set_socket_timeout(int sockfd, int timeout_seconds) {
 std::string ServerConfig::readFile(const std::string& filepath) {
 	std::ifstream file(filepath.c_str());
 	if (!file) {
-		std::cerr << "Could not open the file: " << filepath << std::endl;
+		std::cerr << "Error: Could not open file: " << filepath << std::endl;
 		return "";
 	}
 	std::stringstream buffer;
@@ -63,57 +63,31 @@ std::string ServerConfig::readFile(const std::string& filepath) {
 }
 
 bool ServerConfig::readClientData(int client_fd) {
-	std::cout << "readClientData called for fd: " << client_fd << std::endl;
 	char buffer[1024];
 	int n = recv(client_fd, buffer, sizeof(buffer), 0);
 	if (n <= 0) {
-		// Connection closed or error
-		if (n < 0) {
-			std::cerr << "Error reading from client socket: " << strerror(errno) << std::endl;
-		}
 		close(client_fd);
 		return false;
 	}
 
-	std::cout << "recv returned " << n << " bytes" << std::endl;
-
-	// Append data to client's buffer
 	client_data[client_fd].append(buffer, n);
 
-	// Print everything received
-	std::cout << "Received data from client (first 1000 chars): " << client_data[client_fd].substr(0, 1000) << std::endl;
-	if (client_data[client_fd].size() > 1000) {
-		std::cout << "  (truncated, total size: " << client_data[client_fd].size() << " bytes)\n";
-	}
-
-	// Check if the entire request has been received
 	std::string& data = client_data[client_fd];
 	size_t header_end_pos = data.find("\r\n\r\n");
 	if (header_end_pos != std::string::npos) {
 		size_t content_length = 0;
 		size_t content_length_pos = data.find("Content-Length:");
 		if (content_length_pos != std::string::npos) {
-			content_length_pos += 15; // Skip "Content-Length:"
+			content_length_pos += 15;
 			content_length = std::atoi(data.c_str() + content_length_pos);
-			std::cout << "Content-Length: " << content_length << std::endl;
 		}
 
 		if (data.size() >= header_end_pos + 4 + content_length) {
-			std::cout << "Entire request has been received. Total size: " << data.size() << std::endl;
-
-			// Parse and print the request
-			HttpRequest httpRequest(data.c_str(), data.size());
-			httpRequest.print();
-
-			return true; // Entire request has been received
-		} else {
-			std::cout << "Request not fully received yet. Current size: " << data.size() << " Expected size: " << (header_end_pos + 4 + content_length) << std::endl;
+			return true;
 		}
-	} else {
-		std::cout << "header_end_pos not found" << std::endl;
 	}
 
-	return false; // Request not fully received yet
+	return false;
 }
 
 int ServerConfig::setupServerSocket()
@@ -122,15 +96,14 @@ int ServerConfig::setupServerSocket()
 	if (m_socket == -1)
 		throw ServerConfig::SocketCreationFailed();
 
+	int opt = 1;
+	if (setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+		throw ServerConfig::SocketCreationFailed();
+	}
+
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(_port);
-
-	// Set the IP address based on the host
-	if (_host == "localhost")
-		server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-	else
-		server_addr.sin_addr.s_addr = inet_addr(_host.c_str());
-		
+	server_addr.sin_addr.s_addr = INADDR_ANY;
 
 	// Bind the socket to the address and port
 	if (bind(m_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
@@ -183,12 +156,8 @@ void ServerConfig::setErrorPage(const std::vector<std::string>& tokens) {
 	}
 }
 
-void ServerConfig::setClientMaxBodySize(size_t token)
-{
-	if (token < 0)
-		throw std::runtime_error("Error: client_max_body_size must be a positive integer");
-	else
-		_clientMaxBodySize = token;
+void ServerConfig::setClientMaxBodySize(size_t token) {
+	_clientMaxBodySize = token;
 }
 
 void ServerConfig::setCgiEnabled(const std::vector<std::string>& tokens) {
@@ -419,4 +388,3 @@ const char* ServerConfig::LocationNotFound::what() const throw () {
 const char* ServerConfig::SocketListeningFailed::what() const throw () {
 	return "Throwing exception: socket listening failed";
 }
-

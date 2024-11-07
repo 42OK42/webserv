@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 14:18:42 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/30 16:10:25 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/07 15:23:14 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,12 +54,12 @@ int main(int argc, char **argv)
     // signal(SIGINT, &handle_sigint);
     try
     {
+        Webserver webserver(servers);
+        webserver.initializeServers();
         while (!sigint_flag)
         {
-            Webserver webserver(servers);
-            webserver.initializeServers();
+            webserver.runEventLoop();
         }
-
 
         std::cout << "\033[0;38;5;9m" << "All servers are shut down" << "\033[0m" << std::endl;
     }

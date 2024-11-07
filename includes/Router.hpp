@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Router.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/10/30 16:11:43 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/07 15:22:13 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,37 +20,35 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <iostream>
-#include <algorithm>
-#include <dirent.h>
 
 class Router;
-
 typedef void (Router::*RouteHandler)(const HttpRequest&, HttpResponse&);
 
 class Router {
 private:
 	ServerConfig& _serverConfig;
 	std::map<std::string, RouteHandler> routes;
-	std::map<std::string, std::string> uploadDirs; // Map for upload directories
-	std::vector<std::string> uploadedFiles;
 
-public:
-	Router(ServerConfig& serverConfig);
-	~Router();
-
-	void addRoute(const std::string& path, RouteHandler handler, const std::string& uploadDir = "");
-	void handleRequest(const HttpRequest& request, HttpResponse& response);
-
-	void handleHomeRoute(const HttpRequest& req, HttpResponse& res);
-	void handleFormRoute(const HttpRequest& req, HttpResponse& res);
-	void handleUploadRoute(const HttpRequest& req, HttpResponse& res);
-	void handleUploadSuccessRoute(const HttpRequest& req, HttpResponse& res);
-	void initializeRoutes();
-
-	void saveUploadedFiles(const HttpRequest& req, const std::string& uploadDir);
+	// Private Hilfsmethoden
 	void setErrorResponse(HttpResponse& response, int errorCode);
 	std::vector<std::string> getFilesInDirectory(const std::string& directory);
+	void saveUploadedFiles(const HttpRequest& req, const std::string& uploadDir);
+	void addRoute(const std::string& path, RouteHandler handler);
+
+	// Route Handler
+	void handleHomeRoute(const HttpRequest& request, HttpResponse& response);
+	void handleUploadRoute(const HttpRequest& request, HttpResponse& response);
+	void handleUploadSuccessRoute(const HttpRequest& request, HttpResponse& response);
+
+	// Neue Hilfsmethode für die Verzeichnisauflistung
+	std::string generateDirectoryListing(const std::string& dirPath, const std::string& requestPath);
+
+public:
+	Router(ServerConfig& config);
+	~Router();
+
+	void initializeRoutes();
+	void handleRequest(const HttpRequest& request, HttpResponse& response);
 };
 
 #endif
