@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/18 17:04:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/07 15:17:29 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/07 17:39:46 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -387,4 +387,8 @@ const char* ServerConfig::LocationNotFound::what() const throw () {
 
 const char* ServerConfig::SocketListeningFailed::what() const throw () {
 	return "Throwing exception: socket listening failed";
+}
+
+bool ServerConfig::isBodySizeAllowed(size_t contentLength) const {
+	return contentLength <= _clientMaxBodySize;
 }

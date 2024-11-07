@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/07 16:45:49 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/07 17:58:18 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -166,20 +166,30 @@ void Router::handleUploadRoute(const HttpRequest& request, HttpResponse& respons
 		response.setStatusCode(303);
 		response.setHeader("Location", "/uploadSuccessful");
 	} else if (request.getMethod() == "GET") {
-		Location location = _serverConfig.findLocation("/upload");
-		if (location.getAutoIndex()) {
-			std::string uploadDir = "/home/okrahl/sgoinfre/uploads_webserv/";
-			std::string dirListing = generateDirectoryListing(uploadDir, "/upload");
-			response.setStatusCode(200);
-			response.setBody(dirListing);
-			response.setHeader("Content-Type", "text/html");
-		} else {
-			std::string formPath = location.getRoot() + "/form.html";
-			std::string content = readFile(formPath);
-			response.setStatusCode(200);
-			response.setBody(content);
-			response.setHeader("Content-Type", "text/html");
+		try {
+			Location location = _serverConfig.findLocation("/upload");
+			if (location.getAutoIndex()) {
+				std::string uploadDir = "/home/okrahl/sgoinfre/uploads_webserv/";
+				std::string dirListing = generateDirectoryListing(uploadDir, "/upload");
+				response.setStatusCode(200);
+				response.setBody(dirListing);
+				response.setHeader("Content-Type", "text/html");
+			} else {
+				std::string indexPath = location.getRoot() + "/" + location.getIndex();
+				if (access(indexPath.c_str(), F_OK) != -1) {
+					std::string content = readFile(indexPath);
+					response.setStatusCode(200);
+					response.setBody(content);
+					response.setHeader("Content-Type", "text/html");
+				} else {
+					setErrorResponse(response, 404);
+				}
+			}
+		} catch (const ServerConfig::LocationNotFound& e) {
+			setErrorResponse(response, 404);
 		}
+	} else {
+		setErrorResponse(response, 405);
 	}
 }
 

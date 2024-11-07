@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:28:34 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/05 16:35:47 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/07 17:42:53 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,10 +18,11 @@
 #include <vector>
 #include <sstream>
 #include <iostream>
+#include "ServerConfig.hpp"
 
 class HttpRequest {
 public:
-	HttpRequest(const char* buffer, int bytesRead);
+	HttpRequest(const char* buffer, int bytesRead, const ServerConfig& serverConfig);
 
 	const std::string& getMethod() const;
 	const std::string& getUrl() const;
@@ -51,6 +52,7 @@ private:
 	int port;
 
 	std::string _boundary;
+	const ServerConfig& _serverConfig;
 
 	void parse(const char* buffer, int bytesRead);
 	void parseMultipartData(const std::string& boundary);

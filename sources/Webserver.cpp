@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/07 16:19:18 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/07 17:44:29 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -158,17 +158,21 @@ void Webserver::handleClientData(size_t index) {
 	if (server->readClientData(client_fd)) {
 		try {
 			std::string& requestData = server->getClientData(client_fd);
-			HttpRequest httpRequest(requestData.c_str(), requestData.length());
+			HttpRequest httpRequest(requestData.c_str(), requestData.length(), *server);
 			
 			ServerConfig* matchingServer = findMatchingServer(httpRequest.getHost(), httpRequest.getPort());
 			if (matchingServer) {
 				processRequest(httpRequest, matchingServer, client_fd);
 			} else {
-				// Use default server if no match found
 				processRequest(httpRequest, server, client_fd);
 			}
 		} catch (const std::exception& e) {
 			std::cerr << "Error processing request: " << e.what() << std::endl;
+			HttpRequest emptyRequest("", 0, *server);
+			HttpResponse errorResponse(emptyRequest);
+			errorResponse.setStatusCode(413); // Request Entity Too Large
+			std::string response = errorResponse.toString();
+			send(client_fd, response.c_str(), response.length(), 0);
 		}
 		
 		// Close connection after processing

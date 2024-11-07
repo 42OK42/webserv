@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/07 15:22:20 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/07 17:43:50 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -135,6 +135,7 @@ class ServerConfig
 			public:
 				virtual const char* what() const throw();
 		};
+		bool isBodySizeAllowed(size_t contentLength) const;
 };
 
 std::ostream& operator<<(std::ostream& os, const ServerConfig& server);

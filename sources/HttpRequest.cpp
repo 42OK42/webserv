@@ -6,14 +6,15 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:27 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/05 18:03:52 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/07 17:40:43 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Helper.hpp"
 #include "HttpRequest.hpp"
 
-HttpRequest::HttpRequest(const char* buffer, int bytesRead) {
+HttpRequest::HttpRequest(const char* buffer, int bytesRead, const ServerConfig& serverConfig)
+	: _serverConfig(serverConfig) {
 	parse(buffer, bytesRead);
 }
 
@@ -118,6 +119,12 @@ void HttpRequest::parse(const char* buffer, int bytesRead) {
 	if (headers.count("Content-Length")) {
 		int contentLength;
 		std::istringstream(headers["Content-Length"]) >> contentLength;
+		
+		// Überprüfe die Body-Größe gegen die maximal erlaubte Größe
+		if (!_serverConfig.isBodySizeAllowed(contentLength)) {
+			throw std::runtime_error("Request body exceeds maximum allowed size");
+		}
+		
 		body.resize(contentLength);
 		stream.read(&body[0], contentLength);
 	}
