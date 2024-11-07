@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/05 17:40:29 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/07 16:19:18 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,11 +69,11 @@ void Webserver::initializeServers() {
 					  << _servers[i].getHost() << ":" 
 					  << _servers[i].getPort() 
 					  << " (server_name: ";
-			const std::vector<std::string>& serverNames = _servers[i].getServerName();
-			for (size_t j = 0; j < serverNames.size(); ++j) {
-				std::cout << serverNames[j];
-				if (j < serverNames.size() - 1) std::cout << ", ";
-			}
+			//const std::vector<std::string>& serverNames = _servers[i].getServerName();
+			// for (size_t j = 0; j < serverNames.size(); ++j) {
+			// 	std::cout << serverNames[j];
+			// 	if (j < serverNames.size() - 1) std::cout << ", ";
+			// }
 			std::cout << ")" << std::endl;
 		}
 		runEventLoop();
@@ -215,12 +215,12 @@ ServerConfig* Webserver::findMatchingServer(const std::string& host, int port) {
 				return &_servers[i];
 			}
 
-			const std::vector<std::string>& serverNames = server.getServerName();
-			if (std::find(serverNames.begin(), serverNames.end(), host) != serverNames.end()) {
-				std::cout << "\033[0;32m[Router]\033[0m Found matching server by name: " 
-						  << server.getHost() << ":" << server.getPort() << std::endl;  // Grün
-				return &_servers[i];
-			}
+			// const std::vector<std::string>& serverNames = server.getServerName();
+			// if (std::find(serverNames.begin(), serverNames.end(), host) != serverNames.end()) {
+			// 	std::cout << "\033[0;32m[Router]\033[0m Found matching server by name: " 
+			// 			  << server.getHost() << ":" << server.getPort() << std::endl;  // Grün
+				// return &_servers[i];
+			
 		}
 	}
 	
