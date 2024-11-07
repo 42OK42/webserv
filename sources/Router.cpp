@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/05 18:16:31 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/07 16:36:59 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,7 @@ void Router::initializeRoutes() {
 	addRoute("/", &Router::handleHomeRoute);
 	addRoute("/upload", &Router::handleUploadRoute);
 	addRoute("/uploadSuccessful", &Router::handleUploadSuccessRoute);
+	
 }
 
 void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
@@ -157,7 +158,7 @@ void Router::handleUploadRoute(const HttpRequest& request, HttpResponse& respons
 			response.setBody(dirListing);
 			response.setHeader("Content-Type", "text/html");
 		} else {
-			std::string formPath = location.getRoot() + "/upload.html";
+			std::string formPath = location.getRoot() + "/form.html";
 			std::string content = readFile(formPath);
 			response.setStatusCode(200);
 			response.setBody(content);
