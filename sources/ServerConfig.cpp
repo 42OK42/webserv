@@ -6,14 +6,14 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/18 17:04:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/05 17:38:17 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/07 15:15:17 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../includes/ServerConfig.hpp"
-#include "../includes/Router.hpp"
-#include "../includes/HttpResponse.hpp"
-#include "../includes/HttpRequest.hpp"
+#include "ServerConfig.hpp"
+#include "Router.hpp"
+#include "HttpResponse.hpp"
+#include "HttpRequest.hpp"
 
 // #include "Parser.hpp"
 
@@ -154,12 +154,8 @@ void ServerConfig::setErrorPage(const std::vector<std::string>& tokens) {
 	}
 }
 
-void ServerConfig::setClientMaxBodySize(size_t token)
-{
-	if (token < 0)
-		throw std::runtime_error("Error: client_max_body_size must be a positive integer");
-	else
-		_clientMaxBodySize = token;
+void ServerConfig::setClientMaxBodySize(size_t token) {
+	_clientMaxBodySize = token;
 }
 
 void ServerConfig::setCgiEnabled(const std::vector<std::string>& tokens) {
@@ -396,4 +392,3 @@ const char* ServerConfig::LocationNotFound::what() const throw () {
 const char* ServerConfig::SocketListeningFailed::what() const throw () {
 	return "Throwing exception: socket listening failed";
 }
-
