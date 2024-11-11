@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/11 15:26:28 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/11 17:14:07 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,34 +57,8 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 		}
 
 		Location location = _serverConfig.findLocation(path);
-		std::string fullPath = location.getRoot();
-		
-		struct stat statbuf;
-		if (stat(fullPath.c_str(), &statbuf) == 0) {
-			if (S_ISDIR(statbuf.st_mode)) {
-				if (request.getMethod() == "GET") {
-					std::string indexPath = fullPath;
-					if (!location.getIndex().empty()) {
-						indexPath += "/" + location.getIndex();
-						
-						if (stat(indexPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
-							std::string content = readFile(indexPath);
-							response.setStatusCode(200);
-							response.setBody(content);
-							response.setHeader("Content-Type", "text/html");
-							return;
-						}
-					}
-				}
-				
-				if (location.getAutoIndex()) {
-					std::string dirListing = generateDirectoryListing(fullPath, path);
-					response.setStatusCode(200);
-					response.setBody(dirListing);
-					response.setHeader("Content-Type", "text/html");
-					return;
-				}
-			}
+		if (handleDirectoryRequest(path, request, response)) {
+			return;
 		}
 
 		if (!location.isMethodAllowed(request.getMethod())) {
@@ -100,15 +74,9 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 
 void Router::handleHomeRoute(const HttpRequest& req, HttpResponse& res) {
 	if (req.getMethod() == "GET") {
-		Location location = _serverConfig.findLocation("/");
-		std::string root = location.getRoot();
-		std::string index = location.getIndex();
-		std::string fullPath = root + "/" + index;
-		
-		std::string content = readFile(fullPath);
-		res.setStatusCode(200);
-		res.setBody(content);
-		res.setHeader("Content-Type", "text/html");
+		if (!handleDirectoryRequest("/", req, res)) {
+			setErrorResponse(res, 404);
+		}
 	} else {
 		setErrorResponse(res, 405);
 	}
@@ -116,24 +84,21 @@ void Router::handleHomeRoute(const HttpRequest& req, HttpResponse& res) {
 
 void Router::handleFormRoute(const HttpRequest& request, HttpResponse& response) {
 	if (request.getMethod() == "GET") {
-		Location location = _serverConfig.findLocation("/form");
-		std::string root = location.getRoot();
-		std::string index = location.getIndex();
-		std::string fullPath = root + "/" + index;
-		
-		std::string content = readFile(fullPath);
-		response.setStatusCode(200);
-		response.setBody(content);
-		response.setHeader("Content-Type", "text/html");
+		if (!handleDirectoryRequest("/form", request, response)) {
+			setErrorResponse(response, 404);
+		}
 	} else {
 		setErrorResponse(response, 405);
 	}
 }
 
 void Router::handleUploadRoute(const HttpRequest& request, HttpResponse& response) {
-	#ifdef DEBUG_MODE
-	std::cout << "\033[0;35m[DEBUG] Router::handleUploadRoute: Verarbeite Upload-Request\033[0m" << std::endl;
-	#endif
+	if (request.getMethod() == "GET") {
+		if (!handleDirectoryRequest("/upload", request, response)) {
+			setErrorResponse(response, 404);
+		}
+		return;
+	}
 
 	if (request.getMethod() == "POST") {
 		#ifdef DEBUG_MODE
@@ -197,29 +162,6 @@ void Router::handleUploadRoute(const HttpRequest& request, HttpResponse& respons
 		} else {
 			setErrorResponse(response, 500);
 		}
-	} else if (request.getMethod() == "GET") {
-		try {
-			Location location = _serverConfig.findLocation("/upload");
-			if (location.getAutoIndex()) {
-				std::string uploadDir = "/home/okrahl/sgoinfre/uploads_webserv/";
-				std::string dirListing = generateDirectoryListing(uploadDir, "/upload");
-				response.setStatusCode(200);
-				response.setBody(dirListing);
-				response.setHeader("Content-Type", "text/html");
-			} else {
-				std::string indexPath = location.getRoot() + "/" + location.getIndex();
-				if (access(indexPath.c_str(), F_OK) != -1) {
-					std::string content = readFile(indexPath);
-					response.setStatusCode(200);
-					response.setBody(content);
-					response.setHeader("Content-Type", "text/html");
-				} else {
-					setErrorResponse(response, 404);
-				}
-			}
-		} catch (const ServerConfig::LocationNotFound& e) {
-			setErrorResponse(response, 404);
-		}
 	} else {
 		setErrorResponse(response, 405);
 	}
@@ -232,30 +174,39 @@ void Router::handleUploadSuccessRoute(const HttpRequest& request, HttpResponse& 
 		std::string index = location.getIndex();
 		std::string fullPath = root + "/" + index;
 		
-		std::string successContent = readFile(fullPath);
-		
-		std::string uploadDir = "/home/okrahl/sgoinfre/uploads_webserv/";
-		std::vector<std::string> files = getFilesInDirectory(uploadDir);
-		
-		std::ostringstream json;
-		json << "[";
-		for (size_t i = 0; i < files.size(); ++i) {
-			if (i > 0) json << ", ";
-			json << "\"" << files[i] << "\"";
+		struct stat statbuf;
+		if (stat(fullPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
+			std::string successContent = readFile(fullPath);
+			
+			std::string uploadDir = "/home/okrahl/sgoinfre/uploads_webserv/";
+			std::vector<std::string> files = getFilesInDirectory(uploadDir);
+			
+			std::ostringstream json;
+			json << "[";
+			for (size_t i = 0; i < files.size(); ++i) {
+				if (i > 0) json << ", ";
+				json << "\"" << files[i] << "\"";
+			}
+			json << "]";
+			
+			std::string script = "<script>const fileList = " + json.str() + ";</script>";
+			size_t pos = successContent.find("</head>");
+			if (pos != std::string::npos) {
+				successContent.insert(pos, script);
+			}
+			
+			response.setStatusCode(200);
+			response.setBody(successContent);
+			response.setHeader("Content-Type", "text/html");
+		} else if (location.getAutoIndex()) {
+			std::string dirListing = generateDirectoryListing(root, "/uploadSuccessful");
+			response.setStatusCode(200);
+			response.setBody(dirListing);
+			response.setHeader("Content-Type", "text/html");
+		} else {
+			setErrorResponse(response, 404);
 		}
-		json << "]";
-		
-		std::string script = "<script>const fileList = " + json.str() + ";</script>";
-		size_t pos = successContent.find("</head>");
-		if (pos != std::string::npos) {
-			successContent.insert(pos, script);
-		}
-		
-		response.setStatusCode(200);
-		response.setBody(successContent);
-		response.setHeader("Content-Type", "text/html");
-	}
-	else if (request.getMethod() == "DELETE") {
+	} else if (request.getMethod() == "DELETE") {
 		std::string uploadDir = "/home/okrahl/sgoinfre/uploads_webserv/";
 		std::string filename = extractFilenameFromUrl(request.getUrl());
 		
@@ -273,6 +224,8 @@ void Router::handleUploadSuccessRoute(const HttpRequest& request, HttpResponse& 
 			response.setBody("No filename provided");
 		}
 		response.setHeader("Content-Type", "text/plain");
+	} else {
+		setErrorResponse(response, 405);
 	}
 }
 
@@ -374,4 +327,38 @@ std::string Router::generateDirectoryListing(const std::string& dirPath, const s
 
 	html << "</table>\n</body>\n</html>";
 	return html.str();
+}
+
+bool Router::handleDirectoryRequest(const std::string& path, const HttpRequest& request, HttpResponse& response) {
+	Location location = _serverConfig.findLocation(path);
+	std::string fullPath = location.getRoot();
+	
+	struct stat statbuf;
+	if (stat(fullPath.c_str(), &statbuf) == 0) {
+		if (S_ISDIR(statbuf.st_mode)) {
+			if (request.getMethod() == "GET") {
+				std::string indexPath = fullPath;
+				if (!location.getIndex().empty()) {
+					indexPath += "/" + location.getIndex();
+					
+					if (stat(indexPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
+						std::string content = readFile(indexPath);
+						response.setStatusCode(200);
+						response.setBody(content);
+						response.setHeader("Content-Type", "text/html");
+						return true;
+					}
+				}
+				
+				if (location.getAutoIndex()) {
+					std::string dirListing = generateDirectoryListing(fullPath, path);
+					response.setStatusCode(200);
+					response.setBody(dirListing);
+					response.setHeader("Content-Type", "text/html");
+					return true;
+				}
+			}
+		}
+	}
+	return false;
 }
