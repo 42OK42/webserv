@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/07 16:42:14 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/11 16:00:13 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,6 @@ private:
 	std::map<std::string, RouteHandler> routes;
 
 	// Private Hilfsmethoden
-	void setErrorResponse(HttpResponse& response, int errorCode);
 	std::vector<std::string> getFilesInDirectory(const std::string& directory);
 	void saveUploadedFiles(const HttpRequest& req, const std::string& uploadDir);
 	void addRoute(const std::string& path, RouteHandler handler);
@@ -48,6 +47,8 @@ public:
 	Router(ServerConfig& config);
 	~Router();
 
+	void setErrorResponse(HttpResponse& response, int errorCode);
+	
 	void initializeRoutes();
 	void handleRequest(const HttpRequest& request, HttpResponse& response);
 };

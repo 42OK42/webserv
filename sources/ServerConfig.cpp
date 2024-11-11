@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/18 17:04:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/07 17:39:46 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/11 15:51:38 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,29 +65,52 @@ std::string ServerConfig::readFile(const std::string& filepath) {
 bool ServerConfig::readClientData(int client_fd) {
 	char buffer[1024];
 	int n = recv(client_fd, buffer, sizeof(buffer), 0);
-	if (n <= 0) {
-		close(client_fd);
+	
+	#ifdef DEBUG_MODE
+	std::cout << "\033[0;36m[DEBUG] ServerConfig::readClientData: Empfangen " << n << " Bytes\033[0m" << std::endl;
+	#endif
+	
+	if (n < 0) {
 		return false;
 	}
-
+	
+	if (n == 0) {
+		return true;  // Verbindung geschlossen
+	}
+	
 	client_data[client_fd].append(buffer, n);
+	
+	#ifdef DEBUG_MODE
+	std::cout << "\033[0;36m[DEBUG] ServerConfig::readClientData: Gesamtgröße der Daten: " 
+			  << client_data[client_fd].size() << "\033[0m" << std::endl;
+	#endif
 
+	// Prüfe, ob wir den kompletten Header haben
 	std::string& data = client_data[client_fd];
-	size_t header_end_pos = data.find("\r\n\r\n");
-	if (header_end_pos != std::string::npos) {
-		size_t content_length = 0;
-		size_t content_length_pos = data.find("Content-Length:");
-		if (content_length_pos != std::string::npos) {
-			content_length_pos += 15;
-			content_length = std::atoi(data.c_str() + content_length_pos);
-		}
+	size_t header_end = data.find("\r\n\r\n");
+	if (header_end == std::string::npos) {
+		return false;  // Header noch nicht komplett
+	}
 
-		if (data.size() >= header_end_pos + 4 + content_length) {
-			return true;
+	// Extrahiere Content-Length aus Header
+	size_t content_length_pos = data.find("Content-Length: ");
+	if (content_length_pos != std::string::npos) {
+		size_t end_pos = data.find("\r\n", content_length_pos);
+		std::string length_str = data.substr(content_length_pos + 16, end_pos - (content_length_pos + 16));
+		size_t content_length = std::atol(length_str.c_str());
+		
+		// Prüfe, ob wir den kompletten Body haben
+		size_t expected_size = header_end + 4 + content_length;
+		if (data.size() < expected_size) {
+			#ifdef DEBUG_MODE
+			std::cout << "\033[0;36m[DEBUG] ServerConfig::readClientData: Warte auf mehr Daten. "
+					  << data.size() << "/" << expected_size << " Bytes\033[0m" << std::endl;
+			#endif
+			return false;  // Body noch nicht komplett
 		}
 	}
 
-	return false;
+	return true;  // Request komplett
 }
 
 int ServerConfig::setupServerSocket()
@@ -390,5 +413,9 @@ const char* ServerConfig::SocketListeningFailed::what() const throw () {
 }
 
 bool ServerConfig::isBodySizeAllowed(size_t contentLength) const {
+	#ifdef DEBUG_MODE
+	std::cout << "\033[0;36m[DEBUG] ServerConfig::isBodySizeAllowed: Prüfe Größe " << contentLength 
+			  << " gegen Maximum " << _clientMaxBodySize << "\033[0m" << std::endl;
+	#endif
 	return contentLength <= _clientMaxBodySize;
 }

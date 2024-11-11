@@ -1,10 +1,18 @@
 GREEN = \033[0;32m
 RESET = \033[0m
 
+# Debug-Flag direkt im Makefile setzen (0 oder 1)
+DEBUG = 1
+
 NAME = webserv
 
 CC = c++
 CFLAGS = -Wall -Wextra -Werror -std=c++98 -Iincludes
+
+# Wenn DEBUG = 1, füge Debug-Flags hinzu
+ifeq ($(DEBUG),1)
+	CFLAGS += -DDEBUG_MODE
+endif
 
 SRCS = $(wildcard sources/*.cpp)
 OBJS = $(patsubst sources/%.cpp, objects/%.o, $(SRCS))

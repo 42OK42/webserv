@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:21 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/05 15:52:14 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/11 15:21:11 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,7 @@ class Webserver
 		void handleClientData(size_t index);
 		void setNonBlocking(int sockfd);
 		void setSocketTimeout(int sockfd, int timeout_seconds);
+		void closeConnection(size_t index);
 
 		// Neue Methoden
 		bool isCompleteRequest(const std::string& requestData);

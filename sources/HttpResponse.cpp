@@ -6,12 +6,16 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 18:05:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/05 17:38:05 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/11 16:04:05 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "HttpResponse.hpp"
 #include <sstream> // Für stringstream
+
+HttpResponse::HttpResponse() 
+	: version("HTTP/1.1"), statusCode(200), statusMessage("OK") {
+}
 
 HttpResponse::HttpResponse(const HttpRequest& request) 
 	: version(request.getHttpVersion()), statusCode(200), statusMessage("OK") {

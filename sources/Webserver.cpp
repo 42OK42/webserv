@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/07 17:44:29 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/11 16:03:07 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -140,7 +140,6 @@ void Webserver::handleClientData(size_t index) {
 	int client_fd = fds[index].fd;
 	int server_socket = client_to_server[client_fd];
 	
-	// Find server configuration for this connection
 	ServerConfig* server = NULL;
 	for (size_t i = 0; i < _servers.size(); ++i) {
 		if (_servers[i].getSocket() == server_socket) {
@@ -150,36 +149,99 @@ void Webserver::handleClientData(size_t index) {
 	}
 	
 	if (!server) {
-		std::cerr << "Error: No server configuration found for socket " << server_socket << std::endl;
+		#ifdef DEBUG_MODE
+		std::cerr << "\033[0;31m[DEBUG] Webserver::handleClientData: Kein Server für Socket " 
+				  << server_socket << " gefunden\033[0m" << std::endl;
+		#endif
+		closeConnection(index);
 		return;
 	}
 	
-	// Read and process client data
-	if (server->readClientData(client_fd)) {
+	try {
+		bool requestComplete = server->readClientData(client_fd);
+		if (!requestComplete) {
+			return;  // Warte auf mehr Daten
+		}
+
+		std::string& requestData = server->getClientData(client_fd);
+		
+		// Prüfe auf leere Requests
+		if (requestData.empty()) {
+			closeConnection(index);
+			return;
+		}
+
 		try {
-			std::string& requestData = server->getClientData(client_fd);
 			HttpRequest httpRequest(requestData.c_str(), requestData.length(), *server);
 			
+			// Prüfe Connection Header
+			bool shouldClose = (httpRequest.getHeader("Connection") == "close");
+			
+			#ifdef DEBUG_MODE
+			std::cout << "\033[0;36m[DEBUG] Webserver::handleClientData: Connection Header = " 
+					  << httpRequest.getHeader("Connection") << "\033[0m" << std::endl;
+			#endif
+
 			ServerConfig* matchingServer = findMatchingServer(httpRequest.getHost(), httpRequest.getPort());
 			if (matchingServer) {
 				processRequest(httpRequest, matchingServer, client_fd);
 			} else {
 				processRequest(httpRequest, server, client_fd);
 			}
-		} catch (const std::exception& e) {
-			std::cerr << "Error processing request: " << e.what() << std::endl;
-			HttpRequest emptyRequest("", 0, *server);
-			HttpResponse errorResponse(emptyRequest);
-			errorResponse.setStatusCode(413); // Request Entity Too Large
-			std::string response = errorResponse.toString();
-			send(client_fd, response.c_str(), response.length(), 0);
+
+			// Lösche nur die Request-Daten, nicht die Verbindung
+			server->eraseClientData(client_fd);
+			
+			// Schließe nur wenn nötig
+			if (shouldClose) {
+				#ifdef DEBUG_MODE
+				std::cout << "\033[0;36m[DEBUG] Webserver::handleClientData: Schließe Verbindung auf Anfrage\033[0m" << std::endl;
+				#endif
+				closeConnection(index);
+			}
+			
+		} catch (const std::runtime_error& e) {
+			if (std::string(e.what()) == "Request body exceeds maximum allowed size") {
+				#ifdef DEBUG_MODE
+				std::cerr << "\033[0;31m[DEBUG] Webserver::handleClientData: Datei zu groß, sende 413\033[0m" << std::endl;
+				#endif
+
+				// Erstelle eine neue HttpResponse ohne Request
+				HttpResponse errorResponse;
+				Router router(*server);
+				
+				// Nutze die vorhandene Fehlerbehandlung
+				router.setErrorResponse(errorResponse, 413);
+				
+				std::string responseStr = errorResponse.toString();
+				
+				send(client_fd, responseStr.c_str(), responseStr.length(), MSG_NOSIGNAL);
+				
+				// Lösche die Request-Daten und schließe die Verbindung
+				server->eraseClientData(client_fd);
+				closeConnection(index);
+				return;
+			}
+			closeConnection(index);
+			return;
 		}
 		
-		// Close connection after processing
-		close(client_fd);
-		fds.erase(fds.begin() + index);
-		client_to_server.erase(client_fd);
+	} catch (const std::exception& e) {
+		#ifdef DEBUG_MODE
+		std::cerr << "\033[0;31m[DEBUG] Webserver::handleClientData: Fehler: " << e.what() << "\033[0m" << std::endl;
+		#endif
+		closeConnection(index);
 	}
+}
+
+void Webserver::closeConnection(size_t index) {
+	int client_fd = fds[index].fd;
+	#ifdef DEBUG_MODE
+	std::cout << "\033[0;36m[DEBUG] Webserver::closeConnection: Schließe Client " << client_fd << "\033[0m" << std::endl;
+	#endif
+	close(client_fd);
+	fds.erase(fds.begin() + index);
+	client_to_server.erase(client_fd);
 }
 
 void Webserver::setNonBlocking(int sockfd) {
@@ -233,8 +295,10 @@ ServerConfig* Webserver::findMatchingServer(const std::string& host, int port) {
 }
 
 void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, int client_fd) {
-	// std::cout << "Processing request for server: " 
-	//           << server->getHost() << ":" << server->getPort() << std::endl;
+	#ifdef DEBUG_MODE
+	std::cout << "\033[0;36m[DEBUG] Webserver::processRequest: Verarbeite Request für Client " 
+			  << client_fd << "\033[0m" << std::endl;
+	#endif
 
 	HttpResponse httpResponse(httpRequest);
 	Router router(*server);
@@ -242,12 +306,29 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 	router.initializeRoutes();
 	router.handleRequest(httpRequest, httpResponse);
 	
-	std::string httpResponseString = httpResponse.toString();
-	if (send(client_fd, httpResponseString.c_str(), httpResponseString.size(), 0) < 0) {
-		// std::cerr << "Error sending response: " << strerror(errno) << std::endl;
-	} else {
-		// std::cout << "Response sent to client: " << client_fd << std::endl;
-	}
+	std::string responseStr = httpResponse.toString();
 	
-	server->eraseClientData(client_fd);
+	#ifdef DEBUG_MODE
+	std::cout << "\033[0;36m[DEBUG] Webserver::processRequest: Sende Antwort:\n" 
+			  << responseStr << "\033[0m" << std::endl;
+	#endif
+
+	// Sende die Antwort in einem Stück
+	ssize_t total_sent = 0;
+	while (total_sent < static_cast<ssize_t>(responseStr.length())) {
+		ssize_t sent = send(client_fd, responseStr.c_str() + total_sent, 
+						  responseStr.length() - total_sent, MSG_NOSIGNAL);
+		if (sent <= 0) {
+			#ifdef DEBUG_MODE
+			std::cerr << "\033[0;31m[DEBUG] Webserver::processRequest: Fehler beim Senden\033[0m" << std::endl;
+			#endif
+			break;
+		}
+		total_sent += sent;
+	}
+
+	#ifdef DEBUG_MODE
+	std::cout << "\033[0;36m[DEBUG] Webserver::processRequest: Antwort vollständig gesendet (" 
+			  << total_sent << " Bytes)\033[0m" << std::endl;
+	#endif
 }

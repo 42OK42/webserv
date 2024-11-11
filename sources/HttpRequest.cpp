@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:27 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/07 17:40:43 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/11 15:10:38 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,6 +75,10 @@ void HttpRequest::parseMultipartData(const std::string& boundary) {
 }
 
 void HttpRequest::parse(const char* buffer, int bytesRead) {
+	#ifdef DEBUG_MODE
+	std::cout << "\033[0;34m[DEBUG] HttpRequest::parse: Starte Parsing von " << bytesRead << " Bytes\033[0m" << std::endl;
+	#endif
+
 	std::string rawRequest(buffer, bytesRead);
 	std::istringstream stream(rawRequest);
 	std::string line;
@@ -93,6 +97,9 @@ void HttpRequest::parse(const char* buffer, int bytesRead) {
 		std::istringstream headerLine(line);
 		if (std::getline(headerLine, key, ':') && std::getline(headerLine, value)) {
 			headers[key] = value.substr(1);
+			#ifdef DEBUG_MODE
+			std::cout << "\033[0;34m[DEBUG] HttpRequest::parse: Header gefunden: " << key << ": " << value.substr(1) << "\033[0m" << std::endl;
+			#endif
 		}
 	}
 
@@ -120,8 +127,14 @@ void HttpRequest::parse(const char* buffer, int bytesRead) {
 		int contentLength;
 		std::istringstream(headers["Content-Length"]) >> contentLength;
 		
-		// Überprüfe die Body-Größe gegen die maximal erlaubte Größe
+		#ifdef DEBUG_MODE
+		std::cout << "\033[0;34m[DEBUG] HttpRequest::parse: Content-Length = " << contentLength << "\033[0m" << std::endl;
+		#endif
+		
 		if (!_serverConfig.isBodySizeAllowed(contentLength)) {
+			#ifdef DEBUG_MODE
+			std::cout << "\033[0;31m[DEBUG] HttpRequest::parse: Content-Length überschreitet erlaubte Größe\033[0m" << std::endl;
+			#endif
 			throw std::runtime_error("Request body exceeds maximum allowed size");
 		}
 		

@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/07 17:58:18 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/11 15:26:28 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -131,40 +131,72 @@ void Router::handleFormRoute(const HttpRequest& request, HttpResponse& response)
 }
 
 void Router::handleUploadRoute(const HttpRequest& request, HttpResponse& response) {
+	#ifdef DEBUG_MODE
+	std::cout << "\033[0;35m[DEBUG] Router::handleUploadRoute: Verarbeite Upload-Request\033[0m" << std::endl;
+	#endif
+
 	if (request.getMethod() == "POST") {
+		#ifdef DEBUG_MODE
+		std::cout << "\033[0;35m[DEBUG] Router::handleUploadRoute: POST-Request erkannt\033[0m" << std::endl;
+		std::cout << "\033[0;35m[DEBUG] Router::handleUploadRoute: Body-Größe: " 
+				  << request.getBody().size() << " Bytes\033[0m" << std::endl;
+		#endif
+
 		std::string uploadDir = "/home/okrahl/sgoinfre/uploads_webserv/";
-		ensureDirectoryExists(uploadDir);
-		
 		const std::vector<std::string>& filenames = request.getFilenames();
-		const std::string& body = request.getBody();
-		size_t pos = 0;
 		
-		for (size_t i = 0; i < filenames.size(); ++i) {
-			size_t start = body.find("\r\n\r\n", pos) + 4;
-			if (start == std::string::npos) continue;
-			
-			size_t end = body.find("\r\n--", start);
-			if (end == std::string::npos) {
-				end = body.length();
-			}
-			
-			std::string fileContent = body.substr(start, end - start);
-			pos = end + 4;
+		#ifdef DEBUG_MODE
+		std::cout << "\033[0;35m[DEBUG] Router::handleUploadRoute: Anzahl Dateien: " 
+				  << filenames.size() << "\033[0m" << std::endl;
+		#endif
 
-			if (fileContent.size() >= 2 && fileContent.compare(fileContent.size() - 2, 2, "\r\n") == 0) {
-				fileContent.erase(fileContent.size() - 2);
-			}
+		ensureDirectoryExists(uploadDir);
+		bool uploadSuccess = false;
+		
+		if (!filenames.empty()) {
+			const std::string& body = request.getBody();
+			size_t pos = 0;
+			
+			for (size_t i = 0; i < filenames.size(); ++i) {
+				size_t start = body.find("\r\n\r\n", pos) + 4;
+				if (start == std::string::npos + 4) continue;
+				
+				size_t end = body.find("\r\n--", start);
+				if (end == std::string::npos) {
+					end = body.length();
+				}
+				
+				std::string fileContent = body.substr(start, end - start);
+				pos = end + 4;
 
-			std::string savedFilename = uploadDir + filenames[i];
-			std::ofstream outFile(savedFilename.c_str(), std::ios::binary);
-			if (outFile.is_open()) {
-				outFile.write(fileContent.c_str(), fileContent.size());
-				outFile.close();
+				if (fileContent.size() >= 2 && fileContent.compare(fileContent.size() - 2, 2, "\r\n") == 0) {
+					fileContent.erase(fileContent.size() - 2);
+				}
+
+				std::string savedFilename = uploadDir + filenames[i];
+				std::ofstream outFile(savedFilename.c_str(), std::ios::binary);
+				if (outFile.is_open()) {
+					outFile.write(fileContent.c_str(), fileContent.size());
+					outFile.close();
+					uploadSuccess = true;
+					
+					#ifdef DEBUG_MODE
+					std::cout << "\033[0;32m[DEBUG] Router::handleUploadRoute: Datei erfolgreich gespeichert: " 
+							  << savedFilename << "\033[0m" << std::endl;
+					#endif
+				}
 			}
 		}
 		
-		response.setStatusCode(303);
-		response.setHeader("Location", "/uploadSuccessful");
+		if (uploadSuccess) {
+			response.setStatusCode(303);
+			response.setHeader("Location", "/uploadSuccessful");
+			response.setHeader("Content-Type", "text/html");
+			response.setHeader("Content-Length", "0");
+			response.setBody("");
+		} else {
+			setErrorResponse(response, 500);
+		}
 	} else if (request.getMethod() == "GET") {
 		try {
 			Location location = _serverConfig.findLocation("/upload");
