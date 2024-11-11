@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 14:18:42 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/07 15:23:14 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/11 18:41:59 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,30 +28,47 @@ void    handle_sigint(int sig) {
 int main(int argc, char **argv)
 {
     (void)argv;
+    ServerConfig server;
+    Parser parser;
+    std::stringstream configBuffer;
+
 
     if (argc > 2)
     {
         std::cout << "Wrong number of arguments" << std::endl;
         return (0);
     }
-    else if (argc == 1)
-         std::cout << "Starting server with default config." << std::endl;
-
-
-    ServerConfig server;
-    Parser parser;
-    std::stringstream configBuffer;
-
-    if (!parser.readFile("server_conf/test.conf", configBuffer)) {
-        return 1;
+    if (argc == 1)
+    {
+        std::cout << "Starting server with default config." << std::endl;
+        if (!parser.readFile("server_conf/default.conf", configBuffer)) {
+            return 1;
+        }
+        if (!parser.ParseConfigStream(configBuffer)) {
+            std::cerr << "Error while parsing." << std::endl;
+            return 1;
+        }
     }
-    if (!parser.ParseConfigStream(configBuffer)) {
-        std::cerr << "Error while parsing." << std::endl;
-        return 1;
+    else if (argc == 2)
+    {
+        std::cout << "Starting server with config passed as argument." << std::endl;
+        if (!parser.readFile(argv[1], configBuffer)) {
+            return 1;
+        }
+        if (!parser.ParseConfigStream(configBuffer)) {
+            std::cerr << "Error while parsing." << std::endl;
+            return 1;
+        }
     }
+
+
+
+
+
+
 
     std::vector<ServerConfig> servers = parser.getServers();
-    // signal(SIGINT, &handle_sigint);
+    signal(SIGINT, &handle_sigint);
     try
     {
         Webserver webserver(servers);
