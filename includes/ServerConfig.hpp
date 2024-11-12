@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerConfig.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/07 17:43:50 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/12 16:27:43 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -109,7 +109,7 @@ class ServerConfig
 		void set_socket_timeout(int sockfd, int timeout_seconds);
 		bool readClientData(int client_fd);
 
-		static std::string getUploadDir() { return "/home/okrahl/sgoinfre/uploads_webserv/"; }
+		static std::string getUploadDir() { return "/home/ecarlier/sgoinfre/uploads_webserv/"; }
 
 		class SocketCreationFailed : public std::exception {
 			public:
