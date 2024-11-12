@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:01:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/12 20:47:21 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/12 20:50:24 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -149,29 +149,29 @@ const char* Location::InvalidMethodException::what() const throw ()
 }
 
 /* Overload operators */
-std::ostream& operator<<(std::ostream& os, const Location& location) {
-    os << "\n" << BOLD << BLUE << "# Location " << RESET << location.getPath()  << std::endl;
+std::ostream& operator<<(std::ostream& os, const Location& location)
+{
+	os << "\n" << BOLD << BLUE << "# Location " << RESET << location.getPath()  << std::endl;
 
-    os << YELLOW << std::setw(15) << "Path:" << RESET << location.getPath() << "\n";
-    os << YELLOW << std::setw(15) << "Root:" << RESET << location.getRoot() << "\n";
-    os << YELLOW << std::setw(15) << "Index:" << RESET << location.getIndex() << "\n";
-    os << YELLOW << std::setw(15) << "Redirect to:" << RESET << location.get_redirectTo() << "\n";
+	os << YELLOW << std::setw(15) << "Path:" << RESET << location.getPath() << "\n";
+	os << YELLOW << std::setw(15) << "Root:" << RESET << location.getRoot() << "\n";
+	os << YELLOW << std::setw(15) << "Index:" << RESET << location.getIndex() << "\n";
+	os << YELLOW << std::setw(15) << "Redirect to:" << RESET << location.get_redirectTo() << "\n";
 
-    os << YELLOW << std::setw(15) << "AutoIndex:" << RESET
-       << (location.getAutoIndex() ? GREEN "on" RESET : RED "off" RESET) << "\n";
+	os << YELLOW << std::setw(15) << "AutoIndex:" << RESET
+		<< (location.getAutoIndex() ? GREEN "on" RESET : RED "off" RESET) << "\n";
 
+	os << YELLOW << std::setw(15) << "Allowed Methods:" << RESET;
+	const std::vector<std::string>& methods = location.getMethods();
+	if (!methods.empty()) {
+		for (size_t i = 0; i < methods.size(); ++i) {
+			os << CYAN << methods[i] << RESET;
+			if (i < methods.size() - 1) os << ", ";
+		}
+	} else {
+		os << RED << "None" << RESET;
+	}
+	os << "\n";
 
-    os << YELLOW << std::setw(15) << "Allowed Methods:" << RESET;
-    const std::vector<std::string>& methods = location.getMethods();
-    if (!methods.empty()) {
-        for (size_t i = 0; i < methods.size(); ++i) {
-            os << CYAN << methods[i] << RESET;
-            if (i < methods.size() - 1) os << ", ";
-        }
-    } else {
-        os << RED << "None" << RESET;
-    }
-    os << "\n";
-
-    return os;
+	return os;
 }

@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/12 20:15:10 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/12 21:09:11 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,7 @@ private:
 	void handleUploadSuccessRoute(const HttpRequest& request, HttpResponse& response);
 	void handleFormRoute(const HttpRequest& request, HttpResponse& response);
 	void handleRedirectRoute(const HttpRequest& request, HttpResponse& response);
-
+	void handleNewpage(const HttpRequest& request, HttpResponse& response);
 
 	std::string generateDirectoryListing(const std::string& dirPath, const std::string& requestPath);
 
