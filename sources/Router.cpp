@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/11 17:14:07 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/11 19:03:45 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,19 +50,19 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 	}
 
 	try {
+		Location location = _serverConfig.findLocation(path);
+		if (!location.isMethodAllowed(request.getMethod())) {
+			setErrorResponse(response, 405);
+			return;
+		}
+
 		std::map<std::string, RouteHandler>::iterator routeIt = routes.find(path);
 		if (routeIt != routes.end()) {
 			(this->*(routeIt->second))(request, response);
 			return;
 		}
 
-		Location location = _serverConfig.findLocation(path);
 		if (handleDirectoryRequest(path, request, response)) {
-			return;
-		}
-
-		if (!location.isMethodAllowed(request.getMethod())) {
-			setErrorResponse(response, 405);
 			return;
 		}
 
