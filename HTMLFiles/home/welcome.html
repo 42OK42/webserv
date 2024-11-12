@@ -3,60 +3,75 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Welcome to the Tractor Worship Blog!</title>
+	<title>Welcome to the Tractor Worship Family!</title>
 	<style>
 		body {
 			font-family: Arial, sans-serif;
-			background-color: #f4f4f9;
-			color: #333;
+			background-color: #f0e4d7;
+			color: #5f4b3b;
 			text-align: center;
 			padding: 20px;
+			overflow-x: hidden;
 		}
 		h1 {
-			color: #2a9d8f;
+			color: #2c6d2f;
+			font-size: 3em;
+			margin-bottom: 20px;
+			text-transform: uppercase;
 		}
 		p {
-			font-size: 1.2em;
+			font-size: 1.5em;
 			margin: 20px 0;
+			font-weight: bold;
+			color: #3b5d33;
 		}
-		.container {
-			max-width: 900px;
-			margin: 0 auto;
-			background-color: white;
-			padding: 20px;
-			border-radius: 8px;
-			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-		}
-		.container img {
-			width: 50%;
-			margin: 20px 0;
-		}
-		.button {
-			background-color: #2a9d8f;
+		button {
+			background-color: #8b5e3c;
 			color: white;
 			border: none;
 			padding: 10px 20px;
-			font-size: 1em;
+			font-size: 1.2em;
 			margin: 10px;
 			border-radius: 5px;
 			cursor: pointer;
 		}
-		.button:hover {
+		button:hover {
+			background-color: #6d432b;
+		}
+		/* .tractor-img {
+			width: 60%;
+			max-width: 500px;
+			margin: 20px 0;
+			border-radius: 8px; */
+
+		.vroom-button {
+			font-size: 1.5em;
+			background-color: #2c6d2f;
+			color: white;
+			border: none;
+			padding: 10px 20px;
+			cursor: pointer;
+			border-radius: 8px;
+		}
+		.vroom-button:hover {
 			background-color: #21867a;
 		}
 	</style>
 </head>
 <body>
-	<div class="container">
-		<h1>Welcome to the Tractor Worship Blog!</h1>
-		<p>Where the love for tractors meets the joy of sharing. Join us in celebrating the mighty tractors and all they stand for!</p>
+	<h1>Welcome to the Tractor Worship Family!</h1>
+	<!-- <img src="tractor_image.jpg" alt="Tractor Image" class="tractor-img"> Remplacez par l'URL de votre image de tracteur -->
 
-		<img src="tractors.jpeg" alt="Tractor Worship Image">
+	<p>Vroom Vroom! 🚜<br> Get ready to rev your engines and fuel your passion for the mighty tractors!</p>
 
-		<p>We are thrilled to have you here. Explore our features below:</p>
+	<p><strong>Let's roll in the fields of excitement and share our love for all things tractors!</strong></p>
 
-		<button class="button" onclick="location.href='/upload'">Upload Your Tractor Pictures</button>
-		<button class="button" onclick="location.href='/form'">Fill out the Tractor Worship Form</button>
-	</div>
+	<p><strong>This is a place where the tractor love never stops, and neither do the wheels!</strong></p>
+
+	<button onclick="location.href='/upload'" class="vroom-button">Upload Your Tractor Pics!</button>
+	<button onclick="location.href='/form'" class="vroom-button">Join the Tractor Worship Form!</button>
+
+	<p>Let's keep the engines running, folks! Vroom Vroom all the way!</p>
+	<!-- <button onclick="location.href='/'" class="vroom-button">Back to the Home of the Vroom Vroom Family!</button> -->
 </body>
 </html>
