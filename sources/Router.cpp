@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/12 17:58:04 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/12 20:14:22 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,7 @@ void Router::initializeRoutes() {
 	addRoute("/upload", &Router::handleUploadRoute);
 	addRoute("/uploadSuccessful", &Router::handleUploadSuccessRoute);
 	addRoute("/form", &Router::handleFormRoute);
+	addRoute("/oldpage", &Router::handleRedirectRoute);
 }
 
 void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
@@ -71,6 +72,16 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 		setErrorResponse(response, 404);
 	}
 }
+void Router::handleRedirectRoute(const HttpRequest& request, HttpResponse& response) {
+	if (request.getMethod() == "GET") {
+		response.setStatusCode(301);  // 301 Moved Permanently
+		response.setHeader("Location", "/"); //@olli here should be the location listed in the conf file....
+		response.setBody("");
+	} else {
+        setErrorResponse(response, 405);
+    }
+}
+
 
 void Router::handleHomeRoute(const HttpRequest& req, HttpResponse& res) {
 	if (req.getMethod() == "GET") {

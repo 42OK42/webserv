@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Location.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:54 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/28 15:06:38 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/12 20:07:23 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@ class Location
 		std::vector<std::string>	_Methods;
 		std::string					_cgi_extension;
 		std::string					_cgi_path;
+		std::string					_redirectTo;
 
 	public:
 		Location();
@@ -38,6 +39,7 @@ class Location
 
 		/* Getters and Setters */
 		std::string getPath() const;
+		std::string get_redirectTo() const;
 		std::string getRoot() const;
 		std::string getIndex() const;
 		std::string getExtension() const;
@@ -50,6 +52,7 @@ class Location
 		void setPath(const std::string& token);
 		void setRoot(const std::string& token);
 		void setIndex(const std::string& token);
+		void set_redirectTo(const std::string& token);
 		void setAutoIndex(const std::string& token);
 		void setMethods(const std::vector<std::string>& tokens);
 

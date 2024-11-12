@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Location.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:01:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/10/28 15:04:05 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/12 20:10:59 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,6 +49,10 @@ void Location::setPath(const std::string& token)
 void Location::setRoot(const std::string& token)
 {
 	_root = token;
+}
+void Location::set_redirectTo(const std::string& token)
+{
+	_redirectTo = token;
 }
 
 void Location::setIndex(const std::string& token)
@@ -101,6 +105,11 @@ std::string Location::getPath() const
 	return _path;
 }
 
+std::string Location::get_redirectTo() const
+{
+	return _redirectTo;
+}
+
 std::string Location::getRoot() const
 {
 	return _root;
@@ -145,6 +154,7 @@ std::ostream& operator<<(std::ostream& os, const Location& location) {
 	os << "Path: " << location.getPath() << "\n";
 	os << "Root: " << location.getRoot() << "\n";
 	os << "Index: " << location.getIndex() << "\n";
+	os << "Redirect to: " << location.get_redirectTo() << "\n";
 	os << "AutoIndex: " << (location.getAutoIndex() ? "on" : "off") << "\n";
 	os << "Allowed Methods: ";
 

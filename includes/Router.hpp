@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Router.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/11 17:00:25 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/12 20:15:10 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 #include "ServerConfig.hpp"
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
-#include <cstring> // For strerror
+#include <cstring>
 #include <map>
 #include <string>
 #include <vector>
@@ -29,9 +29,8 @@ private:
 	ServerConfig& _serverConfig;
 	std::map<std::string, RouteHandler> routes;
 
-	// Private Hilfsmethoden
+
 	std::vector<std::string> getFilesInDirectory(const std::string& directory);
-	void saveUploadedFiles(const HttpRequest& req, const std::string& uploadDir);
 	void addRoute(const std::string& path, RouteHandler handler);
 	bool handleDirectoryRequest(const std::string& path, const HttpRequest& request, HttpResponse& response);
 
@@ -40,8 +39,9 @@ private:
 	void handleUploadRoute(const HttpRequest& request, HttpResponse& response);
 	void handleUploadSuccessRoute(const HttpRequest& request, HttpResponse& response);
 	void handleFormRoute(const HttpRequest& request, HttpResponse& response);
+	void handleRedirectRoute(const HttpRequest& request, HttpResponse& response);
 
-	// Neue Hilfsmethode für die Verzeichnisauflistung
+
 	std::string generateDirectoryListing(const std::string& dirPath, const std::string& requestPath);
 
 public:
@@ -49,7 +49,7 @@ public:
 	~Router();
 
 	void setErrorResponse(HttpResponse& response, int errorCode);
-	
+
 	void initializeRoutes();
 	void handleRequest(const HttpRequest& request, HttpResponse& response);
 };

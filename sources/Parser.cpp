@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/11 18:16:35 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/12 20:16:43 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -167,13 +167,13 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
                     std::cout << "Entering new server block...\n";
                 } else {
                     std::cerr << "Error: Expected '{' after 'server' declaration.\n";
-                    return false; // Handle the error as appropriate
+                    return false;
                 }
             }
 
         if (insideServerBlock) {
                 // If we're already inside a server block, finish the current one
-                std::cout << "Finished server block, pushing to servers.\n";
+               // std::cout << "Finished server block, pushing to servers.\n";
                 serverTemplate.checkErrorPage();
                 _serverTemplate = serverTemplate;
                 parseMultipleServers(portVector, hostVector);
@@ -189,7 +189,7 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
         // Detect the end of a server block
         if (line.find("}") != std::string::npos) {
             if (insideServerBlock) {
-                std::cout << "Closing server block...\n";
+                //std::cout << "Closing server block...\n";
 				serverTemplate.checkErrorPage();
 				_serverTemplate = serverTemplate;
 				parseMultipleServers(portVector, hostVector);
@@ -273,6 +273,7 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 		parseMultipleServers(portVector, hostVector);
     }
 
+	#ifdef DEBUG_MODE
     if (_servers.empty()) {
         std::cout << "Error: _servers is empty!\n";
     } else {
@@ -280,7 +281,7 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
         for (size_t i = 0; i < _servers.size(); ++i)
             std::cout << _servers[i];
     }
-
+	#endif
     return true;
 }
 
@@ -288,15 +289,7 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 
 bool Parser::parseLocation(std::stringstream& buffer, Location& location)
 {
-	std::string line;
-	std::string key;
-	std::string method;
-	std::string value;
-    std::string	root;
-    std::string	index;
-	std::string extension;
-	std::string cgi_path;
-
+	std::string line, key, method, value, root, index, extension, cgi_path, _redirectTo;
 
 	while (std::getline(buffer, line) && line.find('}') == std::string::npos)
 	{
@@ -310,6 +303,11 @@ bool Parser::parseLocation(std::stringstream& buffer, Location& location)
 		{
 			iss >> root;
 			location.setRoot(removeSemicolon(root));
+		}
+		if (key == "return")
+		{
+			iss >> _redirectTo;
+			location.set_redirectTo(removeSemicolon(_redirectTo));
 		}
 		else if (key == "index")
 		{
