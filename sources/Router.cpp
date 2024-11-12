@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Router.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/11 19:03:45 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/12 17:58:04 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,7 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 	std::string requestHost = request.getHeader("Host");
 	std::ostringstream expectedHost;
 	expectedHost << _serverConfig.getHost() << ":" << _serverConfig.getPort();
-	
+
 	if (requestHost != expectedHost.str()) {
 		setErrorResponse(response, 400);
 		return;
@@ -103,34 +103,34 @@ void Router::handleUploadRoute(const HttpRequest& request, HttpResponse& respons
 	if (request.getMethod() == "POST") {
 		#ifdef DEBUG_MODE
 		std::cout << "\033[0;35m[DEBUG] Router::handleUploadRoute: POST-Request erkannt\033[0m" << std::endl;
-		std::cout << "\033[0;35m[DEBUG] Router::handleUploadRoute: Body-Größe: " 
+		std::cout << "\033[0;35m[DEBUG] Router::handleUploadRoute: Body-Größe: "
 				  << request.getBody().size() << " Bytes\033[0m" << std::endl;
 		#endif
 
-		std::string uploadDir = "/home/okrahl/sgoinfre/uploads_webserv/";
+		std::string uploadDir = "/home/ecarlier/sgoinfre/uploads_webserv/";
 		const std::vector<std::string>& filenames = request.getFilenames();
-		
+
 		#ifdef DEBUG_MODE
-		std::cout << "\033[0;35m[DEBUG] Router::handleUploadRoute: Anzahl Dateien: " 
+		std::cout << "\033[0;35m[DEBUG] Router::handleUploadRoute: Anzahl Dateien: "
 				  << filenames.size() << "\033[0m" << std::endl;
 		#endif
 
 		ensureDirectoryExists(uploadDir);
 		bool uploadSuccess = false;
-		
+
 		if (!filenames.empty()) {
 			const std::string& body = request.getBody();
 			size_t pos = 0;
-			
+
 			for (size_t i = 0; i < filenames.size(); ++i) {
 				size_t start = body.find("\r\n\r\n", pos) + 4;
 				if (start == std::string::npos + 4) continue;
-				
+
 				size_t end = body.find("\r\n--", start);
 				if (end == std::string::npos) {
 					end = body.length();
 				}
-				
+
 				std::string fileContent = body.substr(start, end - start);
 				pos = end + 4;
 
@@ -144,15 +144,15 @@ void Router::handleUploadRoute(const HttpRequest& request, HttpResponse& respons
 					outFile.write(fileContent.c_str(), fileContent.size());
 					outFile.close();
 					uploadSuccess = true;
-					
+
 					#ifdef DEBUG_MODE
-					std::cout << "\033[0;32m[DEBUG] Router::handleUploadRoute: Datei erfolgreich gespeichert: " 
+					std::cout << "\033[0;32m[DEBUG] Router::handleUploadRoute: Datei erfolgreich gespeichert: "
 							  << savedFilename << "\033[0m" << std::endl;
 					#endif
 				}
 			}
 		}
-		
+
 		if (uploadSuccess) {
 			response.setStatusCode(303);
 			response.setHeader("Location", "/uploadSuccessful");
@@ -173,14 +173,14 @@ void Router::handleUploadSuccessRoute(const HttpRequest& request, HttpResponse& 
 		std::string root = location.getRoot();
 		std::string index = location.getIndex();
 		std::string fullPath = root + "/" + index;
-		
+
 		struct stat statbuf;
 		if (stat(fullPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
 			std::string successContent = readFile(fullPath);
-			
-			std::string uploadDir = "/home/okrahl/sgoinfre/uploads_webserv/";
+
+			std::string uploadDir = "/home/ecarlier/sgoinfre/uploads_webserv/";
 			std::vector<std::string> files = getFilesInDirectory(uploadDir);
-			
+
 			std::ostringstream json;
 			json << "[";
 			for (size_t i = 0; i < files.size(); ++i) {
@@ -188,13 +188,13 @@ void Router::handleUploadSuccessRoute(const HttpRequest& request, HttpResponse& 
 				json << "\"" << files[i] << "\"";
 			}
 			json << "]";
-			
+
 			std::string script = "<script>const fileList = " + json.str() + ";</script>";
 			size_t pos = successContent.find("</head>");
 			if (pos != std::string::npos) {
 				successContent.insert(pos, script);
 			}
-			
+
 			response.setStatusCode(200);
 			response.setBody(successContent);
 			response.setHeader("Content-Type", "text/html");
@@ -207,9 +207,9 @@ void Router::handleUploadSuccessRoute(const HttpRequest& request, HttpResponse& 
 			setErrorResponse(response, 404);
 		}
 	} else if (request.getMethod() == "DELETE") {
-		std::string uploadDir = "/home/okrahl/sgoinfre/uploads_webserv/";
+		std::string uploadDir = "/home/ecarlier/sgoinfre/uploads_webserv/";
 		std::string filename = extractFilenameFromUrl(request.getUrl());
-		
+
 		if (!filename.empty()) {
 			std::string fullPath = uploadDir + filename;
 			if (remove(fullPath.c_str()) == 0) {
@@ -235,7 +235,7 @@ void Router::setErrorResponse(HttpResponse& response, int errorCode) {
 
 	if (errorPageIt != errorPages.end()) {
 		std::string errorPageContent = readFile(errorPageIt->second);
-		
+
 		response.setStatusCode(errorCode);
 		response.setBody(errorPageContent);
 		response.setHeader("Content-Type", "text/html");
@@ -286,35 +286,35 @@ std::string Router::generateDirectoryListing(const std::string& dirPath, const s
 	if (dir) {
 		struct dirent* entry;
 		std::vector<std::string> entries;
-		
+
 		while ((entry = readdir(dir)) != NULL) {
 			entries.push_back(entry->d_name);
 		}
-		
+
 		std::sort(entries.begin(), entries.end());
-		
-		for (std::vector<std::string>::const_iterator it = entries.begin(); 
+
+		for (std::vector<std::string>::const_iterator it = entries.begin();
 			 it != entries.end(); ++it) {
 			std::string name = *it;
 			struct stat statbuf;
 			std::string fullPath = dirPath + "/" + name;
-			
+
 			if (stat(fullPath.c_str(), &statbuf) == 0) {
 				bool isDir = S_ISDIR(statbuf.st_mode);
-				
+
 				std::ostringstream size;
 				if (isDir)
 					size << "-";
 				else
 					size << statbuf.st_size;
-				
+
 				char timeStr[80];
-				strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", 
+				strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S",
 						localtime(&statbuf.st_mtime));
-				
-				html << "<tr><td><a href=\"" 
-					 << (requestPath == "/" ? "" : requestPath) << "/" << name 
-					 << (isDir ? "/" : "") << "\">" << name 
+
+				html << "<tr><td><a href=\""
+					 << (requestPath == "/" ? "" : requestPath) << "/" << name
+					 << (isDir ? "/" : "") << "\">" << name
 					 << (isDir ? "/" : "") << "</a></td>"
 					 << "<td>" << timeStr << "</td>"
 					 << "<td>" << size.str() << "</td></tr>\n";
@@ -332,7 +332,7 @@ std::string Router::generateDirectoryListing(const std::string& dirPath, const s
 bool Router::handleDirectoryRequest(const std::string& path, const HttpRequest& request, HttpResponse& response) {
 	Location location = _serverConfig.findLocation(path);
 	std::string fullPath = location.getRoot();
-	
+
 	struct stat statbuf;
 	if (stat(fullPath.c_str(), &statbuf) == 0) {
 		if (S_ISDIR(statbuf.st_mode)) {
@@ -340,7 +340,7 @@ bool Router::handleDirectoryRequest(const std::string& path, const HttpRequest& 
 				std::string indexPath = fullPath;
 				if (!location.getIndex().empty()) {
 					indexPath += "/" + location.getIndex();
-					
+
 					if (stat(indexPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
 						std::string content = readFile(indexPath);
 						response.setStatusCode(200);
@@ -349,7 +349,7 @@ bool Router::handleDirectoryRequest(const std::string& path, const HttpRequest& 
 						return true;
 					}
 				}
-				
+
 				if (location.getAutoIndex()) {
 					std::string dirListing = generateDirectoryListing(fullPath, path);
 					response.setStatusCode(200);

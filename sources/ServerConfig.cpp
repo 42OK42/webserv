@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/18 17:04:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/11 18:21:43 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/12 18:58:05 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -275,13 +275,13 @@ void  ServerConfig::checkErrorPage()
 	errorsToCheck.push_back(500);
 
 	std::map<int, std::string> defaultErrorPaths;
-	defaultErrorPaths[400] = "/default/error/400.html";
-	defaultErrorPaths[403] = "/default/error/403.html";
-	defaultErrorPaths[404] = "/default/error/404.html";
-	defaultErrorPaths[405] = "/default/error/405.html";
-	defaultErrorPaths[413] = "/default/error/413.html";
-	defaultErrorPaths[415] = "/default/error/415.html";
-	defaultErrorPaths[500] = "/default/error/500.html";
+	defaultErrorPaths[400] = "/HTMLFiles/error/400.html";
+	defaultErrorPaths[403] = "/HTMLFiles/error/403.html";
+	defaultErrorPaths[404] = "/HTMLFiles/error/404.html";
+	defaultErrorPaths[405] = "/HTMLFiles/error/405.html";
+	defaultErrorPaths[413] = "/HTMLFiles/error/413.html";
+	defaultErrorPaths[415] = "/HTMLFiles/error/415.html";
+	defaultErrorPaths[500] = "/HTMLFiles/error/500.html";
 
 	for (size_t i = 0; i < errorsToCheck.size(); ++i)
 	{
@@ -338,7 +338,7 @@ std::string ServerConfig::getErrorFilePath(int errorCode)
 	std::ostringstream oss;
 	oss << errorCode;
 
-	std::string errorFilePath = execDir + "/default/error/" + oss.str() + ".html";
+	std::string errorFilePath = execDir + "/HTMLFiles/error/" + oss.str() + ".html";
 
 	return errorFilePath;
 }
