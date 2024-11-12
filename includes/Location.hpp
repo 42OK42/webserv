@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:54 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/12 20:07:23 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/12 20:40:40 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,14 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <iomanip>
+#define RESET   "\033[0m"
+#define BOLD    "\033[1m"
+#define BLUE    "\033[34m"
+#define CYAN    "\033[36m"
+#define YELLOW  "\033[33m"
+#define GREEN   "\033[32m"
+#define RED     "\033[31m"
 
 class Location
 {

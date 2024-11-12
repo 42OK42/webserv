@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/12 20:14:22 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/12 20:35:23 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,51 +35,126 @@ void Router::initializeRoutes() {
 }
 
 void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
-	std::string requestHost = request.getHeader("Host");
-	std::ostringstream expectedHost;
-	expectedHost << _serverConfig.getHost() << ":" << _serverConfig.getPort();
+    std::string requestHost = request.getHeader("Host");
+    std::ostringstream expectedHost;
+    expectedHost << _serverConfig.getHost() << ":" << _serverConfig.getPort();
 
-	if (requestHost != expectedHost.str()) {
-		setErrorResponse(response, 400);
-		return;
-	}
+    #ifdef DEBUG_MODE
+    std::cout << "[DEBUG] Expected host: " << expectedHost.str() << std::endl;
+    std::cout << "[DEBUG] Received host: " << requestHost << std::endl;
+    #endif
 
-	std::string path = request.getUrl();
-	size_t queryPos = path.find('?');
-	if (queryPos != std::string::npos) {
-		path = path.substr(0, queryPos);
-	}
+    if (requestHost != expectedHost.str()) {
+        setErrorResponse(response, 400);
+        return;
+    }
+
+    std::string path = request.getUrl();
+
+    #ifdef DEBUG_MODE
+    std::cout << "[DEBUG] Requested path: " << path << std::endl;
+    #endif
+
+    try {
+        Location location = _serverConfig.findLocation(path);
+
+        #ifdef DEBUG_MODE
+        std::cout << "[DEBUG] Location found for path: " << location.getPath() << std::endl;
+        std::cout << "[DEBUG] Redirect target: " << location.get_redirectTo() << std::endl;
+        #endif
+
+        if (!location.get_redirectTo().empty()) {
+            response.setStatusCode(301);  // 301 Moved Permanently
+            response.setHeader("Location", location.get_redirectTo());
+            response.setBody("");
+
+            #ifdef DEBUG_MODE
+            std::cout << "[DEBUG] Redirection set to: " << location.get_redirectTo() << std::endl;
+            #endif
+
+            return;
+        }
+
+        // Autre logique de traitement si aucune redirection n'est nécessaire
+    } catch (const ServerConfig::LocationNotFound& e) {
+        #ifdef DEBUG_MODE
+        std::cout << "[DEBUG] Location not found for the requested URL. Sending 404." << std::endl;
+        #endif
+
+        setErrorResponse(response, 404);
+    }
+}
+
+// void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
+// 	std::string requestHost = request.getHeader("Host");
+// 	std::ostringstream expectedHost;
+// 	expectedHost << _serverConfig.getHost() << ":" << _serverConfig.getPort();
+
+// 	if (requestHost != expectedHost.str()) {
+// 		setErrorResponse(response, 400);
+// 		return;
+// 	}
+
+// 	std::string path = request.getUrl();
+// 	size_t queryPos = path.find('?');
+// 	if (queryPos != std::string::npos) {
+// 		path = path.substr(0, queryPos);
+// 	}
+
+// 	try {
+// 		Location location = _serverConfig.findLocation(path);
+// 		if (!location.isMethodAllowed(request.getMethod())) {
+// 			setErrorResponse(response, 405);
+// 			return;
+// 		}
+
+// 		std::map<std::string, RouteHandler>::iterator routeIt = routes.find(path);
+// 		if (routeIt != routes.end()) {
+// 			(this->*(routeIt->second))(request, response);
+// 			return;
+// 		}
+
+// 		if (handleDirectoryRequest(path, request, response)) {
+// 			return;
+// 		}
+
+// 		setErrorResponse(response, 404);
+// 	} catch (const ServerConfig::LocationNotFound& e) {
+// 		setErrorResponse(response, 404);
+// 	}
+// }
+
+void Router::handleRedirectRoute(const HttpRequest& request, HttpResponse& response)
+{
+	#ifdef DEBUG_MODE
+	std::cout << "\033[0;35m[DEBUG] Requested URL: " << request.getUrl() << "\033[0m" << std::endl;
+	#endif
 
 	try {
-		Location location = _serverConfig.findLocation(path);
-		if (!location.isMethodAllowed(request.getMethod())) {
-			setErrorResponse(response, 405);
-			return;
-		}
+		Location location = _serverConfig.findLocation(request.getUrl());
+		std::cout << "[DEBUG] Location found for path: " << location.getPath() << std::endl;
+        std::cout << "[DEBUG] Redirect target: " << location.get_redirectTo() << std::endl;
 
-		std::map<std::string, RouteHandler>::iterator routeIt = routes.find(path);
-		if (routeIt != routes.end()) {
-			(this->*(routeIt->second))(request, response);
-			return;
+		if (!location.get_redirectTo().empty()) {
+			std::cout << "[DEBUG] Redirecting to: " << location.get_redirectTo() << std::endl;
+			response.setStatusCode(301);  // 301 Moved Permanently
+			response.setHeader("Location", location.get_redirectTo());
+			response.setBody("");
+		} else {
+			std::cout << "[DEBUG] No redirect URL defined for this location. Sending 404." << std::endl;
+			setErrorResponse(response, 404);
 		}
-
-		if (handleDirectoryRequest(path, request, response)) {
-			return;
-		}
-
-		setErrorResponse(response, 404);
 	} catch (const ServerConfig::LocationNotFound& e) {
+		 std::cout << "[DEBUG] Location not found for the requested URL. Sending 404." << std::endl;
 		setErrorResponse(response, 404);
 	}
-}
-void Router::handleRedirectRoute(const HttpRequest& request, HttpResponse& response) {
-	if (request.getMethod() == "GET") {
-		response.setStatusCode(301);  // 301 Moved Permanently
-		response.setHeader("Location", "/"); //@olli here should be the location listed in the conf file....
-		response.setBody("");
-	} else {
-        setErrorResponse(response, 405);
-    }
+	// if (request.getMethod() == "GET") {
+	// 	response.setStatusCode(301);  // 301 Moved Permanently
+	// 	response.setHeader("Location", "/"); // here should be the location listed in the conf file....
+	// 	response.setBody("");
+	// } else {
+    //     setErrorResponse(response, 405);
+    // }
 }
 
 
