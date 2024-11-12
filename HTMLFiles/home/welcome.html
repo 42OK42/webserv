@@ -3,12 +3,60 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Welcome</title>
+	<title>Welcome to the Tractor Worship Blog!</title>
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			background-color: #f4f4f9;
+			color: #333;
+			text-align: center;
+			padding: 20px;
+		}
+		h1 {
+			color: #2a9d8f;
+		}
+		p {
+			font-size: 1.2em;
+			margin: 20px 0;
+		}
+		.container {
+			max-width: 900px;
+			margin: 0 auto;
+			background-color: white;
+			padding: 20px;
+			border-radius: 8px;
+			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+		}
+		.container img {
+			width: 50%;
+			margin: 20px 0;
+		}
+		.button {
+			background-color: #2a9d8f;
+			color: white;
+			border: none;
+			padding: 10px 20px;
+			font-size: 1em;
+			margin: 10px;
+			border-radius: 5px;
+			cursor: pointer;
+		}
+		.button:hover {
+			background-color: #21867a;
+		}
+	</style>
 </head>
 <body>
-	<h1>Welcome to the Homepage!</h1>
-	<p>This is a basic HTML page served by your HTTP server.</p>
-	<button onclick="location.href='/upload'">Go to Upload Page</button>
-	<button onclick="location.href='/form'">Go to Form Page</button>
+	<div class="container">
+		<h1>Welcome to the Tractor Worship Blog!</h1>
+		<p>Where the love for tractors meets the joy of sharing. Join us in celebrating the mighty tractors and all they stand for!</p>
+
+		<img src="tractors.jpeg" alt="Tractor Worship Image">
+
+		<p>We are thrilled to have you here. Explore our features below:</p>
+
+		<button class="button" onclick="location.href='/upload'">Upload Your Tractor Pictures</button>
+		<button class="button" onclick="location.href='/form'">Fill out the Tractor Worship Form</button>
+	</div>
 </body>
 </html>
