@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/11 17:00:25 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/12 17:50:49 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,10 +16,12 @@
 #include "ServerConfig.hpp"
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
-#include <cstring> // For strerror
+#include <cstring>
 #include <map>
 #include <string>
 #include <vector>
+#include <ctime>
+#include <fstream>
 
 class Router;
 typedef void (Router::*RouteHandler)(const HttpRequest&, HttpResponse&);
@@ -34,6 +36,7 @@ private:
 	void saveUploadedFiles(const HttpRequest& req, const std::string& uploadDir);
 	void addRoute(const std::string& path, RouteHandler handler);
 	bool handleDirectoryRequest(const std::string& path, const HttpRequest& request, HttpResponse& response);
+	std::string getCurrentTimestamp() const;
 
 	// Route Handler
 	void handleHomeRoute(const HttpRequest& request, HttpResponse& response);

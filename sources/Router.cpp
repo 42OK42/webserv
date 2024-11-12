@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/11 19:03:45 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/12 17:51:34 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,64 +101,71 @@ void Router::handleUploadRoute(const HttpRequest& request, HttpResponse& respons
 	}
 
 	if (request.getMethod() == "POST") {
-		#ifdef DEBUG_MODE
-		std::cout << "\033[0;35m[DEBUG] Router::handleUploadRoute: POST-Request erkannt\033[0m" << std::endl;
-		std::cout << "\033[0;35m[DEBUG] Router::handleUploadRoute: Body-Größe: " 
-				  << request.getBody().size() << " Bytes\033[0m" << std::endl;
-		#endif
-
+		std::string contentType = request.getHeader("Content-Type");
 		std::string uploadDir = "/home/okrahl/sgoinfre/uploads_webserv/";
-		const std::vector<std::string>& filenames = request.getFilenames();
 		
-		#ifdef DEBUG_MODE
-		std::cout << "\033[0;35m[DEBUG] Router::handleUploadRoute: Anzahl Dateien: " 
-				  << filenames.size() << "\033[0m" << std::endl;
-		#endif
-
 		ensureDirectoryExists(uploadDir);
 		bool uploadSuccess = false;
-		
-		if (!filenames.empty()) {
-			const std::string& body = request.getBody();
-			size_t pos = 0;
+
+		if (contentType.find("multipart/form-data") != std::string::npos) {
+			const std::vector<std::string>& filenames = request.getFilenames();
 			
-			for (size_t i = 0; i < filenames.size(); ++i) {
-				size_t start = body.find("\r\n\r\n", pos) + 4;
-				if (start == std::string::npos + 4) continue;
-				
-				size_t end = body.find("\r\n--", start);
-				if (end == std::string::npos) {
-					end = body.length();
-				}
-				
-				std::string fileContent = body.substr(start, end - start);
-				pos = end + 4;
+			#ifdef DEBUG_MODE
+			std::cout << "\033[0;35m[DEBUG] Router::handleUploadRoute: Anzahl Dateien: " 
+					  << filenames.size() << "\033[0m" << std::endl;
+			#endif
 
-				if (fileContent.size() >= 2 && fileContent.compare(fileContent.size() - 2, 2, "\r\n") == 0) {
-					fileContent.erase(fileContent.size() - 2);
-				}
-
-				std::string savedFilename = uploadDir + filenames[i];
-				std::ofstream outFile(savedFilename.c_str(), std::ios::binary);
-				if (outFile.is_open()) {
-					outFile.write(fileContent.c_str(), fileContent.size());
-					outFile.close();
-					uploadSuccess = true;
+			if (!filenames.empty()) {
+				const std::string& body = request.getBody();
+				size_t pos = 0;
+				
+				for (size_t i = 0; i < filenames.size(); ++i) {
+					size_t start = body.find("\r\n\r\n", pos) + 4;
+					if (start == std::string::npos + 4) continue;
 					
-					#ifdef DEBUG_MODE
-					std::cout << "\033[0;32m[DEBUG] Router::handleUploadRoute: Datei erfolgreich gespeichert: " 
-							  << savedFilename << "\033[0m" << std::endl;
-					#endif
+					size_t end = body.find("\r\n--", start);
+					if (end == std::string::npos) {
+						end = body.length();
+					}
+					
+					std::string fileContent = body.substr(start, end - start);
+					pos = end + 4;
+
+					if (fileContent.size() >= 2 && fileContent.compare(fileContent.size() - 2, 2, "\r\n") == 0) {
+						fileContent.erase(fileContent.size() - 2);
+					}
+
+					std::string savedFilename = uploadDir + filenames[i];
+					std::ofstream outFile(savedFilename.c_str(), std::ios::binary);
+					if (outFile.is_open()) {
+						outFile.write(fileContent.c_str(), fileContent.size());
+						outFile.close();
+						uploadSuccess = true;
+						
+						#ifdef DEBUG_MODE
+						std::cout << "\033[0;32m[DEBUG] Router::handleUploadRoute: Datei erfolgreich gespeichert: " 
+								  << savedFilename << "\033[0m" << std::endl;
+						#endif
+					}
 				}
 			}
+		} else {
+			std::string filename = "text_upload_" + getCurrentTimestamp() + ".txt";
+			std::string fullPath = uploadDir + filename;
+			std::ofstream outFile(fullPath.c_str(), std::ios::binary);
+			if (outFile.is_open()) {
+				outFile.write(request.getBody().c_str(), request.getBody().size());
+				outFile.close();
+				uploadSuccess = true;
+			}
 		}
-		
+
 		if (uploadSuccess) {
 			response.setStatusCode(303);
 			response.setHeader("Location", "/uploadSuccessful");
-			response.setHeader("Content-Type", "text/html");
-			response.setHeader("Content-Length", "0");
-			response.setBody("");
+				response.setHeader("Content-Type", "text/html");
+				response.setHeader("Content-Length", "0");
+				response.setBody("");
 		} else {
 			setErrorResponse(response, 500);
 		}
@@ -361,4 +368,11 @@ bool Router::handleDirectoryRequest(const std::string& path, const HttpRequest& 
 		}
 	}
 	return false;
+}
+
+std::string Router::getCurrentTimestamp() const {
+	std::time_t now = std::time(NULL);
+	char buffer[20];
+	std::strftime(buffer, sizeof(buffer), "%Y%m%d_%H%M%S", std::localtime(&now));
+	return std::string(buffer);
 }
