@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/11 16:03:07 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/12 18:20:11 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -150,8 +150,8 @@ void Webserver::handleClientData(size_t index) {
 	
 	if (!server) {
 		#ifdef DEBUG_MODE
-		std::cerr << "\033[0;31m[DEBUG] Webserver::handleClientData: Kein Server für Socket " 
-				  << server_socket << " gefunden\033[0m" << std::endl;
+		std::cerr << "\033[0;31m[DEBUG] Webserver::handleClientData: No server found for socket " 
+				  << server_socket << "\033[0m" << std::endl;
 		#endif
 		closeConnection(index);
 		return;
@@ -296,7 +296,7 @@ ServerConfig* Webserver::findMatchingServer(const std::string& host, int port) {
 
 void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, int client_fd) {
 	#ifdef DEBUG_MODE
-	std::cout << "\033[0;36m[DEBUG] Webserver::processRequest: Verarbeite Request für Client " 
+	std::cout << "\033[0;36m[DEBUG] Webserver::processRequest: Processing request for client " 
 			  << client_fd << "\033[0m" << std::endl;
 	#endif
 
@@ -309,7 +309,7 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 	std::string responseStr = httpResponse.toString();
 	
 	#ifdef DEBUG_MODE
-	std::cout << "\033[0;36m[DEBUG] Webserver::processRequest: Sende Antwort:\n" 
+	std::cout << "\033[0;36m[DEBUG] Webserver::processRequest: Sending response:\n" 
 			  << responseStr << "\033[0m" << std::endl;
 	#endif
 
@@ -320,7 +320,7 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 						  responseStr.length() - total_sent, MSG_NOSIGNAL);
 		if (sent <= 0) {
 			#ifdef DEBUG_MODE
-			std::cerr << "\033[0;31m[DEBUG] Webserver::processRequest: Fehler beim Senden\033[0m" << std::endl;
+			std::cerr << "\033[0;31m[DEBUG] Webserver::processRequest: Error while sending\033[0m" << std::endl;
 			#endif
 			break;
 		}
@@ -328,7 +328,7 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 	}
 
 	#ifdef DEBUG_MODE
-	std::cout << "\033[0;36m[DEBUG] Webserver::processRequest: Antwort vollständig gesendet (" 
-			  << total_sent << " Bytes)\033[0m" << std::endl;
+	std::cout << "\033[0;36m[DEBUG] Webserver::processRequest: Response sent completely (" 
+			  << total_sent << " bytes)\033[0m" << std::endl;
 	#endif
 }

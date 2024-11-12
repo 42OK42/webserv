@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/18 17:04:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/11 15:51:38 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/12 18:20:24 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,7 +67,7 @@ bool ServerConfig::readClientData(int client_fd) {
 	int n = recv(client_fd, buffer, sizeof(buffer), 0);
 	
 	#ifdef DEBUG_MODE
-	std::cout << "\033[0;36m[DEBUG] ServerConfig::readClientData: Empfangen " << n << " Bytes\033[0m" << std::endl;
+	std::cout << "\033[0;36m[DEBUG] ServerConfig::readClientData: Received " << n << " bytes\033[0m" << std::endl;
 	#endif
 	
 	if (n < 0) {
@@ -81,7 +81,7 @@ bool ServerConfig::readClientData(int client_fd) {
 	client_data[client_fd].append(buffer, n);
 	
 	#ifdef DEBUG_MODE
-	std::cout << "\033[0;36m[DEBUG] ServerConfig::readClientData: Gesamtgröße der Daten: " 
+	std::cout << "\033[0;36m[DEBUG] ServerConfig::readClientData: Total data size: " 
 			  << client_data[client_fd].size() << "\033[0m" << std::endl;
 	#endif
 
@@ -103,8 +103,8 @@ bool ServerConfig::readClientData(int client_fd) {
 		size_t expected_size = header_end + 4 + content_length;
 		if (data.size() < expected_size) {
 			#ifdef DEBUG_MODE
-			std::cout << "\033[0;36m[DEBUG] ServerConfig::readClientData: Warte auf mehr Daten. "
-					  << data.size() << "/" << expected_size << " Bytes\033[0m" << std::endl;
+			std::cout << "\033[0;36m[DEBUG] ServerConfig::readClientData: Waiting for more data. "
+					  << data.size() << "/" << expected_size << " bytes\033[0m" << std::endl;
 			#endif
 			return false;  // Body noch nicht komplett
 		}
@@ -414,8 +414,8 @@ const char* ServerConfig::SocketListeningFailed::what() const throw () {
 
 bool ServerConfig::isBodySizeAllowed(size_t contentLength) const {
 	#ifdef DEBUG_MODE
-	std::cout << "\033[0;36m[DEBUG] ServerConfig::isBodySizeAllowed: Prüfe Größe " << contentLength 
-			  << " gegen Maximum " << _clientMaxBodySize << "\033[0m" << std::endl;
+	std::cout << "\033[0;36m[DEBUG] ServerConfig::isBodySizeAllowed: Checking size " << contentLength 
+			  << " against maximum " << _clientMaxBodySize << "\033[0m" << std::endl;
 	#endif
 	return contentLength <= _clientMaxBodySize;
 }

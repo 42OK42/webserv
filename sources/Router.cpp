@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/12 17:51:34 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/12 18:20:31 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -111,7 +111,7 @@ void Router::handleUploadRoute(const HttpRequest& request, HttpResponse& respons
 			const std::vector<std::string>& filenames = request.getFilenames();
 			
 			#ifdef DEBUG_MODE
-			std::cout << "\033[0;35m[DEBUG] Router::handleUploadRoute: Anzahl Dateien: " 
+			std::cout << "\033[0;35m[DEBUG] Router::handleUploadRoute: Number of files: " 
 					  << filenames.size() << "\033[0m" << std::endl;
 			#endif
 
@@ -143,7 +143,7 @@ void Router::handleUploadRoute(const HttpRequest& request, HttpResponse& respons
 						uploadSuccess = true;
 						
 						#ifdef DEBUG_MODE
-						std::cout << "\033[0;32m[DEBUG] Router::handleUploadRoute: Datei erfolgreich gespeichert: " 
+						std::cout << "\033[0;32m[DEBUG] Router::handleUploadRoute: File successfully saved: " 
 								  << savedFilename << "\033[0m" << std::endl;
 						#endif
 					}
