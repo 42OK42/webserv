@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/18 17:04:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/13 17:33:23 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/13 19:07:52 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -162,13 +162,14 @@ int ServerConfig::setupServerSocket()
 	if (bind(m_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
 		throw ServerConfig::SocketBindingFailed();
 
-	std::cout << "Server bound to port: " << _port << std::endl;
+	//std::cout << GREEN << "[INFO]" << RESET << " Server bound to port: " << YELLOW << _port << RESET << std::endl;
+
 
 	// Listen for incoming connections
 	if (listen(m_socket, SOMAXCONN) < 0)
 		throw ServerConfig::SocketListeningFailed();
 
-	std::cout << "Server is listening on port: " << _port << std::endl;
+	std::cout << GREEN << "[INFO]" << RESET << " Server is listening on port: " << YELLOW << _port << RESET << std::endl;
 
 	// Set the server socket to non-blocking mode
 	if (set_nonblocking(m_socket) == -1)
