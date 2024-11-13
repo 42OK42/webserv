@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 14:18:42 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/13 18:28:48 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/13 19:08:47 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,15 @@
 #include "../includes/ServerConfig.hpp"
 #include "../includes/Webserver.hpp"
 
+
+#define RESET       "\033[0m"
+#define BOLD        "\033[1m"
+#define UNDERLINE   "\033[4m"
+#define RED         "\033[31m"
+#define GREEN       "\033[32m"
+#define YELLOW      "\033[33m"
+#define BLUE        "\033[34m"
+#define CYAN        "\033[36m"
 
 bool sigint_flag = false;
 
@@ -35,28 +44,28 @@ int main(int argc, char **argv)
 
     if (argc > 2)
     {
-        std::cout << "Wrong number of arguments" << std::endl;
+        std::cout << RED << "[ERROR]" << RESET << " Wrong number of arguments. Only one argument allowed for the config file." << std::endl;
         return (0);
     }
     if (argc == 1)
     {
-        std::cout << "Starting server with default config." << std::endl;
+        std::cout << GREEN << "[INFO]" << RESET << " Starting server(s) with default config." << std::endl;
         if (!parser.readFile("server_conf/default.conf", configBuffer)) {
             return 1;
         }
         if (!parser.ParseConfigStream(configBuffer)) {
-            std::cerr << "Error while parsing." << std::endl;
+            std::cerr << RED << "[ERROR]" << RESET << " Error while parsing configuration file." << std::endl;
             return 1;
         }
     }
     else if (argc == 2)
     {
-        std::cout << "Starting server with config passed as argument." << std::endl;
+        std::cout << GREEN << "[INFO]" << RESET << " Starting server with config passed as argument: " << YELLOW << argv[1] << RESET << std::endl;
         if (!parser.readFile(argv[1], configBuffer)) {
             return 1;
         }
         if (!parser.ParseConfigStream(configBuffer)) {
-            std::cerr << "Error while parsing." << std::endl;
+            std::cerr << RED << "[ERROR]" << RESET << " Error while parsing configuration file." << std::endl;
             return 1;
         }
     }
@@ -67,12 +76,13 @@ int main(int argc, char **argv)
     {
         Webserver webserver(servers);
         webserver.initializeServers();
+        std::cout << CYAN << "[INFO]" << RESET << " Servers initialized successfully. Entering event loop..." << std::endl;
         while (!sigint_flag)
         {
             webserver.runEventLoop();
         }
 
-        std::cout << "\033[0;38;5;9m" << "All servers are shut down" << "\033[0m" << std::endl;
+        std::cout << CYAN << "[INFO]" << RESET << " All servers are shut down gracefully." << std::endl;
     }
     catch (const std::exception &e)
 	{
