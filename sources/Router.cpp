@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/13 15:32:15 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/13 15:40:58 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -142,38 +142,35 @@ void Router::handleUploadRoute(const HttpRequest& request, HttpResponse& respons
 	}
 
 	if (request.getMethod() == "POST") {
-		#ifdef DEBUG_MODE
-		std::cout << "\033[0;35m[DEBUG] Router::handleUploadRoute: POST-Request erkannt\033[0m" << std::endl;
-		std::cout << "\033[0;35m[DEBUG] Router::handleUploadRoute: Body-Größe: "
-				  << request.getBody().size() << " Bytes\033[0m" << std::endl;
-		#endif
-
+		std::string contentType = request.getHeader("Content-Type");
 		std::string uploadDir = "/home/ecarlier/sgoinfre/uploads_webserv/";
-		const std::vector<std::string>& filenames = request.getFilenames();
-
-		#ifdef DEBUG_MODE
-		std::cout << "\033[0;35m[DEBUG] Router::handleUploadRoute: Anzahl Dateien: "
-				  << filenames.size() << "\033[0m" << std::endl;
-		#endif
-
+		
 		ensureDirectoryExists(uploadDir);
 		bool uploadSuccess = false;
 
-		if (!filenames.empty()) {
-			const std::string& body = request.getBody();
-			size_t pos = 0;
+		if (contentType.find("multipart/form-data") != std::string::npos) {
+			const std::vector<std::string>& filenames = request.getFilenames();
+			
+			#ifdef DEBUG_MODE
+			std::cout << "\033[0;35m[DEBUG] Router::handleUploadRoute: Number of files: " 
+					  << filenames.size() << "\033[0m" << std::endl;
+			#endif
 
-			for (size_t i = 0; i < filenames.size(); ++i) {
-				size_t start = body.find("\r\n\r\n", pos) + 4;
-				if (start == std::string::npos + 4) continue;
-
-				size_t end = body.find("\r\n--", start);
-				if (end == std::string::npos) {
-					end = body.length();
-				}
-
-				std::string fileContent = body.substr(start, end - start);
-				pos = end + 4;
+			if (!filenames.empty()) {
+				const std::string& body = request.getBody();
+				size_t pos = 0;
+				
+				for (size_t i = 0; i < filenames.size(); ++i) {
+					size_t start = body.find("\r\n\r\n", pos) + 4;
+					if (start == std::string::npos + 4) continue;
+					
+					size_t end = body.find("\r\n--", start);
+					if (end == std::string::npos) {
+						end = body.length();
+					}
+					
+					std::string fileContent = body.substr(start, end - start);
+					pos = end + 4;
 
 					if (fileContent.size() >= 2 && fileContent.compare(fileContent.size() - 2, 2, "\r\n") == 0) {
 						fileContent.erase(fileContent.size() - 2);
