@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/13 18:57:14 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/13 19:39:06 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -251,10 +251,10 @@ void Router::setErrorResponse(HttpResponse& response, int errorCode) {
 
 	if (errorPageIt != errorPages.end()) {
 		std::string errorPageContent = readFile(errorPageIt->second);
-
 		response.setStatusCode(errorCode);
 		response.setBody(errorPageContent);
 		response.setHeader("Content-Type", "text/html");
+		response.setHeader("Error-Page-Path", errorPageIt->second);
 	} else {
 		response.setStatusCode(errorCode);
 		response.setBody("");

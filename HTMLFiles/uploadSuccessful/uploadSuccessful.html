@@ -114,7 +114,8 @@
 			if (response.status === 405) {
 			  const errorHtml = await response.text();
 			  document.documentElement.innerHTML = errorHtml;
-			  history.pushState({}, '', '/error/405.html');
+			  const errorPagePath = response.headers.get('Error-Page-Path');
+			  history.pushState({}, '', errorPagePath || '/error/405.html');
 			} else if (response.ok) {
 			  const li = document.querySelector(`li[data-filename="${filename}"]`);
 			  if (li) {
