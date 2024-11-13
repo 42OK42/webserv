@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/13 19:54:43 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/13 20:06:10 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -174,8 +174,53 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 		}
 	}
 
-	// Existierende Logik für normale GET-Requests
-	// ... Rest der bestehenden handleGET-Methode ...
+	// Normale GET-Request Verarbeitung
+	struct stat statbuf;
+	if (stat(fullPath.c_str(), &statbuf) == 0) {
+		if (S_ISDIR(statbuf.st_mode)) {
+			if (!location.getIndex().empty()) {
+				std::string indexPath = fullPath + "/" + location.getIndex();
+				if (stat(indexPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
+					std::string content = readFile(indexPath);
+					
+					// Füge die Dateiliste für die uploadSuccessful Seite hinzu
+					if (request.getUrl() == "/uploadSuccessful") {
+						std::vector<std::string> files = getFilesInDirectory("");
+						std::string fileListJS = "\n<script>\nconst fileList = [";
+						for (size_t i = 0; i < files.size(); ++i) {
+							if (i > 0) fileListJS += ",";
+							fileListJS += "\n    \"" + files[i] + "\"";
+						}
+						fileListJS += "\n];\n</script>\n</head>";
+						
+						// Füge das Script vor dem schließenden </head> Tag ein
+						size_t pos = content.find("</head>");
+						if (pos != std::string::npos) {
+							content.insert(pos, fileListJS);
+						}
+					}
+					
+					response.setStatusCode(200);
+					response.setBody(content);
+					response.setHeader("Content-Type", "text/html");
+					return;
+				}
+			}
+			if (location.getAutoIndex()) {
+				response.setStatusCode(200);
+				response.setBody(generateDirectoryListing(fullPath, request.getUrl()));
+				response.setHeader("Content-Type", "text/html");
+				return;
+			}
+		}
+		else if (S_ISREG(statbuf.st_mode)) {
+			response.setStatusCode(200);
+			response.setBody(readFile(fullPath));
+			response.setHeader("Content-Type", "text/html");
+			return;
+		}
+	}
+	setErrorResponse(response, 404);
 }
 
 void Router::handlePOST(const HttpRequest& request, HttpResponse& response, const Location& location) {
