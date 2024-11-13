@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/12 18:20:11 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/13 17:30:50 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -303,7 +303,6 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 	HttpResponse httpResponse(httpRequest);
 	Router router(*server);
 	
-	router.initializeRoutes();
 	router.handleRequest(httpRequest, httpResponse);
 	
 	std::string responseStr = httpResponse.toString();
@@ -313,7 +312,6 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 			  << responseStr << "\033[0m" << std::endl;
 	#endif
 
-	// Sende die Antwort in einem Stück
 	ssize_t total_sent = 0;
 	while (total_sent < static_cast<ssize_t>(responseStr.length())) {
 		ssize_t sent = send(client_fd, responseStr.c_str() + total_sent, 
@@ -326,9 +324,4 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 		}
 		total_sent += sent;
 	}
-
-	#ifdef DEBUG_MODE
-	std::cout << "\033[0;36m[DEBUG] Webserver::processRequest: Response sent completely (" 
-			  << total_sent << " bytes)\033[0m" << std::endl;
-	#endif
 }

@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:27 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/12 18:20:28 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/13 17:48:46 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,7 @@ void HttpRequest::parseMultipartData(const std::string& boundary) {
 	size_t end = body.find(delimiter, pos);
 
 	while (end != std::string::npos) {
-		size_t start = pos + delimiter.length() + 2; // Skip the delimiter and CRLF
+		size_t start = pos + delimiter.length() + 2;
 		pos = end + delimiter.length();
 		end = body.find(delimiter, pos);
 
@@ -51,6 +51,7 @@ void HttpRequest::parseMultipartData(const std::string& boundary) {
 		if (headerEnd != std::string::npos) {
 			std::string headers = part.substr(0, headerEnd);
 			std::string content = part.substr(headerEnd + 4);
+			content = content.substr(0, content.length() - 2);
 
 			std::istringstream headerStream(headers);
 			std::string line;
@@ -65,6 +66,7 @@ void HttpRequest::parseMultipartData(const std::string& boundary) {
 						std::string filename = extractFilename(value);
 						if (!filename.empty()) {
 							filenames.push_back(filename);
+							fileContents.push_back(content);
 							std::cout << "Found file in request: " << filename << std::endl;
 						}
 					}
@@ -72,6 +74,10 @@ void HttpRequest::parseMultipartData(const std::string& boundary) {
 			}
 		}
 	}
+}
+
+const std::vector<std::string>& HttpRequest::getFileContents() const {
+	return fileContents;
 }
 
 void HttpRequest::parse(const char* buffer, int bytesRead) {
