@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:01:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/13 17:30:09 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/13 18:26:53 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,8 @@ bool Location::isValidMethod(const std::string& token)
 {
 	if (token != "GET"
 		&& token != "POST"
-		&& token != "DELETE")
+		&& token != "DELETE"
+		&& token != "")
 		return false;
 	return true;
 }
@@ -97,20 +98,20 @@ void Location::setCgiPath(const std::string& token)
 */
 void Location::setMethods(const std::vector<std::string>& methods)
 {
-	for (std::vector<std::string>::const_iterator it = methods.begin(); it != methods.end(); ++it)
-	{
-		try
-		{
-			if (!isValidMethod(*it))
-				throw InvalidMethodException();
-			else
-				_Methods.push_back(*it);
-		}
-		catch (const InvalidMethodException& e)
-		{
-			std::cerr << "Error: " << e.what() << std::endl;
-		}
-	}
+    for (std::vector<std::string>::const_iterator it = methods.begin(); it != methods.end(); ++it)
+    {
+        try
+        {
+            if (!isValidMethod(*it))
+                throw InvalidMethodException();
+            else
+                _Methods.push_back(*it);
+        }
+        catch (const InvalidMethodException& e)
+        {
+            std::cerr << "Error : " << e.what() << std::endl;
+        }
+    }
 }
 
 /* ---------------------- Getters ---------------------- */

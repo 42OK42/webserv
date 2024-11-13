@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/13 17:45:57 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/13 17:51:23 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,7 +73,9 @@ void Parser::parseMultipleServers(std::vector<std::string> portVector, std::vect
 			server.setHost(hosts[i]);
 			server.setPort(ports[j]);
 			_servers.push_back(server);
-			std::cout << "Created server on host " << hosts[i] << " and port " << ports[j] << std::endl;
+			#ifdef PARSER_MODE
+				std::cout << "Created server on host " << hosts[i] << " and port " << ports[j] << std::endl;
+			#endif
 		}
 	}
 }
