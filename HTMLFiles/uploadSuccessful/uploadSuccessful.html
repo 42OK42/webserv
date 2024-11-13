@@ -74,47 +74,51 @@
 	<h1>Upload Successful! 🚜💨</h1>
 	<p>Vroom Vroom! Your file has been uploaded successfully!</p>
 
-	<button onclick="location.href='/'" class="vroom-button">Back to Home of the Vroom Vroom Family!</button>
-	<button onclick="location.href='/upload'" class="vroom-button">Upload Another Tractor Masterpiece!</button>
-	<button onclick="location.href='/form'" class="vroom-button">Go to the Tractor Worship Form!</button>
+	<button onclick="location.href='/'" class="vroom-button">Back to Home</button>
+	<button onclick="location.href='/upload'" class="vroom-button">Upload Another File</button>
 
 	<h2>Uploaded Files 🚜📸</h2>
 	<ul id="fileList">
-		<!-- The uploaded files will be listed here dynamically -->
+	  <!-- The uploaded files will be listed here dynamically -->
 	</ul>
 
 	<script>
-		document.addEventListener('DOMContentLoaded', () => {
-			const fileListElement = document.getElementById('fileList');
-			const fileList = ['tractor_pic1.jpg', 'tractor_video.mp4']; // Remplacez par des fichiers dynamiques si nécessaire.
+	  document.addEventListener('DOMContentLoaded', () => {
+		const fileListElement = document.getElementById('fileList');
 
-			fileList.forEach(file => {
-				const li = document.createElement('li');
-				li.textContent = file;
+		// Récupérer la liste des fichiers depuis le serveur
+		fetch('/api/files')
+		  .then(response => response.json())
+		  .then(files => {
+			files.forEach(file => {
+			  const li = document.createElement('li');
+			  li.textContent = file;
 
-				const deleteButton = document.createElement('button');
-				deleteButton.textContent = 'Delete';
-				deleteButton.classList.add('delete-button');
-				deleteButton.onclick = () => deleteFile(file);
+			  const deleteButton = document.createElement('button');
+			  deleteButton.textContent = 'Delete';
+			  deleteButton.classList.add('delete-button');
+			  deleteButton.onclick = () => deleteFile(file);
 
-				li.appendChild(deleteButton);
-				fileListElement.appendChild(li);
+			  li.appendChild(deleteButton);
+			  fileListElement.appendChild(li);
 			});
-		});
+		  })
+		  .catch(error => console.error('Error fetching file list:', error));
+	  });
 
-		function deleteFile(filename) {
-			if (confirm(`Are you sure you want to delete ${filename}? Vroom Vroom, think twice!`)) {
-				fetch(`/uploadSuccessful?filename=${encodeURIComponent(filename)}`, {
-					method: 'DELETE'
-				})
-				.then(response => response.text())
-				.then(data => {
-					alert(data);
-					location.reload();
-				})
-				.catch(error => console.error('Error:', error));
-			}
+	  function deleteFile(filename) {
+		if (confirm(`Are you sure you want to delete ${filename}? Vroom Vroom, think twice!`)) {
+		  fetch(`/uploadSuccessful?filename=${encodeURIComponent(filename)}`, {
+			method: 'DELETE'
+		  })
+		  .then(response => response.text())
+		  .then(data => {
+			alert(data);
+			location.reload();  // Recharge la page pour mettre à jour la liste
+		  })
+		  .catch(error => console.error('Error:', error));
 		}
+	  }
 	</script>
-</body>
-</html>
+  </body>
+  </html>
