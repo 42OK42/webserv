@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:54 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/12 20:40:40 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/13 17:20:36 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,8 @@
 #include <vector>
 #include <algorithm>
 #include <iomanip>
+
+
 #define RESET   "\033[0m"
 #define BOLD    "\033[1m"
 #define BLUE    "\033[34m"
@@ -45,16 +47,15 @@ class Location
 		bool isValidMethod(const std::string& token);
 		bool isValidAutoIndex(const std::string& token);
 
-		/* Getters and Setters */
+		/* Getters */
 		std::string getPath() const;
 		std::string get_redirectTo() const;
 		std::string getRoot() const;
 		std::string getIndex() const;
-		std::string getExtension() const;
-		std::string getCgiEXtension() const;
 		bool getAutoIndex() const;
 		std::vector<std::string> getMethods() const;
 
+		/* Setters */
 		void setExtension(const std::string& token);
 		void setCgiPath(const std::string& token);
 		void setPath(const std::string& token);

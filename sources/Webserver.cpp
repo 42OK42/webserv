@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserver.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/12 18:20:11 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/13 17:40:07 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,12 +22,11 @@
 #include <cstring>
 #include <csignal>
 #include <set>
-#include <utility>  // für std::pair
+#include <utility>
 
 Webserver::Webserver() {}
 
 Webserver::Webserver(const std::vector<ServerConfig>& servers) : _servers(servers) {
-	// Initialisierungen, falls nötig
 }
 
 Webserver::~Webserver() {
@@ -36,18 +35,17 @@ Webserver::~Webserver() {
 	}
 }
 
-void Webserver::initializeServers() {
-	std::set<int> initializedPorts;  // Track initialized ports to avoid duplicates
+void Webserver::initializeServers()
+{
+	std::set<int> initializedPorts;
 
 	for (size_t i = 0; i < _servers.size(); ++i) {
 		ServerConfig& server = _servers[i];
 		int port = server.getPort();
 
-		// Skip if port already initialized
 		if (initializedPorts.find(port) != initializedPorts.end()) {
 			continue;
 		}
-
 		try {
 			int server_socket = server.setupServerSocket();
 			struct pollfd server_fd;
@@ -65,16 +63,10 @@ void Webserver::initializeServers() {
 	if (!fds.empty()) {
 		// Display available server configurations
 		for (size_t i = 0; i < _servers.size(); ++i) {
-			std::cout << "Server configuration available: " 
-					  << _servers[i].getHost() << ":" 
-					  << _servers[i].getPort() 
-					  << " (server_name: ";
-			//const std::vector<std::string>& serverNames = _servers[i].getServerName();
-			// for (size_t j = 0; j < serverNames.size(); ++j) {
-			// 	std::cout << serverNames[j];
-			// 	if (j < serverNames.size() - 1) std::cout << ", ";
-			// }
-			std::cout << ")" << std::endl;
+			std::cout << "Server configuration available: "
+					  << _servers[i].getHost() << ":"
+					  << _servers[i].getPort() << std::endl;
+
 		}
 		runEventLoop();
 	} else {
@@ -84,14 +76,14 @@ void Webserver::initializeServers() {
 
 void Webserver::runEventLoop() {
 	int poll_count = poll(&fds[0], fds.size(), 1000);  // 1 second timeout
-	
+
 	if (poll_count < 0) {
 		if (errno != EINTR) {  // Ignore if interrupted by signal
 			std::cerr << "Poll error: " << strerror(errno) << std::endl;
 		}
 		return;
 	}
-	
+
 	// Check each file descriptor for events
 	for (size_t i = 0; i < fds.size(); ++i) {
 		if (fds[i].revents & POLLIN) {
@@ -116,30 +108,30 @@ bool Webserver::isServerSocket(int fd) {
 void Webserver::handleNewConnection(int server_socket) {
 	struct sockaddr_in client_addr;
 	socklen_t client_len = sizeof(client_addr);
-	
+
 	int new_fd = accept(server_socket, (struct sockaddr*)&client_addr, &client_len);
 	if (new_fd < 0) {
 		std::cerr << "Accept error: " << strerror(errno) << std::endl;
 		return;
 	}
-	
+
 	setNonBlocking(new_fd);
 	setSocketTimeout(new_fd, 60);  // 60 second timeout
-	
+
 	struct pollfd client_fd;
 	client_fd.fd = new_fd;
 	client_fd.events = POLLIN;
 	fds.push_back(client_fd);
-	
+
 	client_to_server[new_fd] = server_socket;
-	std::cout << "\033[0;35m[Connection]\033[0m New client " << new_fd 
+	std::cout << "\033[0;35m[Connection]\033[0m New client " << new_fd
 			  << " connected to server socket " << server_socket << std::endl;
 }
 
 void Webserver::handleClientData(size_t index) {
 	int client_fd = fds[index].fd;
 	int server_socket = client_to_server[client_fd];
-	
+
 	ServerConfig* server = NULL;
 	for (size_t i = 0; i < _servers.size(); ++i) {
 		if (_servers[i].getSocket() == server_socket) {
@@ -147,25 +139,24 @@ void Webserver::handleClientData(size_t index) {
 			break;
 		}
 	}
-	
+
 	if (!server) {
 		#ifdef DEBUG_MODE
-		std::cerr << "\033[0;31m[DEBUG] Webserver::handleClientData: No server found for socket " 
+		std::cerr << "\033[0;31m[DEBUG] Webserver::handleClientData: No server found for socket "
 				  << server_socket << "\033[0m" << std::endl;
 		#endif
 		closeConnection(index);
 		return;
 	}
-	
+
 	try {
 		bool requestComplete = server->readClientData(client_fd);
 		if (!requestComplete) {
-			return;  // Warte auf mehr Daten
+			return;
 		}
 
 		std::string& requestData = server->getClientData(client_fd);
-		
-		// Prüfe auf leere Requests
+
 		if (requestData.empty()) {
 			closeConnection(index);
 			return;
@@ -173,12 +164,11 @@ void Webserver::handleClientData(size_t index) {
 
 		try {
 			HttpRequest httpRequest(requestData.c_str(), requestData.length(), *server);
-			
-			// Prüfe Connection Header
+
 			bool shouldClose = (httpRequest.getHeader("Connection") == "close");
-			
+
 			#ifdef DEBUG_MODE
-			std::cout << "\033[0;36m[DEBUG] Webserver::handleClientData: Connection Header = " 
+			std::cout << "\033[0;36m[DEBUG] Webserver::handleClientData: Connection Header = "
 					  << httpRequest.getHeader("Connection") << "\033[0m" << std::endl;
 			#endif
 
@@ -189,35 +179,30 @@ void Webserver::handleClientData(size_t index) {
 				processRequest(httpRequest, server, client_fd);
 			}
 
-			// Lösche nur die Request-Daten, nicht die Verbindung
 			server->eraseClientData(client_fd);
-			
-			// Schließe nur wenn nötig
+
 			if (shouldClose) {
 				#ifdef DEBUG_MODE
 				std::cout << "\033[0;36m[DEBUG] Webserver::handleClientData: Schließe Verbindung auf Anfrage\033[0m" << std::endl;
 				#endif
 				closeConnection(index);
 			}
-			
+
 		} catch (const std::runtime_error& e) {
 			if (std::string(e.what()) == "Request body exceeds maximum allowed size") {
 				#ifdef DEBUG_MODE
 				std::cerr << "\033[0;31m[DEBUG] Webserver::handleClientData: Datei zu groß, sende 413\033[0m" << std::endl;
 				#endif
 
-				// Erstelle eine neue HttpResponse ohne Request
 				HttpResponse errorResponse;
 				Router router(*server);
-				
-				// Nutze die vorhandene Fehlerbehandlung
+
 				router.setErrorResponse(errorResponse, 413);
-				
+
 				std::string responseStr = errorResponse.toString();
-				
+
 				send(client_fd, responseStr.c_str(), responseStr.length(), MSG_NOSIGNAL);
-				
-				// Lösche die Request-Daten und schließe die Verbindung
+
 				server->eraseClientData(client_fd);
 				closeConnection(index);
 				return;
@@ -225,7 +210,7 @@ void Webserver::handleClientData(size_t index) {
 			closeConnection(index);
 			return;
 		}
-		
+
 	} catch (const std::exception& e) {
 		#ifdef DEBUG_MODE
 		std::cerr << "\033[0;31m[DEBUG] Webserver::handleClientData: Fehler: " << e.what() << "\033[0m" << std::endl;
@@ -259,7 +244,7 @@ void Webserver::setSocketTimeout(int sockfd, int timeout_seconds) {
 	struct timeval timeout;
 	timeout.tv_sec = timeout_seconds;
 	timeout.tv_usec = 0;
-	
+
 	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
 		std::cerr << "Error setting receive timeout: " << strerror(errno) << std::endl;
 	}
@@ -270,53 +255,45 @@ void Webserver::setSocketTimeout(int sockfd, int timeout_seconds) {
 
 ServerConfig* Webserver::findMatchingServer(const std::string& host, int port) {
 	std::cout << "\033[0;33m[Router]\033[0m Searching server for " << host << ":" << port << std::endl;  // Gelb
-	
+
 	for (size_t i = 0; i < _servers.size(); ++i) {
 		const ServerConfig& server = _servers[i];
-		
+
 		if (server.getPort() == port) {
 			if (server.getHost() == host) {
-				std::cout << "\033[0;32m[Router]\033[0m Found matching server: " 
+				std::cout << "\033[0;32m[Router]\033[0m Found matching server: "
 						  << server.getHost() << ":" << server.getPort() << std::endl;  // Grün
 				return &_servers[i];
 			}
-
-			// const std::vector<std::string>& serverNames = server.getServerName();
-			// if (std::find(serverNames.begin(), serverNames.end(), host) != serverNames.end()) {
-			// 	std::cout << "\033[0;32m[Router]\033[0m Found matching server by name: " 
-			// 			  << server.getHost() << ":" << server.getPort() << std::endl;  // Grün
-				// return &_servers[i];
-			
 		}
 	}
-	
+
 	std::cout << "\033[0;31m[Router]\033[0m No matching server found!" << std::endl;  // Rot
 	return NULL;
 }
 
 void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, int client_fd) {
 	#ifdef DEBUG_MODE
-	std::cout << "\033[0;36m[DEBUG] Webserver::processRequest: Processing request for client " 
+	std::cout << "\033[0;36m[DEBUG] Webserver::processRequest: Processing request for client "
 			  << client_fd << "\033[0m" << std::endl;
 	#endif
 
 	HttpResponse httpResponse(httpRequest);
 	Router router(*server);
-	
+
 	router.initializeRoutes();
 	router.handleRequest(httpRequest, httpResponse);
-	
+
 	std::string responseStr = httpResponse.toString();
-	
+
 	#ifdef DEBUG_MODE
-	std::cout << "\033[0;36m[DEBUG] Webserver::processRequest: Sending response:\n" 
+	std::cout << "\033[0;36m[DEBUG] Webserver::processRequest: Sending response:\n"
 			  << responseStr << "\033[0m" << std::endl;
 	#endif
 
-	// Sende die Antwort in einem Stück
 	ssize_t total_sent = 0;
 	while (total_sent < static_cast<ssize_t>(responseStr.length())) {
-		ssize_t sent = send(client_fd, responseStr.c_str() + total_sent, 
+		ssize_t sent = send(client_fd, responseStr.c_str() + total_sent,
 						  responseStr.length() - total_sent, MSG_NOSIGNAL);
 		if (sent <= 0) {
 			#ifdef DEBUG_MODE
@@ -328,7 +305,7 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 	}
 
 	#ifdef DEBUG_MODE
-	std::cout << "\033[0;36m[DEBUG] Webserver::processRequest: Response sent completely (" 
+	std::cout << "\033[0;36m[DEBUG] Webserver::processRequest: Response sent completely ("
 			  << total_sent << " bytes)\033[0m" << std::endl;
 	#endif
 }

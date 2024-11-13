@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerConfig.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/18 17:04:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/13 15:35:25 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/13 17:33:23 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,19 +15,27 @@
 #include "HttpResponse.hpp"
 #include "HttpRequest.hpp"
 
-// #include "Parser.hpp"
 
 ServerConfig::ServerConfig() {}
 
+/*
+	Destructor for the ServerConfig class. Closes the socket (`m_socket`) if it is open
+	(i.e., not equal to -1) to release system resources.
 
-// Destructeur
+	@returns void
+*/
 ServerConfig::~ServerConfig() {
 	if (m_socket != -1) {
 		close(m_socket);
 	}
 }
 
-// Set the socket to non-blocking mode
+/*
+	Sets the specified socket to non-blocking mode.
+
+	@param sockfd: The socket file descriptor to be set to non-blocking mode.
+	@returns: 0 on success, -1 on failure.
+*/
 int set_nonblocking(int sockfd) {
 	int flags = fcntl(sockfd, F_GETFL, 0);
 	if (flags == -1) {
@@ -36,7 +44,12 @@ int set_nonblocking(int sockfd) {
 	return fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
 }
 
+/*
+	Sets the send and receive timeout for the specified socket.
 
+	@param sockfd: The socket file descriptor to set the timeout for.
+	@param timeout_seconds: The timeout value in seconds for both sending and receiving operations.
+*/
 void ServerConfig::set_socket_timeout(int sockfd, int timeout_seconds) {
 	struct timeval timeout;
 	timeout.tv_sec = timeout_seconds;
@@ -50,7 +63,12 @@ void ServerConfig::set_socket_timeout(int sockfd, int timeout_seconds) {
 	}
 }
 
+/*
+	Reads the contents of a file and returns it as a string.
 
+	@param filepath: The path to the file to read.
+	@return A string containing the content of the file. If the file cannot be opened, returns an empty string.
+*/
 std::string ServerConfig::readFile(const std::string& filepath) {
 	std::ifstream file(filepath.c_str());
 	if (!file) {
@@ -62,6 +80,15 @@ std::string ServerConfig::readFile(const std::string& filepath) {
 	return buffer.str();
 }
 
+/*
+	Reads data from a client socket and stores it in a buffer.
+
+	@param client_fd: The file descriptor of the client socket.
+	@return true if the complete client data (including headers and content) is received, false otherwise.
+
+	This function reads data from the client, appends it to a buffer, and checks for the end of the HTTP headers and the content length.
+	If the full data has not been received, it returns false, indicating more data is expected.
+*/
 bool ServerConfig::readClientData(int client_fd) {
 	char buffer[1024];
 	int n = recv(client_fd, buffer, sizeof(buffer), 0);
@@ -70,49 +97,52 @@ bool ServerConfig::readClientData(int client_fd) {
 	std::cout << "\033[0;36m[DEBUG] ServerConfig::readClientData: Received " << n << " bytes\033[0m" << std::endl;
 	#endif
 
-	if (n < 0) {
+	if (n < 0)
 		return false;
-	}
 
-	if (n == 0) {
-		return true;  // Verbindung geschlossen
-	}
+	if (n == 0)
+		return true;
 
 	client_data[client_fd].append(buffer, n);
 
 	#ifdef DEBUG_MODE
-	std::cout << "\033[0;36m[DEBUG] ServerConfig::readClientData: Total data size: " 
+	std::cout << "\033[0;36m[DEBUG] ServerConfig::readClientData: Total data size: "
 			  << client_data[client_fd].size() << "\033[0m" << std::endl;
 	#endif
 
-	// Prüfe, ob wir den kompletten Header haben
 	std::string& data = client_data[client_fd];
 	size_t header_end = data.find("\r\n\r\n");
 	if (header_end == std::string::npos) {
-		return false;  // Header noch nicht komplett
+		return false;
 	}
 
-	// Extrahiere Content-Length aus Header
 	size_t content_length_pos = data.find("Content-Length: ");
 	if (content_length_pos != std::string::npos) {
 		size_t end_pos = data.find("\r\n", content_length_pos);
 		std::string length_str = data.substr(content_length_pos + 16, end_pos - (content_length_pos + 16));
 		size_t content_length = std::atol(length_str.c_str());
 
-		// Prüfe, ob wir den kompletten Body haben
 		size_t expected_size = header_end + 4 + content_length;
 		if (data.size() < expected_size) {
 			#ifdef DEBUG_MODE
 			std::cout << "\033[0;36m[DEBUG] ServerConfig::readClientData: Waiting for more data. "
 					  << data.size() << "/" << expected_size << " bytes\033[0m" << std::endl;
 			#endif
-			return false;  // Body noch nicht komplett
+			return false;
 		}
 	}
-
-	return true;  // Request komplett
+	return true;
 }
 
+/*
+	Sets up a server socket for accepting incoming client connections.
+
+	@return The file descriptor of the server socket.
+
+	This function creates a socket, binds it to the server's address and port, and listens for incoming client connections.
+	It also sets the socket to non-blocking mode to handle asynchronous communication.
+	If any step fails (socket creation, binding, listening, or non-blocking setup), the function throws an appropriate exception.
+*/
 int ServerConfig::setupServerSocket()
 {
 	m_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -240,7 +270,7 @@ std::string ServerConfig::getCgiBin() const {
 
 
 const std::map<std::string, Location>& ServerConfig::getLocations() const {
-	return _locations; //returns the whole map
+	return _locations;
 }
 
 
@@ -260,8 +290,13 @@ void ServerConfig::addErrorPage(int code, const std::string& page)
 	}
 
 /*
-	Goes through the errorPage map and check if all the error pages are there and if their path is accesible
-	if the errorcode is not there or if the path is not accesible, the default page and path will be added
+	Checks and sets default error pages for common HTTP error codes (400, 403, 404, etc.) if no custom error page is defined.
+
+	For each error code (400, 403, 404, 405, 413, 415, 500), the function checks if a custom error page path has been provided.
+	If not, it assigns a default error page file path. If the custom error page exists, it remains in place;
+	otherwise, it is replaced with the default error page. The error pages are stored in a map (_errorPages) indexed by error code.
+
+	No return value.
 */
 void  ServerConfig::checkErrorPage()
 {
@@ -290,7 +325,6 @@ void  ServerConfig::checkErrorPage()
 		{
 			std::string defaultErrorPagePath = getErrorFilePath(errorCode);
 			_errorPages[errorCode] = defaultErrorPagePath;
-		//	std::cout << "Added default error page for code " << errorCode << ": " << defaultErrorPagePath << std::endl;
 		}
 		else
 		{
@@ -299,19 +333,26 @@ void  ServerConfig::checkErrorPage()
 			{
 				std::string defaultErrorPagePath = getErrorFilePath(errorCode);
 				_errorPages[errorCode] = defaultErrorPagePath;
-				std::cout << "Replaced with default error page: " << defaultErrorPagePath << std::endl;
+				#ifdef PARSER_MODE
+					std::cout << "Replaced with default error page: " << defaultErrorPagePath << std::endl;
+				#endif
 			}
 			else
 			{
-
-
-				std::cout << "Error page for code " << errorCode << " is valid: " << filePath << std::endl;
+				#ifdef PARSER_MODE
+					std::cout << "Error page for code " << errorCode << " is valid: " << filePath << std::endl;
+				#endif
 			}
 		}
-
 	}
 }
 
+/* ---------------------- Getters ---------------------- */
+
+/*
+	Retrieves the path of the currently running executable.
+	@return The absolute path of the executable as a string.
+*/
 std::string ServerConfig::getExecutablePath() {
 	char result[PATH_MAX];
 	ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
@@ -330,6 +371,12 @@ void ServerConfig::eraseClientData(int client_fd) {
 	client_data.erase(client_fd);
 }
 
+/*
+    Generates the file path for an error page based on the error code.
+
+    @param errorCode The HTTP error code (e.g., 404, 500).
+    @return The file path to the corresponding error page HTML file.
+*/
 std::string ServerConfig::getErrorFilePath(int errorCode)
 {
 	std::string execPath = getExecutablePath();
@@ -343,9 +390,21 @@ std::string ServerConfig::getErrorFilePath(int errorCode)
 	return errorFilePath;
 }
 
-/* ---------------- Methods ---------------- */
+/* ---------------------- Methods ---------------------- */
 
-/*Try to find a location with the given location path, if no location found throws an error */
+/*
+    Finds a location configuration by its path.
+
+    This function searches for a location configuration in the `_locations` map using the provided `locationPath`.
+    If the location is found, it returns the corresponding `Location` object. If not, it throws a `LocationNotFound` exception.
+
+    @param locationPath The path of the location to search for.
+
+    @return The `Location` object associated with the given path.
+
+    @throws ServerConfig::LocationNotFound If the location path is not found in the `_locations` map.
+*/
+
 Location ServerConfig::findLocation(std::string locationPath)
 {
 	 std::map<std::string, Location>::iterator it = _locations.find(locationPath);
@@ -357,7 +416,29 @@ Location ServerConfig::findLocation(std::string locationPath)
 
 }
 
-/*           Overload operator            */
+/*
+	Checks if the given content length is within the allowed maximum size for the body.
+
+	This function compares the provided `contentLength` with the server's configured maximum allowed body size (_clientMaxBodySize).
+	It returns `true` if the content length is within the allowed limit; otherwise, it returns `false`.
+
+	@param contentLength The size of the body content to check, in bytes.
+
+	@return True if the content length is less than or equal to the allowed size; false otherwise.
+
+	@note In DEBUG_MODE, the function will log the content length being checked and the maximum allowed body size to the console.
+*/
+
+bool ServerConfig::isBodySizeAllowed(size_t contentLength) const {
+	#ifdef DEBUG_MODE
+	std::cout << "\033[0;36m[DEBUG] ServerConfig::isBodySizeAllowed: Checking size " << contentLength
+			  << " against maximum " << _clientMaxBodySize << "\033[0m" << std::endl;
+	#endif
+	return contentLength <= _clientMaxBodySize;
+}
+
+
+/* ---------------------- Overload Operator ---------------------- */
 
 std::ostream& operator<<(std::ostream& os, const ServerConfig& server) {
 
@@ -385,8 +466,7 @@ std::ostream& operator<<(std::ostream& os, const ServerConfig& server) {
 	return os;
 }
 
-
-/*           Exceptions         */
+/* ---------------------- Exceptions ---------------------- */
 
 const char* ServerConfig::SocketCreationFailed::what() const throw () {
 	return "Throwing exception: creating server socket";
@@ -410,12 +490,4 @@ const char* ServerConfig::LocationNotFound::what() const throw () {
 
 const char* ServerConfig::SocketListeningFailed::what() const throw () {
 	return "Throwing exception: socket listening failed";
-}
-
-bool ServerConfig::isBodySizeAllowed(size_t contentLength) const {
-	#ifdef DEBUG_MODE
-	std::cout << "\033[0;36m[DEBUG] ServerConfig::isBodySizeAllowed: Checking size " << contentLength 
-			  << " against maximum " << _clientMaxBodySize << "\033[0m" << std::endl;
-	#endif
-	return contentLength <= _clientMaxBodySize;
 }

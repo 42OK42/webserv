@@ -6,22 +6,21 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:01:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/12 20:50:24 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/13 17:30:09 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Location.hpp"
 
-Location::Location()
-{
-	//std::cout << "\033[33m" << "Default constructor called" << "\033[0m" << std::endl;
-}
+Location::Location() {}
 
-Location::~Location()
-{
-	//std::cout << "\033[32m" << "Destructor called" << "\033[0m" << std::endl;
-}
+Location::~Location() {}
 
+/*
+	@note The valid HTTP methods are constrained to "GET", "POST", and "DELETE".
+	Any other method will be considered invalid and will raise an exception.
+	(see subject)
+*/
 bool Location::isValidMethod(const std::string& token)
 {
 	if (token != "GET"
@@ -39,7 +38,7 @@ bool Location::isValidAutoIndex(const std::string& token)
 	return true;
 }
 
-/* Setters */
+/* ---------------------- Setters ---------------------- */
 
 void Location::setPath(const std::string& token)
 {
@@ -80,6 +79,22 @@ void Location::setCgiPath(const std::string& token)
 	_cgi_path = token;
 }
 
+/*
+	Sets the allowed HTTP methods for a location.
+
+	The function iterates over a vector of HTTP method strings, validates each
+	method using the `isValidMethod` function, and adds the valid methods to
+	the `_Methods` vector. If an invalid method is encountered, an
+	`InvalidMethodException` is thrown and an error message is displayed,
+	without stopping the execution of the program.
+
+	@param methods A constant reference to a `std::vector<std::string>`
+	containing the HTTP methods to be set for the location. Each method is
+	checked for validity before being added to the location's list of allowed
+	methods.
+
+	@returns void
+*/
 void Location::setMethods(const std::vector<std::string>& methods)
 {
 	for (std::vector<std::string>::const_iterator it = methods.begin(); it != methods.end(); ++it)
@@ -98,7 +113,7 @@ void Location::setMethods(const std::vector<std::string>& methods)
 	}
 }
 
-/* Getters */
+/* ---------------------- Getters ---------------------- */
 
 std::string Location::getPath() const
 {
@@ -130,13 +145,12 @@ std::vector<std::string> Location::getMethods() const
 	return _Methods;
 }
 
-/* Neue Methode zur Überprüfung erlaubter Methoden */
 bool Location::isMethodAllowed(const std::string& method) const
 {
 	return std::find(_Methods.begin(), _Methods.end(), method) != _Methods.end();
 }
 
-/* Exceptions */
+/* ---------------------- Exceptions ---------------------- */
 
 const char* Location::InvalidAutoIndexException::what() const throw ()
 {
@@ -148,7 +162,8 @@ const char* Location::InvalidMethodException::what() const throw ()
 	return "Throwing exception: invalid method";
 }
 
-/* Overload operators */
+/* ---------------------- Overload Operators ---------------------- */
+
 std::ostream& operator<<(std::ostream& os, const Location& location)
 {
 	os << "\n" << BOLD << BLUE << "# Location " << RESET << location.getPath()  << std::endl;
