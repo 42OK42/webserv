@@ -85,12 +85,10 @@
 	<script>
 	  document.addEventListener('DOMContentLoaded', () => {
 		const fileListElement = document.getElementById('fileList');
-
-		// Récupérer la liste des fichiers depuis le serveur
-		fetch('/api/files')
-		  .then(response => response.json())
-		  .then(files => {
-			files.forEach(file => {
+		
+		// Verwende die bereits verfügbare fileList Variable, die vom Server injiziert wurde
+		if (typeof fileList !== 'undefined') {
+			fileList.forEach(file => {
 			  const li = document.createElement('li');
 			  li.textContent = file;
 
@@ -102,8 +100,7 @@
 			  li.appendChild(deleteButton);
 			  fileListElement.appendChild(li);
 			});
-		  })
-		  .catch(error => console.error('Error fetching file list:', error));
+		}
 	  });
 
 	  function deleteFile(filename) {
@@ -114,7 +111,7 @@
 		  .then(response => response.text())
 		  .then(data => {
 			alert(data);
-			location.reload();  // Recharge la page pour mettre à jour la liste
+			location.reload();
 		  })
 		  .catch(error => console.error('Error:', error));
 		}
