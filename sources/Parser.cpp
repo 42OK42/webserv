@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/12 20:16:43 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/13 16:20:16 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,6 @@ bool Parser::readFile(const std::string& filePath, std::stringstream& buffer)
 		std::cerr << "Error: Unable to open configuration file" << std::endl;
 		return false;
 	}
-
 	buffer << configFile.rdbuf();
 	configFile.close();
 	return true;
@@ -48,7 +47,6 @@ void Parser::parseMultipleServers(std::vector<std::string> portVector, std::vect
 	std::vector<int> ports =  checkPorts(portVector);
 	std::vector<std::string> hosts = checkHosts(hostVector);
 
-
 	for (size_t i = 0; i < hosts.size(); ++i)
 	{
 		for (size_t j = 0; j < ports.size(); ++j)
@@ -57,8 +55,6 @@ void Parser::parseMultipleServers(std::vector<std::string> portVector, std::vect
 			server.setHost(hosts[i]);
 			server.setPort(ports[j]);
 			_servers.push_back(server);
-
-
 			std::cout << "Created server on host " << hosts[i] << " and port " << ports[j] << std::endl;
 		}
 	}
@@ -273,7 +269,7 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 		parseMultipleServers(portVector, hostVector);
     }
 
-	#ifdef DEBUG_MODE
+	#ifdef PARSER_MODE
     if (_servers.empty()) {
         std::cout << "Error: _servers is empty!\n";
     } else {
