@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/13 16:14:00 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/13 17:02:03 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -278,9 +278,15 @@ void Router::handleUploadSuccessRoute(const HttpRequest& request, HttpResponse& 
 		if (!filename.empty()) {
 			std::string fullPath = uploadDir + filename;
 			if (remove(fullPath.c_str()) == 0) {
+				// Datei wurde erfolgreich gelöscht
 				response.setStatusCode(200);
 				response.setBody("File deleted successfully");
+			} else if (errno == ENOENT) {
+				// Datei existiert nicht
+				response.setStatusCode(204);
+				response.setBody("");
 			} else {
+				// Echter Fehler beim Löschen (z.B. Berechtigungsprobleme)
 				response.setStatusCode(500);
 				response.setBody("Error deleting file");
 			}
