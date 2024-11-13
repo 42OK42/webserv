@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/13 15:40:58 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/13 18:57:14 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,15 +26,68 @@ Router::Router(ServerConfig& config) : _serverConfig(config) {}
 
 Router::~Router() {}
 
-void Router::initializeRoutes() {
-	addRoute("/", &Router::handleHomeRoute);
-	addRoute("/upload", &Router::handleUploadRoute);
-	addRoute("/uploadSuccessful", &Router::handleUploadSuccessRoute);
-	addRoute("/form", &Router::handleFormRoute);
-	addRoute("/oldpage", &Router::handleRedirectRoute);
-	addRoute("/newpage", &Router::handleNewpage);
+std::string Router::readFile(const std::string& filepath) {
+	std::ifstream file(filepath.c_str());
+	if (!file.is_open()) {
+		return "<html><body><h1>404 Not Found</h1></body></html>";
+	}
+	std::stringstream buffer;
+	buffer << file.rdbuf();
+	return buffer.str();
 }
 
+void Router::ensureDirectoryExists(const std::string& path) {
+	size_t pos = 0;
+	do {
+		pos = path.find('/', pos + 1);
+		std::string subpath = path.substr(0, pos);
+		if (!subpath.empty()) {
+			mkdir(subpath.c_str(), 0777);
+		}
+	} while (pos != std::string::npos);
+}
+
+std::string Router::extractFilenameFromUrl(const std::string& url) {
+	size_t pos = url.find("filename=");
+	if (pos != std::string::npos) {
+		return url.substr(pos + 9);
+	}
+	return "";
+}
+
+std::string Router::extractFilename(const std::string& contentDisposition) {
+	std::string filename;
+	size_t pos = contentDisposition.find("filename=");
+	if (pos != std::string::npos) {
+		pos += 10;
+		size_t endPos = contentDisposition.find("\"", pos);
+		if (endPos != std::string::npos) {
+			filename = contentDisposition.substr(pos, endPos - pos);
+		}
+	}
+	return filename;
+}
+
+std::vector<std::string> Router::getFilesInDirectory(const std::string&) {
+	std::vector<std::string> files;
+	const std::map<std::string, Location>& locations = _serverConfig.getLocations();
+	
+	for (std::map<std::string, Location>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
+		std::string uploadDir = it->second.getRoot() + "/uploads/";
+		std::string locationPath = it->first;  // z.B. "/upload" oder "/form"
+		DIR* dir = opendir(uploadDir.c_str());
+		if (dir) {
+			struct dirent* entry;
+			while ((entry = readdir(dir)) != NULL) {
+				if (entry->d_type == DT_REG) {
+					files.push_back(locationPath + "|" + it->second.getRoot() + "|" + entry->d_name);
+				}
+			}
+			closedir(dir);
+		}
+	}
+	return files;
+}
 
 void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 	std::string requestHost = request.getHeader("Host");
@@ -59,207 +112,124 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 			return;
 		}
 
-		std::map<std::string, RouteHandler>::iterator routeIt = routes.find(path);
-		if (routeIt != routes.end()) {
-			(this->*(routeIt->second))(request, response);
-			return;
+		if (request.getMethod() == "GET") {
+			handleGET(request, response, location);
 		}
-
-		if (handleDirectoryRequest(path, request, response)) {
-			return;
+		else if (request.getMethod() == "POST") {
+			handlePOST(request, response, location);
 		}
-
-		setErrorResponse(response, 404);
-	} catch (const ServerConfig::LocationNotFound& e) {
-		setErrorResponse(response, 404);
-	}
-}
-
-void Router::handleRedirectRoute(const HttpRequest& request, HttpResponse& response)
-{
-	#ifdef DEBUG_MODE
-	std::cout << "\033[0;35m[DEBUG] Requested URL: " << request.getUrl() << "\033[0m" << std::endl;
-	#endif
-
-	try {
-		Location location = _serverConfig.findLocation(request.getUrl());
-
-		#ifdef DEBUG_MODE
-		std::cout << "\033[0;35m[DEBUG] Location found for path: " << location.getPath() << "\033[0m" << std::endl;
-		std::cout << "\033[0;35m[DEBUG] Redirect target: " << location.get_redirectTo() << "\033[0m" << std::endl;
-		#endif
-		if (!location.get_redirectTo().empty()) {
-			std::cout << "\033[0;35m[DEBUG] Redirecting to: " << location.get_redirectTo() << "\033[0m" << std::endl;
-			response.setStatusCode(301);
-			response.setHeader("Location", location.get_redirectTo());
-			response.setBody("");
-		} else {
-			std::cout << "\033[0;35m[DEBUG] No redirect URL defined for this location. Sending 404.\033[0m" << std::endl;
-			setErrorResponse(response, 404);
+		else if (request.getMethod() == "DELETE") {
+			handleDELETE(request, response, location);
+		}
+		else {
+			setErrorResponse(response, 405);
 		}
 	} catch (const ServerConfig::LocationNotFound& e) {
-		std::cout << "\033[0;35m[DEBUG] Location not found for the requested URL. Sending 404.\033[0m" << std::endl;
 		setErrorResponse(response, 404);
 	}
 }
 
-void Router::handleNewpage(const HttpRequest& req, HttpResponse& res) {
-	if (req.getMethod() == "GET") {
-		if (!handleDirectoryRequest("/newpage", req, res)) {
-			setErrorResponse(res, 404);
-		}
-	} else {
-		setErrorResponse(res, 405);
-	}
-}
-
-void Router::handleHomeRoute(const HttpRequest& req, HttpResponse& res) {
-	if (req.getMethod() == "GET") {
-		if (!handleDirectoryRequest("/", req, res)) {
-			setErrorResponse(res, 404);
-		}
-	} else {
-		setErrorResponse(res, 405);
-	}
-}
-
-void Router::handleFormRoute(const HttpRequest& request, HttpResponse& response) {
-	if (request.getMethod() == "GET") {
-		if (!handleDirectoryRequest("/form", request, response)) {
-			setErrorResponse(response, 404);
-		}
-	} else {
-		setErrorResponse(response, 405);
-	}
-}
-
-void Router::handleUploadRoute(const HttpRequest& request, HttpResponse& response) {
-	if (request.getMethod() == "GET") {
-		if (!handleDirectoryRequest("/upload", request, response)) {
-			setErrorResponse(response, 404);
-		}
+void Router::handleGET(const HttpRequest& request, HttpResponse& response, const Location& location) {
+	if (!location.get_redirectTo().empty()) {
+		response.setStatusCode(301);
+		response.setHeader("Location", location.get_redirectTo());
 		return;
 	}
 
-	if (request.getMethod() == "POST") {
-		std::string contentType = request.getHeader("Content-Type");
-		std::string uploadDir = "/home/ecarlier/sgoinfre/uploads_webserv/";
+	std::string path = request.getUrl();
+	std::string fullPath = location.getRoot();
+	
+	if (path == "/uploadSuccessful") {
+		std::string content = readFile(fullPath + "/" + location.getIndex());
+		std::vector<std::string> files = getFilesInDirectory("");
 		
-		ensureDirectoryExists(uploadDir);
-		bool uploadSuccess = false;
+		std::string fileListJS = "const fileList = [";
+		for (size_t i = 0; i < files.size(); ++i) {
+			fileListJS += "'" + files[i] + "'";
+			if (i < files.size() - 1) fileListJS += ",";
+		}
+		fileListJS += "];";
+		
+		size_t pos = content.find("</head>");
+		if (pos != std::string::npos) {
+			content.insert(pos, "<script>" + fileListJS + "</script>");
+		}
+		
+		response.setStatusCode(200);
+		response.setBody(content);
+		response.setHeader("Content-Type", "text/html");
+		return;
+	}
 
-		if (contentType.find("multipart/form-data") != std::string::npos) {
-			const std::vector<std::string>& filenames = request.getFilenames();
-			
-			#ifdef DEBUG_MODE
-			std::cout << "\033[0;35m[DEBUG] Router::handleUploadRoute: Number of files: " 
-					  << filenames.size() << "\033[0m" << std::endl;
-			#endif
-
-			if (!filenames.empty()) {
-				const std::string& body = request.getBody();
-				size_t pos = 0;
-				
-				for (size_t i = 0; i < filenames.size(); ++i) {
-					size_t start = body.find("\r\n\r\n", pos) + 4;
-					if (start == std::string::npos + 4) continue;
-					
-					size_t end = body.find("\r\n--", start);
-					if (end == std::string::npos) {
-						end = body.length();
-					}
-					
-					std::string fileContent = body.substr(start, end - start);
-					pos = end + 4;
-
-					if (fileContent.size() >= 2 && fileContent.compare(fileContent.size() - 2, 2, "\r\n") == 0) {
-						fileContent.erase(fileContent.size() - 2);
-					}
-
-					std::string savedFilename = uploadDir + filenames[i];
-					std::ofstream outFile(savedFilename.c_str(), std::ios::binary);
-					if (outFile.is_open()) {
-						outFile.write(fileContent.c_str(), fileContent.size());
-						outFile.close();
-						uploadSuccess = true;
-						
-						#ifdef DEBUG_MODE
-						std::cout << "\033[0;32m[DEBUG] Router::handleUploadRoute: File successfully saved: " 
-								  << savedFilename << "\033[0m" << std::endl;
-						#endif
-					}
+	struct stat statbuf;
+	if (stat(fullPath.c_str(), &statbuf) == 0) {
+		if (S_ISDIR(statbuf.st_mode)) {
+			if (!location.getIndex().empty()) {
+				std::string indexPath = fullPath + "/" + location.getIndex();
+				if (stat(indexPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
+					response.setStatusCode(200);
+					response.setBody(readFile(indexPath));
+					response.setHeader("Content-Type", "text/html");
+					return;
 				}
 			}
-		} else {
-			std::string filename = "text_upload_" + getCurrentTimestamp() + ".txt";
-			std::string fullPath = uploadDir + filename;
-			std::ofstream outFile(fullPath.c_str(), std::ios::binary);
-			if (outFile.is_open()) {
-				outFile.write(request.getBody().c_str(), request.getBody().size());
-				outFile.close();
-				uploadSuccess = true;
+			if (location.getAutoIndex()) {
+				response.setStatusCode(200);
+				response.setBody(generateDirectoryListing(fullPath, request.getUrl()));
+				response.setHeader("Content-Type", "text/html");
+				return;
 			}
 		}
-
-		if (uploadSuccess) {
-			response.setStatusCode(303);
-			response.setHeader("Location", "/uploadSuccessful");
-				response.setHeader("Content-Type", "text/html");
-				response.setHeader("Content-Length", "0");
-				response.setBody("");
-		} else {
-			setErrorResponse(response, 500);
+		else if (S_ISREG(statbuf.st_mode)) {
+			response.setStatusCode(200);
+			response.setBody(readFile(fullPath));
+			response.setHeader("Content-Type", "text/html");
+			return;
 		}
+	}
+	setErrorResponse(response, 404);
+}
+
+void Router::handlePOST(const HttpRequest& request, HttpResponse& response, const Location& location) {
+	std::string uploadDir = location.getRoot() + "/uploads/";
+	ensureDirectoryExists(uploadDir);
+
+	const std::vector<std::string>& filenames = request.getFilenames();
+	const std::vector<std::string>& fileContents = request.getFileContents();
+	
+	if (!filenames.empty() && filenames.size() == fileContents.size()) {
+		for (size_t i = 0; i < filenames.size(); ++i) {
+			std::string fullPath = uploadDir + filenames[i];
+			std::ofstream outFile(fullPath.c_str(), std::ios::binary);
+			if (outFile.is_open()) {
+				outFile.write(fileContents[i].c_str(), fileContents[i].length());
+				outFile.close();
+			}
+		}
+		
+		response.setStatusCode(303);
+		response.setHeader("Location", "/uploadSuccessful");
+		response.setHeader("Content-Type", "text/html");
+		response.setBody("<html><body>Redirecting to /uploadSuccessful</body></html>");
 	} else {
-		setErrorResponse(response, 405);
+		setErrorResponse(response, 400);
 	}
 }
 
-void Router::handleUploadSuccessRoute(const HttpRequest& request, HttpResponse& response) {
-	if (request.getMethod() == "GET") {
-		Location location = _serverConfig.findLocation("/uploadSuccessful");
-		std::string root = location.getRoot();
-		std::string index = location.getIndex();
-		std::string fullPath = root + "/" + index;
+void Router::handleDELETE(const HttpRequest& request, HttpResponse& response, const Location& location) {
+	if (!location.isMethodAllowed("DELETE")) {
+		setErrorResponse(response, 405);
+		return;
+	}
 
-		struct stat statbuf;
-		if (stat(fullPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
-			std::string successContent = readFile(fullPath);
-
-			std::string uploadDir = "/home/ecarlier/sgoinfre/uploads_webserv/";
-			std::vector<std::string> files = getFilesInDirectory(uploadDir);
-
-			std::ostringstream json;
-			json << "[";
-			for (size_t i = 0; i < files.size(); ++i) {
-				if (i > 0) json << ", ";
-				json << "\"" << files[i] << "\"";
-			}
-			json << "]";
-
-			std::string script = "<script>const fileList = " + json.str() + ";</script>";
-			size_t pos = successContent.find("</head>");
-			if (pos != std::string::npos) {
-				successContent.insert(pos, script);
-			}
-
-			response.setStatusCode(200);
-			response.setBody(successContent);
-			response.setHeader("Content-Type", "text/html");
-		} else if (location.getAutoIndex()) {
-			std::string dirListing = generateDirectoryListing(root, "/uploadSuccessful");
-			response.setStatusCode(200);
-			response.setBody(dirListing);
-			response.setHeader("Content-Type", "text/html");
-		} else {
-			setErrorResponse(response, 404);
-		}
-	} else if (request.getMethod() == "DELETE") {
-		std::string uploadDir = "/home/ecarlier/sgoinfre/uploads_webserv/";
-		std::string filename = extractFilenameFromUrl(request.getUrl());
-
-		if (!filename.empty()) {
-			std::string fullPath = uploadDir + filename;
+	std::string filename = extractFilenameFromUrl(request.getUrl());
+	if (!filename.empty()) {
+		size_t separatorPos = filename.find("|");
+		if (separatorPos != std::string::npos) {
+			std::string root = filename.substr(0, separatorPos);
+			std::string file = filename.substr(separatorPos + 1);
+			std::string fullPath = root + "/uploads/" + file;
+			
 			if (remove(fullPath.c_str()) == 0) {
 				response.setStatusCode(200);
 				response.setBody("File deleted successfully");
@@ -267,14 +237,12 @@ void Router::handleUploadSuccessRoute(const HttpRequest& request, HttpResponse& 
 				response.setStatusCode(500);
 				response.setBody("Error deleting file");
 			}
-		} else {
-			response.setStatusCode(400);
-			response.setBody("No filename provided");
 		}
-		response.setHeader("Content-Type", "text/plain");
 	} else {
-		setErrorResponse(response, 405);
+		response.setStatusCode(400);
+		response.setBody("No filename provided");
 	}
+	response.setHeader("Content-Type", "text/plain");
 }
 
 void Router::setErrorResponse(HttpResponse& response, int errorCode) {
@@ -294,33 +262,15 @@ void Router::setErrorResponse(HttpResponse& response, int errorCode) {
 	}
 }
 
-std::vector<std::string> Router::getFilesInDirectory(const std::string& directory) {
-	std::vector<std::string> files;
-	DIR* dir = opendir(directory.c_str());
-	if (dir) {
-		struct dirent* entry;
-		while ((entry = readdir(dir)) != NULL) {
-			if (entry->d_type == DT_REG) {
-				files.push_back(entry->d_name);
-			}
-		}
-		closedir(dir);
-	}
-	return files;
-}
-
-void Router::addRoute(const std::string& path, RouteHandler handler) {
-	routes[path] = handler;
-}
-
 std::string Router::generateDirectoryListing(const std::string& dirPath, const std::string& requestPath) {
-	std::ostringstream html;
-	html << "<html>\n<head>\n"
+	std::stringstream html;
+	html << "<!DOCTYPE html>\n<html>\n<head>\n"
 		 << "<title>Index of " << requestPath << "</title>\n"
 		 << "<style>\n"
-		 << "body { font-family: monospace; padding: 20px; }\n"
-		 << "table { width: 100%; border-collapse: collapse; }\n"
+		 << "body { font-family: Arial, sans-serif; margin: 20px; }\n"
+		 << "table { border-collapse: collapse; width: 100%; }\n"
 		 << "th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ddd; }\n"
+		 << "th { background-color: #f2f2f2; }\n"
 		 << "tr:hover { background-color: #f5f5f5; }\n"
 		 << "a { text-decoration: none; color: #0366d6; }\n"
 		 << "a:hover { text-decoration: underline; }\n"
@@ -375,40 +325,6 @@ std::string Router::generateDirectoryListing(const std::string& dirPath, const s
 
 	html << "</table>\n</body>\n</html>";
 	return html.str();
-}
-
-bool Router::handleDirectoryRequest(const std::string& path, const HttpRequest& request, HttpResponse& response) {
-	Location location = _serverConfig.findLocation(path);
-	std::string fullPath = location.getRoot();
-
-	struct stat statbuf;
-	if (stat(fullPath.c_str(), &statbuf) == 0) {
-		if (S_ISDIR(statbuf.st_mode)) {
-			if (request.getMethod() == "GET") {
-				std::string indexPath = fullPath;
-				if (!location.getIndex().empty()) {
-					indexPath += "/" + location.getIndex();
-
-					if (stat(indexPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
-						std::string content = readFile(indexPath);
-						response.setStatusCode(200);
-						response.setBody(content);
-						response.setHeader("Content-Type", "text/html");
-						return true;
-					}
-				}
-
-				if (location.getAutoIndex()) {
-					std::string dirListing = generateDirectoryListing(fullPath, path);
-					response.setStatusCode(200);
-					response.setBody(dirListing);
-					response.setHeader("Content-Type", "text/html");
-					return true;
-				}
-			}
-		}
-	}
-	return false;
 }
 
 std::string Router::getCurrentTimestamp() const {

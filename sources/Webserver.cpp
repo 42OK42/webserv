@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserver.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/13 18:46:53 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/13 19:01:44 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -403,8 +403,7 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 
 	HttpResponse httpResponse(httpRequest);
 	Router router(*server);
-
-	router.initializeRoutes();
+	
 	router.handleRequest(httpRequest, httpResponse);
 
 	std::string responseStr = httpResponse.toString();
@@ -426,9 +425,4 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 		}
 		total_sent += sent;
 	}
-
-	#ifdef DEBUG_MODE
-	std::cout << "\033[0;36m[DEBUG] Webserver::processRequest: Response sent completely ("
-			  << total_sent << " bytes)\033[0m" << std::endl;
-	#endif
 }

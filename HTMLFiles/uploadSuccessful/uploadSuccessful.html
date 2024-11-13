@@ -85,36 +85,43 @@
 	<script>
 	  document.addEventListener('DOMContentLoaded', () => {
 		const fileListElement = document.getElementById('fileList');
+		
+		if (typeof fileList !== 'undefined') {
+			fileList.forEach(file => {
+				const [location, root, name] = file.split('|');
+				const li = document.createElement('li');
+				li.textContent = name;
+				li.setAttribute('data-filename', file);
 
-		// Récupérer la liste des fichiers depuis le serveur
-		fetch('/api/files')
-		  .then(response => response.json())
-		  .then(files => {
-			files.forEach(file => {
-			  const li = document.createElement('li');
-			  li.textContent = file;
+				const deleteButton = document.createElement('button');
+				deleteButton.textContent = 'Delete';
+				deleteButton.classList.add('delete-button');
+				deleteButton.onclick = () => deleteFile(file);
 
-			  const deleteButton = document.createElement('button');
-			  deleteButton.textContent = 'Delete';
-			  deleteButton.classList.add('delete-button');
-			  deleteButton.onclick = () => deleteFile(file);
-
-			  li.appendChild(deleteButton);
-			  fileListElement.appendChild(li);
+				li.appendChild(deleteButton);
+				fileListElement.appendChild(li);
 			});
-		  })
-		  .catch(error => console.error('Error fetching file list:', error));
+		}
 	  });
 
 	  function deleteFile(filename) {
-		if (confirm(`Are you sure you want to delete ${filename}? Vroom Vroom, think twice!`)) {
-		  fetch(`/uploadSuccessful?filename=${encodeURIComponent(filename)}`, {
+		const [location, root, name] = filename.split('|');
+		if (confirm(`Are you sure you want to delete ${name}? Vroom Vroom, think twice!`)) {
+		  fetch(`${location}?filename=${root}|${name}`, {
 			method: 'DELETE'
 		  })
-		  .then(response => response.text())
-		  .then(data => {
-			alert(data);
-			location.reload();  // Recharge la page pour mettre à jour la liste
+		  .then(async response => {
+			if (response.status === 405) {
+			  const errorHtml = await response.text();
+			  document.documentElement.innerHTML = errorHtml;
+			  history.pushState({}, '', '/error/405.html');
+			} else if (response.ok) {
+			  const li = document.querySelector(`li[data-filename="${filename}"]`);
+			  if (li) {
+				li.remove();
+			  }
+			  alert('File deleted successfully');
+			}
 		  })
 		  .catch(error => console.error('Error:', error));
 		}

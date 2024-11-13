@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:28:34 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/07 17:42:53 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/13 17:48:44 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,7 @@ public:
 	const std::map<std::string, std::string>& getHeaders() const;
 	const std::string& getBody() const;
 	const std::vector<std::string>& getFilenames() const;
+	const std::vector<std::string>& getFileContents() const;
 
 	std::string getHeader(const std::string& name) const;
 	const std::string& getHost() const;
@@ -47,6 +48,7 @@ private:
 	std::map<std::string, std::string> headers;
 	std::string body;
 	std::vector<std::string> filenames;
+	std::vector<std::string> fileContents;
 
 	std::string host;
 	int port;
