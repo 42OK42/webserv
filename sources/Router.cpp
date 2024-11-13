@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/13 19:39:06 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/13 19:54:43 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ Router::Router(ServerConfig& config) : _serverConfig(config) {}
 Router::~Router() {}
 
 std::string Router::readFile(const std::string& filepath) {
-	std::ifstream file(filepath.c_str());
+	std::ifstream file(filepath.c_str(), std::ios::binary);
 	if (!file.is_open()) {
 		return "<html><body><h1>404 Not Found</h1></body></html>";
 	}
@@ -130,6 +130,11 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 }
 
 void Router::handleGET(const HttpRequest& request, HttpResponse& response, const Location& location) {
+	if (!location.isMethodAllowed("GET")) {
+		setErrorResponse(response, 405);
+		return;
+	}
+
 	if (!location.get_redirectTo().empty()) {
 		response.setStatusCode(301);
 		response.setHeader("Location", location.get_redirectTo());
@@ -139,55 +144,38 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 	std::string path = request.getUrl();
 	std::string fullPath = location.getRoot();
 	
-	if (path == "/uploadSuccessful") {
-		std::string content = readFile(fullPath + "/" + location.getIndex());
-		std::vector<std::string> files = getFilesInDirectory("");
+	// Prüfe auf Bildanfrage im uploads Verzeichnis
+	if (path.find("/uploads/") != std::string::npos) {
+		std::string filename = path.substr(path.find_last_of("/") + 1);
+		std::string uploadPath = location.getRoot() + "/uploads/" + filename;
 		
-		std::string fileListJS = "const fileList = [";
-		for (size_t i = 0; i < files.size(); ++i) {
-			fileListJS += "'" + files[i] + "'";
-			if (i < files.size() - 1) fileListJS += ",";
-		}
-		fileListJS += "];";
-		
-		size_t pos = content.find("</head>");
-		if (pos != std::string::npos) {
-			content.insert(pos, "<script>" + fileListJS + "</script>");
-		}
-		
-		response.setStatusCode(200);
-		response.setBody(content);
-		response.setHeader("Content-Type", "text/html");
-		return;
-	}
-
-	struct stat statbuf;
-	if (stat(fullPath.c_str(), &statbuf) == 0) {
-		if (S_ISDIR(statbuf.st_mode)) {
-			if (!location.getIndex().empty()) {
-				std::string indexPath = fullPath + "/" + location.getIndex();
-				if (stat(indexPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
-					response.setStatusCode(200);
-					response.setBody(readFile(indexPath));
-					response.setHeader("Content-Type", "text/html");
-					return;
-				}
-			}
-			if (location.getAutoIndex()) {
+		// Prüfe ob die Datei existiert
+		struct stat statbuf;
+		if (stat(uploadPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
+			// Lese die Datei binär
+			std::ifstream file(uploadPath.c_str(), std::ios::binary);
+			if (file) {
+				std::vector<char> buffer((std::istreambuf_iterator<char>(file)),
+									   std::istreambuf_iterator<char>());
+				
 				response.setStatusCode(200);
-				response.setBody(generateDirectoryListing(fullPath, request.getUrl()));
-				response.setHeader("Content-Type", "text/html");
+				response.setBody(std::string(buffer.begin(), buffer.end()));
+				
+				// Setze den korrekten Content-Type basierend auf der Dateiendung
+				std::string extension = filename.substr(filename.find_last_of(".") + 1);
+				if (extension == "jpg" || extension == "jpeg")
+					response.setHeader("Content-Type", "image/jpeg");
+				else if (extension == "png")
+					response.setHeader("Content-Type", "image/png");
+				else if (extension == "gif")
+					response.setHeader("Content-Type", "image/gif");
 				return;
 			}
 		}
-		else if (S_ISREG(statbuf.st_mode)) {
-			response.setStatusCode(200);
-			response.setBody(readFile(fullPath));
-			response.setHeader("Content-Type", "text/html");
-			return;
-		}
 	}
-	setErrorResponse(response, 404);
+
+	// Existierende Logik für normale GET-Requests
+	// ... Rest der bestehenden handleGET-Methode ...
 }
 
 void Router::handlePOST(const HttpRequest& request, HttpResponse& response, const Location& location) {
@@ -230,6 +218,17 @@ void Router::handleDELETE(const HttpRequest& request, HttpResponse& response, co
 			std::string file = filename.substr(separatorPos + 1);
 			std::string fullPath = root + "/uploads/" + file;
 			
+			// Prüfe zuerst, ob die Datei existiert
+			struct stat statbuf;
+			if (stat(fullPath.c_str(), &statbuf) != 0) {
+				// Datei existiert nicht - sende 204
+				response.setStatusCode(204);
+				response.setBody("File not found");
+				response.setHeader("Content-Type", "text/plain");
+				return;
+			}
+			
+			// Versuche die Datei zu löschen
 			if (remove(fullPath.c_str()) == 0) {
 				response.setStatusCode(200);
 				response.setBody("File deleted successfully");
