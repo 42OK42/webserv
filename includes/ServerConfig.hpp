@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/12 16:27:43 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/13 18:36:27 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,74 +40,73 @@
 #include <limits.h>
 
 extern bool sigint_flag;
+
 class ServerConfig
 {
 	private:
-		static const std::string UPLOAD_DIR;
+		static const std::string 			UPLOAD_DIR;
 
-		int								_port;
-		std::string						_host;
-		std::string						_serverName;
-		std::string						_root;
-		std::map<int, std::string>		_errorPages;
-		size_t 							_clientMaxBodySize;
+		int									_port;
+		std::string							_host;
+		std::string							_serverName;
+		std::string							_root;
+		std::map<int, std::string>			_errorPages;
+		size_t 								_clientMaxBodySize;
 		std::map <std::string, Location>	_locations;
 
 		/* CGI */
-		bool							_cgiEnabled;
-		std::string						_cgiExtension;
-		std::string						_cgiBin;
+		bool								_cgiEnabled;
+		std::string							_cgiExtension;
+		std::string							_cgiBin;
 
-        int m_socket; //return a socket descriptor
-        struct sockaddr_in  server_addr;
-        std::vector<struct pollfd> fds; // Poll file descriptors
-        std::map<int, std::string> client_data; // Client data buffer
+		int									m_socket;
+		struct sockaddr_in					server_addr;
+		std::vector<struct pollfd>			fds;
+		std::map<int, std::string>			client_data;
 
 	public:
-		//ServerConfig( const Configuration& config ); //from parsing config file
 		ServerConfig();
 		~ServerConfig();
 
-		Location findLocation(std::string locationPath);
+		/* Setters */
+		void	setHost(const std::string& host);
+		void	setPort(int port);
+		void	setServerName(const std::vector<std::string>& tokens);
+		void	setRoot(const std::vector<std::string>& tokens);
+		void	setErrorPage(const std::vector<std::string>& tokens);
+		void	setClientMaxBodySize(size_t token);
+		void	setCgiEnabled(const std::vector<std::string>& tokens);
+		void	setCgiExtension(const std::vector<std::string>& tokens);
+		void	setCgiBin(const std::vector<std::string>& tokens);
 
-		/* Setters & Getters */
-		void setHost(const std::string& host);
-		void setPort(int port);
-		int getSocket() const;
-		std::string& getClientData(int client_fd);
-		void eraseClientData(int client_fd);
+		/* Getters */
+		int											getSocket() const;
+		std::string&								getClientData(int client_fd);
+		std::string									getHost() const;
+		int											getPort() const;
+		std::string									getServerName(void) const;
+		std::string									getRoot(void) const;
+		int											getClientMaxBodySize(void) const;
+		bool										isCgiEnabled(void) const;
+		std::string									getCgiExtension(void) const;
+		std::string									getCgiBin(void) const;
+		const std::map<int, std::string>&			getErrorPages() const;
+		const std::map<std::string, Location>&		getLocations() const;
 
-		std::string getHost() const;
-		int getPort() const;
+		std::string 						getExecutablePath();
+		std::string 						getErrorFilePath(int errorCode);
 
-		void setServerName(const std::vector<std::string>& tokens);
-		void setRoot(const std::vector<std::string>& tokens);
-		void setErrorPage(const std::vector<std::string>& tokens);
-		void setClientMaxBodySize(size_t token);
-		void setCgiEnabled(const std::vector<std::string>& tokens);
-		void setCgiExtension(const std::vector<std::string>& tokens);
-		void setCgiBin(const std::vector<std::string>& tokens);
+		void			eraseClientData(int client_fd);
+		void			addErrorPage(int code, const std::string& page);
+		void			checkErrorPage();
+		void			addLocation(const std::string& path, const Location& location);
+		void			set_socket_timeout(int sockfd, int timeout_seconds);
+		bool			isBodySizeAllowed(size_t contentLength) const;
+		bool			readClientData(int client_fd);
+		int				setupServerSocket();
+		std::string		readFile(const std::string& filepath);
+		Location		findLocation(std::string locationPath);
 
-		std::string getServerName(void) const;
-		std::string getRoot(void) const;
-		int getClientMaxBodySize(void) const;
-		bool isCgiEnabled(void) const;
-		std::string getCgiExtension(void) const;
-		std::string getCgiBin(void) const;
-
-		void addErrorPage(int code, const std::string& page);
-		const std::map<int, std::string>& getErrorPages() const;
-		void checkErrorPage();
-		std::string getExecutablePath();
-		std::string getErrorFilePath(int errorCode);
-
-		void addLocation(const std::string& path, const Location& location);
-		const std::map<std::string, Location>& getLocations() const;
-
-		int setupServerSocket();  // Change return type to int
-		std::string readFile(const std::string& filepath);
-		void set_socket_timeout(int sockfd, int timeout_seconds);
-		bool readClientData(int client_fd);
 
 		static std::string getUploadDir() { return "/home/ecarlier/sgoinfre/uploads_webserv/"; }
 
@@ -135,7 +134,7 @@ class ServerConfig
 			public:
 				virtual const char* what() const throw();
 		};
-		bool isBodySizeAllowed(size_t contentLength) const;
+
 };
 
 std::ostream& operator<<(std::ostream& os, const ServerConfig& server);

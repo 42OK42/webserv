@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:01:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/13 18:26:53 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/13 18:28:13 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,17 +83,11 @@ void Location::setCgiPath(const std::string& token)
 /*
 	Sets the allowed HTTP methods for a location.
 
-	The function iterates over a vector of HTTP method strings, validates each
-	method using the `isValidMethod` function, and adds the valid methods to
-	the `_Methods` vector. If an invalid method is encountered, an
-	`InvalidMethodException` is thrown and an error message is displayed,
-	without stopping the execution of the program.
+	The function validates each HTTP method in the provided vector and adds valid methods
+	to the `_Methods` vector. Invalid methods trigger an `InvalidMethodException` and an error
+	message is printed, but the program continues execution.
 
-	@param methods A constant reference to a `std::vector<std::string>`
-	containing the HTTP methods to be set for the location. Each method is
-	checked for validity before being added to the location's list of allowed
-	methods.
-
+	@param methods A vector of HTTP methods to be set for the location.
 	@returns void
 */
 void Location::setMethods(const std::vector<std::string>& methods)

@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 14:18:42 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/11 18:41:59 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/13 18:28:48 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,12 +60,6 @@ int main(int argc, char **argv)
             return 1;
         }
     }
-
-
-
-
-
-
 
     std::vector<ServerConfig> servers = parser.getServers();
     signal(SIGINT, &handle_sigint);

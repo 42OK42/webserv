@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/13 17:51:23 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/13 18:29:01 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -137,7 +137,6 @@ std::vector<std::string> Parser::checkHosts(std::vector<std::string>& tokens)
 	Returns:
 		std::vector<int> - A vector containing the valid, non-duplicate ports.
 */
-
 std::vector<int> Parser::checkPorts( std::vector<std::string>& tokens)
 {
 
