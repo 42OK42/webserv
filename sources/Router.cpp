@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Router.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/13 15:26:37 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/13 15:32:15 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -175,31 +175,41 @@ void Router::handleUploadRoute(const HttpRequest& request, HttpResponse& respons
 				std::string fileContent = body.substr(start, end - start);
 				pos = end + 4;
 
-				if (fileContent.size() >= 2 && fileContent.compare(fileContent.size() - 2, 2, "\r\n") == 0) {
-					fileContent.erase(fileContent.size() - 2);
-				}
+					if (fileContent.size() >= 2 && fileContent.compare(fileContent.size() - 2, 2, "\r\n") == 0) {
+						fileContent.erase(fileContent.size() - 2);
+					}
 
-				std::string savedFilename = uploadDir + filenames[i];
-				std::ofstream outFile(savedFilename.c_str(), std::ios::binary);
-				if (outFile.is_open()) {
-					outFile.write(fileContent.c_str(), fileContent.size());
-					outFile.close();
-					uploadSuccess = true;
-
-					#ifdef DEBUG_MODE
-					std::cout << "\033[0;32m[DEBUG] Router::handleUploadRoute: Datei erfolgreich gespeichert: "
-							  << savedFilename << "\033[0m" << std::endl;
-					#endif
+					std::string savedFilename = uploadDir + filenames[i];
+					std::ofstream outFile(savedFilename.c_str(), std::ios::binary);
+					if (outFile.is_open()) {
+						outFile.write(fileContent.c_str(), fileContent.size());
+						outFile.close();
+						uploadSuccess = true;
+						
+						#ifdef DEBUG_MODE
+						std::cout << "\033[0;32m[DEBUG] Router::handleUploadRoute: File successfully saved: " 
+								  << savedFilename << "\033[0m" << std::endl;
+						#endif
+					}
 				}
+			}
+		} else {
+			std::string filename = "text_upload_" + getCurrentTimestamp() + ".txt";
+			std::string fullPath = uploadDir + filename;
+			std::ofstream outFile(fullPath.c_str(), std::ios::binary);
+			if (outFile.is_open()) {
+				outFile.write(request.getBody().c_str(), request.getBody().size());
+				outFile.close();
+				uploadSuccess = true;
 			}
 		}
 
 		if (uploadSuccess) {
 			response.setStatusCode(303);
 			response.setHeader("Location", "/uploadSuccessful");
-			response.setHeader("Content-Type", "text/html");
-			response.setHeader("Content-Length", "0");
-			response.setBody("");
+				response.setHeader("Content-Type", "text/html");
+				response.setHeader("Content-Length", "0");
+				response.setBody("");
 		} else {
 			setErrorResponse(response, 500);
 		}
@@ -402,4 +412,11 @@ bool Router::handleDirectoryRequest(const std::string& path, const HttpRequest& 
 		}
 	}
 	return false;
+}
+
+std::string Router::getCurrentTimestamp() const {
+	std::time_t now = std::time(NULL);
+	char buffer[20];
+	std::strftime(buffer, sizeof(buffer), "%Y%m%d_%H%M%S", std::localtime(&now));
+	return std::string(buffer);
 }

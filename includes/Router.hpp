@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Router.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/12 21:09:11 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/13 15:37:07 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,8 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <ctime>
+#include <fstream>
 
 class Router;
 typedef void (Router::*RouteHandler)(const HttpRequest&, HttpResponse&);
@@ -33,6 +35,7 @@ private:
 	std::vector<std::string> getFilesInDirectory(const std::string& directory);
 	void addRoute(const std::string& path, RouteHandler handler);
 	bool handleDirectoryRequest(const std::string& path, const HttpRequest& request, HttpResponse& response);
+	std::string getCurrentTimestamp() const;
 
 	// Route Handler
 	void handleHomeRoute(const HttpRequest& request, HttpResponse& response);
