@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/12 22:24:18 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/13 15:26:37 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,30 +88,19 @@ void Router::handleRedirectRoute(const HttpRequest& request, HttpResponse& respo
 		std::cout << "\033[0;35m[DEBUG] Location found for path: " << location.getPath() << "\033[0m" << std::endl;
 		std::cout << "\033[0;35m[DEBUG] Redirect target: " << location.get_redirectTo() << "\033[0m" << std::endl;
 		#endif
-
-		// Vérifie si une redirection est configurée pour cette location
 		if (!location.get_redirectTo().empty()) {
 			std::cout << "\033[0;35m[DEBUG] Redirecting to: " << location.get_redirectTo() << "\033[0m" << std::endl;
-			response.setStatusCode(301);  // 301 Moved Permanently
+			response.setStatusCode(301);
 			response.setHeader("Location", location.get_redirectTo());
 			response.setBody("");
 		} else {
-			// Pas de redirection spécifiée, erreur 404
 			std::cout << "\033[0;35m[DEBUG] No redirect URL defined for this location. Sending 404.\033[0m" << std::endl;
 			setErrorResponse(response, 404);
 		}
 	} catch (const ServerConfig::LocationNotFound& e) {
-		// Location introuvable
 		std::cout << "\033[0;35m[DEBUG] Location not found for the requested URL. Sending 404.\033[0m" << std::endl;
 		setErrorResponse(response, 404);
 	}
-	// if (request.getMethod() == "GET") {
-	// 	response.setStatusCode(301);  // 301 Moved Permanently
-	// 	response.setHeader("Location", "/"); // here should be the location listed in the conf file....
-	// 	response.setBody("");
-	// } else {
-    //     setErrorResponse(response, 405);
-    // }
 }
 
 void Router::handleNewpage(const HttpRequest& req, HttpResponse& res) {
