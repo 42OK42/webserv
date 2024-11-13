@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/13 15:40:58 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/13 16:14:00 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -143,7 +143,12 @@ void Router::handleUploadRoute(const HttpRequest& request, HttpResponse& respons
 
 	if (request.getMethod() == "POST") {
 		std::string contentType = request.getHeader("Content-Type");
-		std::string uploadDir = "/home/ecarlier/sgoinfre/uploads_webserv/";
+		std::string uploadDir;
+		#ifdef LEO_MODE
+			uploadDir = "/home/ecarlier/sgoinfre/uploads_webserv/";
+		#else
+			uploadDir = "/home/okrahl/sgoinfre/uploads_webserv/";
+		#endif
 		
 		ensureDirectoryExists(uploadDir);
 		bool uploadSuccess = false;
@@ -226,7 +231,13 @@ void Router::handleUploadSuccessRoute(const HttpRequest& request, HttpResponse& 
 		if (stat(fullPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
 			std::string successContent = readFile(fullPath);
 
-			std::string uploadDir = "/home/ecarlier/sgoinfre/uploads_webserv/";
+			std::string uploadDir;
+			#ifdef LEO_MODE
+				uploadDir = "/home/ecarlier/sgoinfre/uploads_webserv/";
+			#else
+				uploadDir = "/home/okrahl/sgoinfre/uploads_webserv/";
+			#endif
+			
 			std::vector<std::string> files = getFilesInDirectory(uploadDir);
 
 			std::ostringstream json;
@@ -255,7 +266,13 @@ void Router::handleUploadSuccessRoute(const HttpRequest& request, HttpResponse& 
 			setErrorResponse(response, 404);
 		}
 	} else if (request.getMethod() == "DELETE") {
-		std::string uploadDir = "/home/ecarlier/sgoinfre/uploads_webserv/";
+		std::string uploadDir;
+		#ifdef LEO_MODE
+			uploadDir = "/home/ecarlier/sgoinfre/uploads_webserv/";
+		#else
+			uploadDir = "/home/okrahl/sgoinfre/uploads_webserv/";
+		#endif
+		
 		std::string filename = extractFilenameFromUrl(request.getUrl());
 
 		if (!filename.empty()) {
