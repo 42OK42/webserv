@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/14 20:19:20 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/14 22:32:50 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ class Router {
 private:
 	ServerConfig& _serverConfig;
 
-	// Hilfsfunktionen
+	
 	std::string readFile(const std::string& filepath);
 	std::string generateDirectoryListing(const std::string& dirPath, const std::string& requestPath);
 	std::string getCurrentTimestamp() const;
@@ -43,7 +43,7 @@ private:
 	std::string extractFilenameFromUrl(const std::string& url);
 	std::string extractFilename(const std::string& contentDisposition);
 
-	// HTTP-Methoden-Handler
+
 	void handleGET(const HttpRequest& request, HttpResponse& response, const Location& location);
 	void handlePOST(const HttpRequest& request, HttpResponse& response, const Location& location);
 	void handleDELETE(const HttpRequest& request, HttpResponse& response, const Location& location);
