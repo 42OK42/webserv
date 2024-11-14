@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/14 20:23:32 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/14 20:53:00 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,12 @@ Router::Router(ServerConfig& config) : _serverConfig(config) {}
 
 Router::~Router() {}
 
+/*
+    Reads the content of a file and returns it as a string.
+
+    @param filepath The path to the file to be read.
+    @returns A string containing the file content. Returns a "404 Not Found" HTML message if the file cannot be opened.
+*/
 std::string Router::readFile(const std::string& filepath) {
 	std::ifstream file(filepath.c_str(), std::ios::binary);
 	if (!file.is_open()) {
@@ -38,6 +44,12 @@ std::string Router::readFile(const std::string& filepath) {
 	return buffer.str();
 }
 
+/*
+    Ensures that the directories leading up to a specified path exist, creating them if necessary.
+
+    @param path The path where directories should be ensured to exist.
+    @returns void
+*/
 void Router::ensureDirectoryExists(const std::string& path) {
 	size_t pos = 0;
 	do {
@@ -49,6 +61,12 @@ void Router::ensureDirectoryExists(const std::string& path) {
 	} while (pos != std::string::npos);
 }
 
+/*
+    Extracts the filename from a URL query string.
+
+    @param url The URL containing the filename query parameter.
+    @returns The extracted filename as a string, or an empty string if no filename is found.
+*/
 std::string Router::extractFilenameFromUrl(const std::string& url) {
 	size_t pos = url.find("filename=");
 	if (pos != std::string::npos) {
@@ -57,6 +75,12 @@ std::string Router::extractFilenameFromUrl(const std::string& url) {
 	return "";
 }
 
+/*
+    Extracts the filename from a Content-Disposition header.
+
+    @param contentDisposition The Content-Disposition header containing the filename.
+    @returns The extracted filename as a string, or an empty string if the filename is not found.
+*/
 std::string Router::extractFilename(const std::string& contentDisposition) {
 	std::string filename;
 	size_t pos = contentDisposition.find("filename=");
@@ -70,13 +94,19 @@ std::string Router::extractFilename(const std::string& contentDisposition) {
 	return filename;
 }
 
+/*
+    Retrieves a list of files in the upload directory for each location.
+
+    @param The path of the directory (not used in this implementation).
+    @returns A vector of strings containing the paths to the files in the upload directories.
+*/
 std::vector<std::string> Router::getFilesInDirectory(const std::string&) {
 	std::vector<std::string> files;
 	const std::map<std::string, Location>& locations = _serverConfig.getLocations();
 
 	for (std::map<std::string, Location>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
 		std::string uploadDir = it->second.getRoot() + "/uploads/";
-		std::string locationPath = it->first;  // z.B. "/upload" oder "/form"
+		std::string locationPath = it->first;
 		DIR* dir = opendir(uploadDir.c_str());
 		if (dir) {
 			struct dirent* entry;
@@ -91,6 +121,18 @@ std::vector<std::string> Router::getFilesInDirectory(const std::string&) {
 	return files;
 }
 
+/*
+    Handles an incoming HTTP request and processes it based on the request's method and URL.
+
+    This function checks if the request is directed to a CGI location, if the request method is allowed,
+    and processes the request accordingly. It handles GET, POST, DELETE methods and returns the appropriate
+    response for each.
+
+    @param request The HTTP request object containing the request details such as method, headers, and URL.
+    @param response The HTTP response object where the status code, headers, and body will be set.
+
+    @returns void
+*/
 void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 	#ifdef DEBUG_MODE
 	std::cout << "\033[0;33m[DEBUG] Request URL: " << request.getUrl() << "\033[0m" << std::endl;
@@ -108,7 +150,6 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 
 	std::string path = request.getUrl();
 
-	// Prüfe zuerst auf CGI-Anfrage
 	if (path.find("/cgi-bin/") == 0) {
 		#ifdef DEBUG_MODE
 		std::cout << "\033[0;33m[DEBUG] CGI Request detected for path: " << path << "\033[0m" << std::endl;
@@ -126,7 +167,6 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 		}
 	}
 
-	// Normale Request-Verarbeitung
 	size_t queryPos = path.find('?');
 	if (queryPos != std::string::npos) {
 		path = path.substr(0, queryPos);
@@ -157,6 +197,20 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 	}
 }
 
+/*
+    Handles an HTTP GET request by fetching the requested resource and generating the appropriate response.
+
+    This function processes the GET request in different ways:
+    - If a query string indicates a file, it attempts to find and return the requested file from the server.
+    - If the request is for an image file, it tries to find and return the file from the `/uploads/` directory.
+    - If the request is for a directory, it may return the directory listing or an index file, depending on the location configuration.
+
+    @param request The HTTP request object containing the request details such as method, headers, and URL.
+    @param response The HTTP response object where the status code, headers, and body will be set.
+    @param location The location object that contains configuration details for the path being accessed.
+
+    @returns void
+*/
 void Router::handleGET(const HttpRequest& request, HttpResponse& response, const Location& location) {
 	if (!location.isMethodAllowed("GET")) {
 		setErrorResponse(response, 405);
@@ -167,12 +221,9 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 	size_t queryPos = path.find("?file=");
 
 	if (queryPos != std::string::npos) {
-		std::string filename = path.substr(queryPos + 6); // "file=" ist 5 Zeichen lang
+		std::string filename = path.substr(queryPos + 6);
 		std::string uploadPath = location.getRoot() + "/uploads/" + filename;
 
-		#ifdef DEBUG_MODE
-		std::cout << "Suche Datei: " << uploadPath << std::endl;
-		#endif
 
 		struct stat statbuf;
 		if (stat(uploadPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
@@ -206,12 +257,10 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 
 	std::string fullPath = location.getRoot();
 
-	// Prüfe auf Bildanfrage im uploads Verzeichnis
 	if (path.find("/uploads/") != std::string::npos) {
 		std::string filename = path.substr(path.find_last_of("/") + 1);
 		std::string uploadPath = location.getRoot() + "/uploads/" + filename;
 
-		// Prüfe ob die Datei existiert
 		struct stat statbuf;
 		if (stat(uploadPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
 			std::ifstream file(uploadPath.c_str(), std::ios::binary);
@@ -222,7 +271,6 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 				response.setStatusCode(200);
 				response.setBody(std::string(buffer.begin(), buffer.end()));
 
-				// Setze den korrekten Content-Type basierend auf der Dateiendung
 				std::string extension = filename.substr(filename.find_last_of(".") + 1);
 				if (extension == "jpg" || extension == "jpeg")
 					response.setHeader("Content-Type", "image/jpeg");
@@ -237,7 +285,6 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 		return;
 	}
 
-	// Normale GET-Request Verarbeitung
 	struct stat statbuf;
 	if (stat(fullPath.c_str(), &statbuf) == 0) {
 		if (S_ISDIR(statbuf.st_mode)) {
@@ -246,7 +293,6 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 				if (stat(indexPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
 					std::string content = readFile(indexPath);
 
-					// Füge die Dateiliste für die uploadSuccessful Seite hinzu
 					if (request.getUrl() == "/uploadSuccessful") {
 						std::vector<std::string> files = getFilesInDirectory("");
 						std::string fileListJS = "\n<script>\nconst fileList = [";
@@ -256,7 +302,6 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 						}
 						fileListJS += "\n];\n</script>\n</head>";
 
-						// Füge das Script vor dem schließenden </head> Tag ein
 						size_t pos = content.find("</head>");
 						if (pos != std::string::npos) {
 							content.insert(pos, fileListJS);
@@ -286,6 +331,19 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 	setErrorResponse(response, 404);
 }
 
+/*
+	Handles an HTTP POST request, typically used for receiving form submissions or file uploads.
+
+    This function processes the POST request in two main scenarios:
+    - If the request content type is `multipart/form-data`, it handles file uploads by saving files to the server's `/uploads/` directory.
+    - If the request body contains plain text or data, it simply echoes the received data back in the response.
+
+    @param request The HTTP request object containing the request details such as method, headers, and body.
+    @param response The HTTP response object where the status code, headers, and body will be set.
+    @param location The location object that contains configuration details for the path being accessed.
+
+    @returns void
+*/
 void Router::handlePOST(const HttpRequest& request, HttpResponse& response, const Location& location) {
 	std::string contentType = request.getHeader("Content-Type");
 
@@ -326,6 +384,20 @@ void Router::handlePOST(const HttpRequest& request, HttpResponse& response, cons
 	}
 }
 
+/*
+	Handles an HTTP DELETE request by attempting to delete the specified file on the server.
+
+    This function:
+    - Checks if the DELETE method is allowed for the requested location.
+    - Attempts to extract the filename from the URL and delete the corresponding file from the server's `/uploads/` directory.
+    - Returns a success message if the file is deleted, or an error message if the file is not found or there is an issue with deletion.
+
+    @param request The HTTP request object containing the request details such as method, headers, and URL.
+    @param response The HTTP response object where the status code, headers, and body will be set.
+    @param location The location object that contains configuration details for the path being accessed.
+
+    @returns void
+*/
 void Router::handleDELETE(const HttpRequest& request, HttpResponse& response, const Location& location) {
 	if (!location.isMethodAllowed("DELETE")) {
 		setErrorResponse(response, 405);
@@ -363,6 +435,20 @@ void Router::handleDELETE(const HttpRequest& request, HttpResponse& response, co
 	response.setHeader("Content-Type", "text/plain");
 }
 
+
+/*
+	Sets an error response with the given status code and an optional custom error page.
+
+    This function:
+    - Checks if a custom error page is configured for the given error code in the server's configuration.
+    - If a custom error page exists, it reads the content and sets it as the response body.
+    - If no custom error page exists, it sets a default empty body and the error status code.
+
+    @param response The HTTP response object where the status code, headers, and body will be set.
+    @param errorCode The error code to set in the response (e.g., 404 for "Not Found", 500 for "Internal Server Error").
+
+    @returns void
+*/
 void Router::setErrorResponse(HttpResponse& response, int errorCode) {
 	const std::map<int, std::string>& errorPages = _serverConfig.getErrorPages();
 	std::map<int, std::string>::const_iterator errorPageIt = errorPages.find(errorCode);
@@ -380,6 +466,21 @@ void Router::setErrorResponse(HttpResponse& response, int errorCode) {
 	}
 }
 
+/*
+Generates an HTML directory listing for the specified directory.
+
+    This function:
+    - Scans the specified directory for files and subdirectories.
+    - Sorts the entries alphabetically.
+    - Generates an HTML page displaying the name, last modified time, and size of each entry.
+    - Creates links to each entry (directories will have a trailing slash).
+    - Returns the generated HTML as a string.
+
+    @param dirPath The path to the directory whose contents are to be listed.
+    @param requestPath The original URL path that was requested, used to create relative links.
+
+    @returns A string containing the HTML for the directory listing.
+*/
 std::string Router::generateDirectoryListing(const std::string& dirPath, const std::string& requestPath) {
 	std::stringstream html;
 	html << "<!DOCTYPE html>\n<html>\n<head>\n"
@@ -445,6 +546,11 @@ std::string Router::generateDirectoryListing(const std::string& dirPath, const s
 	return html.str();
 }
 
+/*
+	Returns the current timestamp formatted as "YYYYMMDD_HHMMSS".
+
+    @returns A string containing the current timestamp.
+*/
 std::string Router::getCurrentTimestamp() const {
 	std::time_t now = std::time(NULL);
 	char buffer[20];
@@ -452,6 +558,16 @@ std::string Router::getCurrentTimestamp() const {
 	return std::string(buffer);
 }
 
+
+/*
+	Handles an HTTP request for a CGI (Common Gateway Interface) script.
+
+    @param request The HTTP request object containing the request details such as method, headers, and URL.
+    @param response The HTTP response object where the status code, headers, and body will be set.
+    @param location The location object that contains configuration details for the path being accessed.
+
+    @returns void
+*/
 void Router::handleCGI(const HttpRequest& request, HttpResponse& response, const Location& location) {
     if (!isCgiEnabled(location)) {
         setErrorResponse(response, 403);
@@ -477,6 +593,13 @@ void Router::handleCGI(const HttpRequest& request, HttpResponse& response, const
     }
 }
 
+/*
+	Checks whether CGI is enabled for the specified location.
+
+    @param location The location object that contains the configuration details for the path being accessed.
+
+    @returns A boolean indicating whether CGI is enabled for the specified location.
+*/
 bool Router::isCgiEnabled(const Location& location) {
     #ifdef DEBUG_MODE
     std::cout << "[DEBUG] CGI Location settings:" << std::endl;
@@ -487,6 +610,14 @@ bool Router::isCgiEnabled(const Location& location) {
     return location.isCgiEnabled();
 }
 
+/*
+	Constructs the full script path for a CGI request.
+
+    @param request The HTTP request object containing the request details such as method, headers, and URL.
+    @param location The location object that contains configuration details for the path being accessed.
+
+    @returns A string containing the full script path for the CGI request.
+*/
 std::string Router::constructScriptPath(const HttpRequest& request, const Location& location) {
     std::string scriptPath = request.getUrl();
     if (scriptPath.find("/cgi-bin/") == 0) {
@@ -495,6 +626,15 @@ std::string Router::constructScriptPath(const HttpRequest& request, const Locati
     return scriptPath;
 }
 
+
+/*
+	Creates two pipes for inter-process communication.
+
+    @param input_pipe
+    @param output_pipe
+
+    @returns A boolean indicating whether both pipes were successfully created.
+*/
 bool Router::createPipes(int input_pipe[2], int output_pipe[2]) {
     if (pipe(input_pipe) < 0 || pipe(output_pipe) < 0) {
         return false;
@@ -502,6 +642,15 @@ bool Router::createPipes(int input_pipe[2], int output_pipe[2]) {
     return true;
 }
 
+/*
+	Creates a new process by forking the current process.
+
+    @param input_pipe .
+    @param output_pipe
+    @param response The HTTP response object to handle error responses in case of failure.
+
+    @returns The PID of the child process, or -1 if forking fails.
+*/
 pid_t Router::createFork(int input_pipe[2], int output_pipe[2], HttpResponse& response) {
     pid_t pid = fork();
     if (pid < 0) {
@@ -514,6 +663,17 @@ pid_t Router::createFork(int input_pipe[2], int output_pipe[2], HttpResponse& re
     return pid;
 }
 
+/*
+	Executes a CGI script by redirecting input/output through pipes.
+
+    @param request The HTTP request object
+    @param input_pipe
+    @param output_pipe .
+    @param location The location object containing the path to the CGI binary.
+    @param scriptPath The full path to the CGI script that needs to be executed.
+
+    @returns void
+*/
 void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int output_pipe[2], const Location& location, const std::string& scriptPath) {
     #ifdef DEBUG_MODE
     std::cout << "[DEBUG-CHILD] Executing CGI script: " << location.getCgiBin() << std::endl;
@@ -554,16 +714,29 @@ void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int outpu
     exit(1);
 }
 
+/*
+	Handles the parent process after forking for CGI execution.
+
+    This function:
+    - Writes the request body to the input pipe (either chunked or non-chunked).
+    - Reads the output from the CGI script via the output pipe.
+    - Waits for the child process to finish and sets the HTTP response based on the CGI output.
+
+    @param request The HTTP request object containing the request details.
+    @param response The HTTP response object to set the response headers, status, and body.
+    @param input_pipe
+    @param output_pipe
+    @param pid The PID of the child process to wait for.
+
+    @returns void
+*/
 void Router::handleParentProcess(const HttpRequest& request, HttpResponse& response, int input_pipe[2], int output_pipe[2], pid_t pid) {
     close(input_pipe[0]);
     close(output_pipe[1]);
 
-    // Vérification de l'encodage chunked
     if (request.getHeader("Transfer-Encoding") == "chunked") {
-        // Décodage du corps en chunks
         std::string decoded_body = decodeChunkedBody(request.getBody());
 
-        // Écriture du corps décodé dans le pipe
         ssize_t written = write(input_pipe[1], decoded_body.c_str(), decoded_body.length());
         if (written != static_cast<ssize_t>(decoded_body.length())) {
             perror("[ERROR-PARENT] Write failed or incomplete");
@@ -573,7 +746,6 @@ void Router::handleParentProcess(const HttpRequest& request, HttpResponse& respo
         }
         fsync(input_pipe[1]);
     } else {
-        // Pas d'encodage chunked, on écrit directement le corps de la requête
         if (!request.getBody().empty()) {
             ssize_t written = write(input_pipe[1], request.getBody().c_str(), request.getBody().length());
             if (written != static_cast<ssize_t>(request.getBody().length())) {
@@ -609,6 +781,12 @@ void Router::handleParentProcess(const HttpRequest& request, HttpResponse& respo
     }
 }
 
+/* Decodes a chunked transfer-encoded HTTP body.
+
+    @param body The chunked HTTP body to decode.
+
+    @returns The decoded body as a string.
+*/
 std::string Router::decodeChunkedBody(const std::string& body)
 {
     std::string decoded_body;
