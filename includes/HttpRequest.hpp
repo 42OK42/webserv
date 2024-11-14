@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:28:34 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/14 20:13:42 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/14 22:49:49 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,6 @@ public:
 	const std::string& getHost() const;
 	int getPort() const;
 
-	void print() const;
 
 private:
 	std::string method;

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpRequest.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:27 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/13 17:48:46 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/14 22:49:47 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,7 @@ void HttpRequest::parseMultipartData(const std::string& boundary) {
 		end = body.find(delimiter, pos);
 
 		std::string part = body.substr(start, end - start);
-		
+
 		size_t headerEnd = part.find("\r\n\r\n");
 		if (headerEnd != std::string::npos) {
 			std::string headers = part.substr(0, headerEnd);
@@ -132,18 +132,18 @@ void HttpRequest::parse(const char* buffer, int bytesRead) {
 	if (headers.count("Content-Length")) {
 		int contentLength;
 		std::istringstream(headers["Content-Length"]) >> contentLength;
-		
+
 		#ifdef DEBUG_MODE
 		std::cout << "\033[0;34m[DEBUG] HttpRequest::parse: Content-Length = " << contentLength << "\033[0m" << std::endl;
 		#endif
-		
+
 		if (!_serverConfig.isBodySizeAllowed(contentLength)) {
 			#ifdef DEBUG_MODE
 			std::cout << "\033[0;31m[DEBUG] HttpRequest::parse: Content-Length exceeds allowed size\033[0m" << std::endl;
 			#endif
 			throw std::runtime_error("Request body exceeds maximum allowed size");
 		}
-		
+
 		body.resize(contentLength);
 		stream.read(&body[0], contentLength);
 	}
@@ -157,30 +157,4 @@ void HttpRequest::parse(const char* buffer, int bytesRead) {
 			parseMultipartData(boundary);
 		}
 	}
-}
-
-void HttpRequest::print() const {
-	std::cout << "\n=== HTTP Request Details ===" << std::endl;
-	std::cout << "Method: " << method << std::endl;
-	std::cout << "URL: " << url << std::endl;
-	std::cout << "HTTP Version: " << httpVersion << std::endl;
-	std::cout << "Host: " << host << ":" << port << std::endl;
-	
-	std::cout << "\nHeaders:" << std::endl;
-	for(std::map<std::string, std::string>::const_iterator it = headers.begin(); 
-		it != headers.end(); ++it) {
-		std::cout << "  " << it->first << ": " << it->second << std::endl;
-	}
-	
-	std::cout << "\nFiles Found:" << std::endl;
-	for(size_t i = 0; i < filenames.size(); ++i) {
-		std::cout << "  " << filenames[i] << std::endl;
-	}
-	
-	std::cout << "\nBody Size: " << body.size() << " bytes" << std::endl;
-	if (body.size() > 0) {
-		std::cout << "Body Preview (first 100 chars):" << std::endl;
-		std::cout << body.substr(0, 100) << std::endl;
-	}
-	std::cout << "==========================\n" << std::endl;
 }
