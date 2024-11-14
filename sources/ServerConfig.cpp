@@ -6,14 +6,11 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/18 17:04:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/13 19:07:52 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/14 21:32:32 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ServerConfig.hpp"
-#include "Router.hpp"
-#include "HttpResponse.hpp"
-#include "HttpRequest.hpp"
 
 
 ServerConfig::ServerConfig() {}

@@ -6,22 +6,11 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/14 20:55:04 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/14 21:16:54 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Router.hpp"
-#include <sstream>
-#include <ctime>
-#include <iostream>
-#include <fstream>
-#include <algorithm>
-#include <cerrno>
-#include <vector>
-#include <dirent.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <sys/wait.h>
 
 Router::Router(ServerConfig& config) : _serverConfig(config) {}
 

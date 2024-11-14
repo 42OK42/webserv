@@ -6,16 +6,14 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 17:16:51 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/14 21:02:42 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/14 21:20:11 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef HTTPRESPONSE_HPP
 #define HTTPRESPONSE_HPP
 
-#include <string>
-#include <map>
-#include "HttpRequest.hpp"
+#include "CommonHeader.hpp"
 
 class HttpRequest;
 

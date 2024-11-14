@@ -6,22 +6,14 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:21 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/13 18:38:09 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/14 21:21:01 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef WEBSERV_HPP
 #define WEBSERV_HPP
 
-#include "ServerConfig.hpp"
-#include "HttpResponse.hpp"
-#include "HttpRequest.hpp"
-#include "Router.hpp"
-#include <vector>
-#include <sys/poll.h>
-#include <unistd.h>
-#include <iostream>
-#include <map>
+#include "CommonHeader.hpp"
 
 extern bool sigint_flag;
 

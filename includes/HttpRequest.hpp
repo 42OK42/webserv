@@ -6,21 +6,14 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:28:34 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/14 21:04:07 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/14 21:19:59 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef HTTPREQUEST_HPP
 #define HTTPREQUEST_HPP
 
-#include <string>
-#include <map>
-#include <vector>
-#include <sstream>
-#include <iostream>
-#include "ServerConfig.hpp"
-#include "Router.hpp"
-#include "HttpResponse.hpp"
+#include "CommonHeader.hpp"
 
 class Router;
 

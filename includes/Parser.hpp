@@ -6,20 +6,19 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:21 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/13 17:07:14 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/14 21:31:02 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef PARSER_HPP
 #define PARSER_HPP
 
-#include <string>
-#include <sstream>
-#include <fstream>
-#include <iostream>
-#include <vector>
+#include "CommonHeader.hpp"
 #include "ServerConfig.hpp"
 #include "Location.hpp"
+
+class Location;
+class ServerConfig;
 
 class Parser
 {
