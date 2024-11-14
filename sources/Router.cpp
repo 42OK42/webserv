@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Router.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/14 16:51:42 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/14 17:39:35 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,7 +71,7 @@ std::string Router::extractFilename(const std::string& contentDisposition) {
 std::vector<std::string> Router::getFilesInDirectory(const std::string&) {
 	std::vector<std::string> files;
 	const std::map<std::string, Location>& locations = _serverConfig.getLocations();
-	
+
 	for (std::map<std::string, Location>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
 		std::string uploadDir = it->second.getRoot() + "/uploads/";
 		std::string locationPath = it->first;  // z.B. "/upload" oder "/form"
@@ -137,25 +137,25 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 
 	std::string path = request.getUrl();
 	size_t queryPos = path.find("?file=");
-	
+
 	if (queryPos != std::string::npos) {
 		std::string filename = path.substr(queryPos + 6); // "file=" ist 5 Zeichen lang
 		std::string uploadPath = location.getRoot() + "/uploads/" + filename;
-		
+
 		#ifdef DEBUG_MODE
 		std::cout << "Suche Datei: " << uploadPath << std::endl;
 		#endif
-		
+
 		struct stat statbuf;
 		if (stat(uploadPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
 			std::ifstream file(uploadPath.c_str(), std::ios::binary);
 			if (file) {
 				std::vector<char> buffer((std::istreambuf_iterator<char>(file)),
 									   std::istreambuf_iterator<char>());
-				
+
 				response.setStatusCode(200);
 				response.setBody(std::string(buffer.begin(), buffer.end()));
-				
+
 				std::string extension = filename.substr(filename.find_last_of(".") + 1);
 				if (extension == "jpg" || extension == "jpeg")
 					response.setHeader("Content-Type", "image/jpeg");
@@ -177,24 +177,21 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 	}
 
 	std::string fullPath = location.getRoot();
-	
-	// Prüfe auf Bildanfrage im uploads Verzeichnis
+
 	if (path.find("/uploads/") != std::string::npos) {
 		std::string filename = path.substr(path.find_last_of("/") + 1);
 		std::string uploadPath = location.getRoot() + "/uploads/" + filename;
-		
-		// Prüfe ob die Datei existiert
+
 		struct stat statbuf;
 		if (stat(uploadPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
 			std::ifstream file(uploadPath.c_str(), std::ios::binary);
 			if (file) {
 				std::vector<char> buffer((std::istreambuf_iterator<char>(file)),
 									   std::istreambuf_iterator<char>());
-				
+
 				response.setStatusCode(200);
 				response.setBody(std::string(buffer.begin(), buffer.end()));
-				
-				// Setze den korrekten Content-Type basierend auf der Dateiendung
+
 				std::string extension = filename.substr(filename.find_last_of(".") + 1);
 				if (extension == "jpg" || extension == "jpeg")
 					response.setHeader("Content-Type", "image/jpeg");
@@ -209,7 +206,6 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 		return;
 	}
 
-	// Normale GET-Request Verarbeitung
 	struct stat statbuf;
 	if (stat(fullPath.c_str(), &statbuf) == 0) {
 		if (S_ISDIR(statbuf.st_mode)) {
@@ -217,8 +213,7 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 				std::string indexPath = fullPath + "/" + location.getIndex();
 				if (stat(indexPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
 					std::string content = readFile(indexPath);
-					
-					// Füge die Dateiliste für die uploadSuccessful Seite hinzu
+
 					if (request.getUrl() == "/uploadSuccessful") {
 						std::vector<std::string> files = getFilesInDirectory("");
 						std::string fileListJS = "\n<script>\nconst fileList = [";
@@ -227,14 +222,13 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 							fileListJS += "\n    \"" + files[i] + "\"";
 						}
 						fileListJS += "\n];\n</script>\n</head>";
-						
-						// Füge das Script vor dem schließenden </head> Tag ein
+
 						size_t pos = content.find("</head>");
 						if (pos != std::string::npos) {
 							content.insert(pos, fileListJS);
 						}
 					}
-					
+
 					response.setStatusCode(200);
 					response.setBody(content);
 					response.setHeader("Content-Type", "text/html");
@@ -260,14 +254,14 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 
 void Router::handlePOST(const HttpRequest& request, HttpResponse& response, const Location& location) {
 	std::string contentType = request.getHeader("Content-Type");
-	
+
 	if (contentType.find("multipart/form-data") != std::string::npos) {
 		std::string uploadDir = location.getRoot() + "/uploads/";
 		ensureDirectoryExists(uploadDir);
 
 		const std::vector<std::string>& filenames = request.getFilenames();
 		const std::vector<std::string>& fileContents = request.getFileContents();
-		
+
 		if (!filenames.empty() && filenames.size() == fileContents.size()) {
 			for (size_t i = 0; i < filenames.size(); ++i) {
 				std::string fullPath = uploadDir + filenames[i];
@@ -277,7 +271,7 @@ void Router::handlePOST(const HttpRequest& request, HttpResponse& response, cons
 					outFile.close();
 				}
 			}
-			
+
 			response.setStatusCode(303);
 			response.setHeader("Location", "/uploadSuccessful");
 			response.setHeader("Content-Type", "text/html");
