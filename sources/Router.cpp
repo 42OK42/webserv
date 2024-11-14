@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/13 20:06:10 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/14 16:29:51 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -135,13 +135,47 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 		return;
 	}
 
+	std::string path = request.getUrl();
+	size_t queryPos = path.find("?file=");
+	
+	if (queryPos != std::string::npos) {
+		std::string filename = path.substr(queryPos + 6); // "file=" ist 5 Zeichen lang
+		std::string uploadPath = location.getRoot() + "/uploads/" + filename;
+		
+		#ifdef DEBUG_MODE
+		std::cout << "Suche Datei: " << uploadPath << std::endl;
+		#endif
+		
+		struct stat statbuf;
+		if (stat(uploadPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
+			std::ifstream file(uploadPath.c_str(), std::ios::binary);
+			if (file) {
+				std::vector<char> buffer((std::istreambuf_iterator<char>(file)),
+									   std::istreambuf_iterator<char>());
+				
+				response.setStatusCode(200);
+				response.setBody(std::string(buffer.begin(), buffer.end()));
+				
+				std::string extension = filename.substr(filename.find_last_of(".") + 1);
+				if (extension == "jpg" || extension == "jpeg")
+					response.setHeader("Content-Type", "image/jpeg");
+				else if (extension == "png")
+					response.setHeader("Content-Type", "image/png");
+				else if (extension == "gif")
+					response.setHeader("Content-Type", "image/gif");
+				return;
+			}
+		}
+		setErrorResponse(response, 404);
+		return;
+	}
+
 	if (!location.get_redirectTo().empty()) {
 		response.setStatusCode(301);
 		response.setHeader("Location", location.get_redirectTo());
 		return;
 	}
 
-	std::string path = request.getUrl();
 	std::string fullPath = location.getRoot();
 	
 	// Prüfe auf Bildanfrage im uploads Verzeichnis
@@ -152,7 +186,6 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 		// Prüfe ob die Datei existiert
 		struct stat statbuf;
 		if (stat(uploadPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
-			// Lese die Datei binär
 			std::ifstream file(uploadPath.c_str(), std::ios::binary);
 			if (file) {
 				std::vector<char> buffer((std::istreambuf_iterator<char>(file)),
@@ -172,6 +205,8 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 				return;
 			}
 		}
+		setErrorResponse(response, 404);
+		return;
 	}
 
 	// Normale GET-Request Verarbeitung
