@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Router.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/14 17:44:58 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/14 20:08:13 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,7 @@
 class Router {
 private:
 	ServerConfig& _serverConfig;
-	
+
 	// Hilfsfunktionen
 	std::string readFile(const std::string& filepath);
 	std::string generateDirectoryListing(const std::string& dirPath, const std::string& requestPath);
@@ -42,12 +42,19 @@ private:
 	void ensureDirectoryExists(const std::string& path);
 	std::string extractFilenameFromUrl(const std::string& url);
 	std::string extractFilename(const std::string& contentDisposition);
-	
+
 	// HTTP-Methoden-Handler
 	void handleGET(const HttpRequest& request, HttpResponse& response, const Location& location);
 	void handlePOST(const HttpRequest& request, HttpResponse& response, const Location& location);
 	void handleDELETE(const HttpRequest& request, HttpResponse& response, const Location& location);
 	void handleCGI(const HttpRequest& request, HttpResponse& response, const Location& location);
+	bool isCgiEnabled(const Location& location);
+	std::string constructScriptPath(const HttpRequest& request, const Location& location);
+	bool createPipes(int input_pipe[2], int output_pipe[2]) ;
+	pid_t createFork(int input_pipe[2], int output_pipe[2], HttpResponse& response);
+	void executeCgi(const HttpRequest& request, int input_pipe[2], int output_pipe[2], const Location& location, const std::string& scriptPath);
+	void handleParentProcess(const HttpRequest& request, HttpResponse& response, int input_pipe[2], int output_pipe[2], pid_t pid);
+
 
 public:
 	Router(ServerConfig& config);

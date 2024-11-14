@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Router.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/14 19:17:25 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/14 20:08:37 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,7 +73,7 @@ std::string Router::extractFilename(const std::string& contentDisposition) {
 std::vector<std::string> Router::getFilesInDirectory(const std::string&) {
 	std::vector<std::string> files;
 	const std::map<std::string, Location>& locations = _serverConfig.getLocations();
-	
+
 	for (std::map<std::string, Location>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
 		std::string uploadDir = it->second.getRoot() + "/uploads/";
 		std::string locationPath = it->first;  // z.B. "/upload" oder "/form"
@@ -107,7 +107,7 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 	}
 
 	std::string path = request.getUrl();
-	
+
 	// Prüfe zuerst auf CGI-Anfrage
 	if (path.find("/cgi-bin/") == 0) {
 		#ifdef DEBUG_MODE
@@ -134,7 +134,7 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 
 	try {
 		const Location& location = _serverConfig.findLocation(path);
-		
+
 		if (!location.isMethodAllowed(request.getMethod())) {
 			setErrorResponse(response, 405);
 			return;
@@ -165,25 +165,25 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 
 	std::string path = request.getUrl();
 	size_t queryPos = path.find("?file=");
-	
+
 	if (queryPos != std::string::npos) {
 		std::string filename = path.substr(queryPos + 6); // "file=" ist 5 Zeichen lang
 		std::string uploadPath = location.getRoot() + "/uploads/" + filename;
-		
+
 		#ifdef DEBUG_MODE
 		std::cout << "Suche Datei: " << uploadPath << std::endl;
 		#endif
-		
+
 		struct stat statbuf;
 		if (stat(uploadPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
 			std::ifstream file(uploadPath.c_str(), std::ios::binary);
 			if (file) {
 				std::vector<char> buffer((std::istreambuf_iterator<char>(file)),
 									   std::istreambuf_iterator<char>());
-				
+
 				response.setStatusCode(200);
 				response.setBody(std::string(buffer.begin(), buffer.end()));
-				
+
 				std::string extension = filename.substr(filename.find_last_of(".") + 1);
 				if (extension == "jpg" || extension == "jpeg")
 					response.setHeader("Content-Type", "image/jpeg");
@@ -205,12 +205,12 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 	}
 
 	std::string fullPath = location.getRoot();
-	
+
 	// Prüfe auf Bildanfrage im uploads Verzeichnis
 	if (path.find("/uploads/") != std::string::npos) {
 		std::string filename = path.substr(path.find_last_of("/") + 1);
 		std::string uploadPath = location.getRoot() + "/uploads/" + filename;
-		
+
 		// Prüfe ob die Datei existiert
 		struct stat statbuf;
 		if (stat(uploadPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
@@ -218,10 +218,10 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 			if (file) {
 				std::vector<char> buffer((std::istreambuf_iterator<char>(file)),
 									   std::istreambuf_iterator<char>());
-				
+
 				response.setStatusCode(200);
 				response.setBody(std::string(buffer.begin(), buffer.end()));
-				
+
 				// Setze den korrekten Content-Type basierend auf der Dateiendung
 				std::string extension = filename.substr(filename.find_last_of(".") + 1);
 				if (extension == "jpg" || extension == "jpeg")
@@ -245,7 +245,7 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 				std::string indexPath = fullPath + "/" + location.getIndex();
 				if (stat(indexPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
 					std::string content = readFile(indexPath);
-					
+
 					// Füge die Dateiliste für die uploadSuccessful Seite hinzu
 					if (request.getUrl() == "/uploadSuccessful") {
 						std::vector<std::string> files = getFilesInDirectory("");
@@ -255,14 +255,14 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 							fileListJS += "\n    \"" + files[i] + "\"";
 						}
 						fileListJS += "\n];\n</script>\n</head>";
-						
+
 						// Füge das Script vor dem schließenden </head> Tag ein
 						size_t pos = content.find("</head>");
 						if (pos != std::string::npos) {
 							content.insert(pos, fileListJS);
 						}
 					}
-					
+
 					response.setStatusCode(200);
 					response.setBody(content);
 					response.setHeader("Content-Type", "text/html");
@@ -288,14 +288,14 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 
 void Router::handlePOST(const HttpRequest& request, HttpResponse& response, const Location& location) {
 	std::string contentType = request.getHeader("Content-Type");
-	
+
 	if (contentType.find("multipart/form-data") != std::string::npos) {
 		std::string uploadDir = location.getRoot() + "/uploads/";
 		ensureDirectoryExists(uploadDir);
 
 		const std::vector<std::string>& filenames = request.getFilenames();
 		const std::vector<std::string>& fileContents = request.getFileContents();
-		
+
 		if (!filenames.empty() && filenames.size() == fileContents.size()) {
 			for (size_t i = 0; i < filenames.size(); ++i) {
 				std::string fullPath = uploadDir + filenames[i];
@@ -305,7 +305,7 @@ void Router::handlePOST(const HttpRequest& request, HttpResponse& response, cons
 					outFile.close();
 				}
 			}
-			
+
 			response.setStatusCode(303);
 			response.setHeader("Location", "/uploadSuccessful");
 			response.setHeader("Content-Type", "text/html");
@@ -453,161 +453,144 @@ std::string Router::getCurrentTimestamp() const {
 }
 
 void Router::handleCGI(const HttpRequest& request, HttpResponse& response, const Location& location) {
-	#ifdef DEBUG_MODE
-	std::cout << "[DEBUG] CGI Location settings:" << std::endl;
-	std::cout << "[DEBUG] CGI Enabled: " << location.isCgiEnabled() << std::endl;
-	std::cout << "[DEBUG] CGI Extension: " << location.getCgiExtension() << std::endl;
-	std::cout << "[DEBUG] CGI Path: " << location.getCgiBin() << std::endl;
-	std::cout << "[DEBUG] Location Root: " << location.getRoot() << std::endl;
-	#endif
+    // Vérification de la configuration du CGI
+    if (!isCgiEnabled(location)) {
+        setErrorResponse(response, 403);
+        return;
+    }
 
-	if (!location.isCgiEnabled()) {
-		setErrorResponse(response, 403);
-		return;
-	}
+    std::string scriptPath = constructScriptPath(request, location);
 
-	std::string scriptPath = request.getUrl();
-	if (scriptPath.find("/cgi-bin/") == 0) {
-		scriptPath = location.getRoot() + scriptPath;
-	}
+    int input_pipe[2];
+    int output_pipe[2];
 
-	int input_pipe[2];
-	int output_pipe[2];
-	
-	if (pipe(input_pipe) < 0 || pipe(output_pipe) < 0) {
-		setErrorResponse(response, 500);
-		return;
-	}
+    if (!createPipes(input_pipe, output_pipe)) {
+        setErrorResponse(response, 500);
+        return;
+    }
 
-	pid_t pid = fork();
-	if (pid < 0) {
-		close(input_pipe[0]);
-		close(input_pipe[1]);
-		close(output_pipe[0]);
-		close(output_pipe[1]);
-		setErrorResponse(response, 500);
-		return;
-	}
+    pid_t pid = createFork(input_pipe, output_pipe, response);
 
-	if (pid == 0) { // Child-Prozess
-		#ifdef DEBUG_MODE
-		std::cout << "[DEBUG-CHILD] Setting environment variables..." << std::endl;
-		std::cout << "[DEBUG-CHILD] Content-Length: " << request.getBody().length() << std::endl;
-		std::cout << "[DEBUG-CHILD] Content-Type: " << request.getHeader("Content-Type") << std::endl;
-		std::cout << "[DEBUG-CHILD] Request-Method: " << request.getMethod() << std::endl;
-		std::cout << "[DEBUG-CHILD] Request-Body: " << request.getBody() << std::endl;
-		#endif
+    if (pid == 0) {
+        // Code du processus fils
+        executeCgi(request, input_pipe, output_pipe, location, scriptPath);
+    } else {
+        // Code du processus parent
+        handleParentProcess(request, response, input_pipe, output_pipe, pid);
+    }
+}
 
-		std::ostringstream oss;
-		oss << request.getBody().length();
-		setenv("CONTENT_LENGTH", oss.str().c_str(), 1);
-		setenv("CONTENT_TYPE", request.getHeader("Content-Type").c_str(), 1);
-		setenv("REQUEST_METHOD", request.getMethod().c_str(), 1);
-		setenv("QUERY_STRING", "", 1);
+bool Router::isCgiEnabled(const Location& location) {
+    #ifdef DEBUG_MODE
+    std::cout << "[DEBUG] CGI Location settings:" << std::endl;
+    std::cout << "[DEBUG] CGI Enabled: " << location.isCgiEnabled() << std::endl;
+    std::cout << "[DEBUG] CGI Path: " << location.getCgiBin() << std::endl;
+    #endif
 
-		#ifdef DEBUG_MODE
-		std::cout << "[DEBUG-CHILD] Setting up pipes..." << std::endl;
-		std::cout << "[DEBUG-CHILD] input_pipe[0]: " << input_pipe[0] << std::endl;
-		std::cout << "[DEBUG-CHILD] input_pipe[1]: " << input_pipe[1] << std::endl;
-		std::cout << "[DEBUG-CHILD] output_pipe[0]: " << output_pipe[0] << std::endl;
-		std::cout << "[DEBUG-CHILD] output_pipe[1]: " << output_pipe[1] << std::endl;
-		#endif
+    return location.isCgiEnabled();
+}
 
-		// Schließe nicht benötigte Pipe-Enden
-		close(input_pipe[1]);  // Schließe Write-Ende der Input-Pipe
-		close(output_pipe[0]); // Schließe Read-Ende der Output-Pipe
+std::string Router::constructScriptPath(const HttpRequest& request, const Location& location) {
+    std::string scriptPath = request.getUrl();
+    if (scriptPath.find("/cgi-bin/") == 0) {
+        scriptPath = location.getRoot() + scriptPath;
+    }
+    return scriptPath;
+}
 
-		#ifdef DEBUG_MODE
-		std::cout << "[DEBUG-CHILD] Pipes closed, setting up dup2..." << std::endl;
-		#endif
+bool Router::createPipes(int input_pipe[2], int output_pipe[2]) {
+    if (pipe(input_pipe) < 0 || pipe(output_pipe) < 0) {
+        return false;
+    }
+    return true;
+}
 
-		// Setze die Pipe-Umleitungen
-		if (dup2(input_pipe[0], STDIN_FILENO) == -1) {
-			#ifdef DEBUG_MODE
-			perror("[ERROR-CHILD] dup2 input failed");
-			#endif
-			exit(1);
-		}
-		
-		if (dup2(output_pipe[1], STDOUT_FILENO) == -1) {
-			#ifdef DEBUG_MODE
-			perror("[ERROR-CHILD] dup2 output failed");
-			#endif
-			exit(1);
-		}
+pid_t Router::createFork(int input_pipe[2], int output_pipe[2], HttpResponse& response) {
+    pid_t pid = fork();
+    if (pid < 0) {
+        close(input_pipe[0]);
+        close(input_pipe[1]);
+        close(output_pipe[0]);
+        close(output_pipe[1]);
+        setErrorResponse(response, 500);
+    }
+    return pid;
+}
 
-		#ifdef DEBUG_MODE
-		std::cout << "[DEBUG-CHILD] dup2 complete, closing remaining pipes..." << std::endl;
-		#endif
+void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int output_pipe[2], const Location& location, const std::string& scriptPath) {
+    #ifdef DEBUG_MODE
+    std::cout << "[DEBUG-CHILD] Executing CGI script: " << location.getCgiBin() << std::endl;
+    std::cout << "[DEBUG-CHILD] Script path: " << scriptPath << std::endl;
+    #endif
 
-		// Schließe die duplizierten Pipe-Enden
-		close(input_pipe[0]);
-		close(output_pipe[1]);
+    std::ostringstream oss;
+    oss << request.getBody().length();
+    setenv("CONTENT_LENGTH", oss.str().c_str(), 1);
+    setenv("CONTENT_TYPE", request.getHeader("Content-Type").c_str(), 1);
+    setenv("REQUEST_METHOD", request.getMethod().c_str(), 1);
+    setenv("QUERY_STRING", "", 1);
 
-		char* const args[] = {
-			const_cast<char*>(location.getCgiBin().c_str()),
-			const_cast<char*>(scriptPath.c_str()),
-			NULL
-		};
+    close(input_pipe[1]);
+    close(output_pipe[0]);
 
-		#ifdef DEBUG_MODE
-		std::cout << "[DEBUG-CHILD] Executing CGI script: " << location.getCgiBin() << std::endl;
-		std::cout << "[DEBUG-CHILD] Script path: " << scriptPath << std::endl;
-		#endif
+    if (dup2(input_pipe[0], STDIN_FILENO) == -1) {
+        perror("[ERROR-CHILD] dup2 input failed");
+        exit(1);
+    }
 
-		execv(location.getCgiBin().c_str(), args);
-		perror("[ERROR-CHILD] execv failed");
-		exit(1);
-	}
+    if (dup2(output_pipe[1], STDOUT_FILENO) == -1) {
+        perror("[ERROR-CHILD] dup2 output failed");
+        exit(1);
+    }
 
-	// Parent-Prozess
-	#ifdef DEBUG_MODE
-	std::cout << "[DEBUG-PARENT] Starting parent process..." << std::endl;
-	#endif
+    close(input_pipe[0]);
+    close(output_pipe[1]);
 
-	close(input_pipe[0]);  // Schließe Read-Ende der Input-Pipe
-	close(output_pipe[1]); // Schließe Write-Ende der Output-Pipe
+    char* const args[] = {
+        const_cast<char*>(location.getCgiBin().c_str()),
+        const_cast<char*>(scriptPath.c_str()),
+        NULL
+    };
 
-	// Schreibe Request-Body in die Pipe
-	if (!request.getBody().empty()) {
-		#ifdef DEBUG_MODE
-		std::cout << "[DEBUG-PARENT] Writing to pipe..." << std::endl;
-		std::cout << "[DEBUG-PARENT] Body length: " << request.getBody().length() << std::endl;
-		std::cout << "[DEBUG-PARENT] Body content: " << request.getBody() << std::endl;
-		#endif
-		
-		ssize_t written = write(input_pipe[1], request.getBody().c_str(), request.getBody().length());
-		if (written != static_cast<ssize_t>(request.getBody().length())) {
-			#ifdef DEBUG_MODE
-			perror("[ERROR-PARENT] Write failed or incomplete");
-			#endif
-			close(input_pipe[1]);
-			setErrorResponse(response, 500);
-			return;
-		}
-		fsync(input_pipe[1]);
-	}
+    execv(location.getCgiBin().c_str(), args);
+    perror("[ERROR-CHILD] execv failed");
+    exit(1);
+}
 
-	close(input_pipe[1]); // Schließe Write-Ende nach dem Schreiben
+void Router::handleParentProcess(const HttpRequest& request, HttpResponse& response, int input_pipe[2], int output_pipe[2], pid_t pid) {
+    close(input_pipe[0]);
+    close(output_pipe[1]);
 
-	// Lese CGI-Output
-	std::string cgi_output;
-	char buffer[4096];
-	ssize_t bytes_read;
-	
-	while ((bytes_read = read(output_pipe[0], buffer, sizeof(buffer))) > 0) {
-		cgi_output.append(buffer, bytes_read);
-	}
-	close(output_pipe[0]);
+    if (!request.getBody().empty()) {
+        ssize_t written = write(input_pipe[1], request.getBody().c_str(), request.getBody().length());
+        if (written != static_cast<ssize_t>(request.getBody().length())) {
+            perror("[ERROR-PARENT] Write failed or incomplete");
+            close(input_pipe[1]);
+            setErrorResponse(response, 500);
+            return;
+        }
+        fsync(input_pipe[1]);
+    }
 
-	int status;
-	waitpid(pid, &status, 0);
+    close(input_pipe[1]);
 
-	if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-		response.setStatusCode(200);
-		response.setBody(cgi_output);
-		response.setHeader("Content-Type", "text/html");
-	} else {
-		setErrorResponse(response, 500);
-	}
+    std::string cgi_output;
+    char buffer[4096];
+    ssize_t bytes_read;
+
+    while ((bytes_read = read(output_pipe[0], buffer, sizeof(buffer))) > 0) {
+        cgi_output.append(buffer, bytes_read);
+    }
+    close(output_pipe[0]);
+
+    int status;
+    waitpid(pid, &status, 0);
+
+    if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+        response.setStatusCode(200);
+        response.setBody(cgi_output);
+        response.setHeader("Content-Type", "text/html");
+    } else {
+        setErrorResponse(response, 500);
+    }
 }
