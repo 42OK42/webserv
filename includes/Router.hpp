@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/14 20:19:20 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/14 21:04:42 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/wait.h>
+
+class HttpRequest;
+class HttpResponse;
 
 class Router {
 private:

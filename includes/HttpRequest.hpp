@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:28:34 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/14 20:13:42 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/14 21:04:07 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,10 @@
 #include <sstream>
 #include <iostream>
 #include "ServerConfig.hpp"
+#include "Router.hpp"
+#include "HttpResponse.hpp"
+
+class Router;
 
 class HttpRequest {
 public:
@@ -31,7 +35,7 @@ public:
 	const std::string& getBody() const;
 	const std::vector<std::string>& getFilenames() const;
 	const std::vector<std::string>& getFileContents() const;
-
+	std::string extractFilename(const std::string& contentDisposition);
 	std::string getHeader(const std::string& name) const;
 	const std::string& getHost() const;
 	int getPort() const;
