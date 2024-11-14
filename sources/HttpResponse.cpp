@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 18:05:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/12 21:36:37 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/14 17:30:58 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,7 @@ void HttpResponse::setStatusMessage(int code)
 		case 201: statusMessage = "Created"; break;
 		case 204: statusMessage = "No Content"; break;
 		case 301: statusMessage = "Moved Permanently"; break;
+		case 303: statusMessage = "See Other" ; break;
 		case 400: statusMessage = "Bad Request"; break;
 		case 403: statusMessage = "Forbidden"; break;
 		case 404: statusMessage = "Not Found"; break;
