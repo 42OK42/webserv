@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Location.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:01:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/14 17:40:59 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/14 23:06:22 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,6 +42,11 @@ bool Location::isValidAutoIndex(const std::string& token)
 }
 
 /* ---------------------- Setters ---------------------- */
+
+void Location::setClientMaxBodySize(size_t token) {
+	_clientMaxBodySize = token;
+}
+
 
 void Location::setPath(const std::string& token)
 {
@@ -111,6 +116,12 @@ void Location::setMethods(const std::vector<std::string>& methods)
 }
 
 /* ---------------------- Getters ---------------------- */
+
+int Location::getClientMaxBodySize() const
+{
+	return static_cast<int>(_clientMaxBodySize);
+}
+
 
 std::string Location::getPath() const
 {

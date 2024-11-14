@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/14 22:38:30 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/14 23:39:31 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -138,6 +138,7 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 	std::cout << "\033[0;33m[DEBUG] Request URL: " << request.getUrl() << "\033[0m" << std::endl;
 	std::cout << "\033[0;33m[DEBUG] Request Method: " << request.getMethod() << "\033[0m" << std::endl;
 	#endif
+
 
 	std::string requestHost = request.getHeader("Host");
 	std::ostringstream expectedHost;
@@ -348,6 +349,24 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
     @returns void
 */
 void Router::handlePOST(const HttpRequest& request, HttpResponse& response, const Location& location) {
+
+	    size_t maxBodySize = location.getClientMaxBodySize();
+
+
+    #ifdef DEBUG_MODE
+    std::cout << "[DEBUG] Max body size allowed: " << maxBodySize << std::endl;
+    std::cout << "[DEBUG] Request body size: " << request.getBody().length() << std::endl;
+    #endif
+
+    if (request.getBody().length() > maxBodySize) {
+		#ifdef DEBUG_MODE
+        std::cerr << "[DEBUG] Request body exceeds maximum allowed size, sending 413" << std::endl;
+        #endif
+        setErrorResponse(response, 413);
+        response.setBody("Request body exceeds maximum allowed size");
+        return;
+    }
+
 	std::string contentType = request.getHeader("Content-Type");
 
 	if (contentType.find("multipart/form-data") != std::string::npos) {
@@ -386,6 +405,16 @@ void Router::handlePOST(const HttpRequest& request, HttpResponse& response, cons
 		}
 	}
 }
+
+
+/*
+	size_t maxBodySize = _serverConfig.getClientMaxBodySize();
+	  if ((request.getMethod() == "POST" || request.getMethod() == "PUT") && request.getBody().length() > maxBodySize) {
+        // Si la taille dépasse la limite, envoyer une réponse 413 Payload Too Large
+        setErrorResponse(response, 413);
+        return;
+    }
+*/
 
 /*
 	Handles an HTTP DELETE request by attempting to delete the specified file on the server.

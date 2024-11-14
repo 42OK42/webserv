@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/14 20:30:30 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/14 23:45:29 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -228,7 +228,6 @@ void Webserver::handleClientData(size_t index) {
 		closeConnection(index);
 		return;
 	}
-
 	try {
 		bool requestComplete = server->readClientData(client_fd);
 		if (!requestComplete) {
@@ -263,7 +262,7 @@ void Webserver::handleClientData(size_t index) {
 
 			if (shouldClose) {
 				#ifdef DEBUG_MODE
-				std::cout << "\033[0;36m[DEBUG] Webserver::handleClientData: Schließe Verbindung auf Anfrage\033[0m" << std::endl;
+				std::cout << "\033[0;36m[DEBUG] Webserver::handleClientData: Closing connection upon request\033[0m" << std::endl;
 				#endif
 				closeConnection(index);
 			}
@@ -271,7 +270,7 @@ void Webserver::handleClientData(size_t index) {
 		} catch (const std::runtime_error& e) {
 			if (std::string(e.what()) == "Request body exceeds maximum allowed size") {
 				#ifdef DEBUG_MODE
-				std::cerr << "\033[0;31m[DEBUG] Webserver::handleClientData: Datei zu groß, sende 413\033[0m" << std::endl;
+				std::cout << "\033[0;31m[DEBUG] Webserver::handleClientData: File too large, sending 413\033[0m" << std::endl;
 				#endif
 
 				HttpResponse errorResponse;

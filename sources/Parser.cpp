@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Parser.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/14 18:48:32 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/14 23:46:09 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -184,6 +184,7 @@ std::vector<int> Parser::checkPorts( std::vector<std::string>& tokens)
 
 bool Parser::ParseConfigStream(std::stringstream& buffer)
 {
+	size_t size;;
     ServerConfig serverTemplate;
     std::string line, key, errorPage, sizeStr;
     int errorCode;
@@ -268,9 +269,8 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
                 iss >> sizeStr;
                 sizeStr = removeSemicolon(sizeStr);
                 std::stringstream ss(sizeStr);
-                size_t size;
                 ss >> size;
-                serverTemplate.setClientMaxBodySize(size * 1024 * 1024); // MB to bytes
+                serverTemplate.setClientMaxBodySize(size);
             }
             else if (key == "location") {
                 std::string path;
@@ -278,7 +278,8 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
                 path = removeSemicolon(path);
 
                 Location location;
-                location.setPath(path);
+                location.setPath(path);;
+				location.setClientMaxBodySize(size);
                 parseLocation(buffer, location);
                 serverTemplate.addLocation(path, location);
             }

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Location.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:54 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/14 17:40:29 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/14 23:05:33 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,9 +39,12 @@ class Location
 		std::string					_cgi_extension;
 		std::string					_cgi_path;
 		std::string					_redirectTo;
-		bool _cgiEnabled;
-		std::string _cgiExtension;
-		std::string _cgiBin;
+		size_t 						_clientMaxBodySize;
+
+
+		bool						_cgiEnabled;
+		std::string 				_cgiExtension;
+		std::string 				_cgiBin;
 
 	public:
 		Location();
@@ -59,9 +62,12 @@ class Location
 		std::vector<std::string> getMethods() const;
 		bool isCgiEnabled() const { return _cgiEnabled; }
 		std::string getCgiExtension() const { return _cgiExtension; }
-		std::string getCgiBin() const { return _cgiBin; }
+		std::string	getCgiBin() const { return _cgiBin; }
+		int			getClientMaxBodySize(void) const;
 
 		/* Setters */
+		
+		void	setClientMaxBodySize(size_t token);
 		void setExtension(const std::string& token);
 		void setCgiPath(const std::string& token);
 		void setPath(const std::string& token);
