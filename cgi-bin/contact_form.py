@@ -4,36 +4,62 @@ import urllib.parse
 import os
 import sys
 
-# Get content length from the environment variable
-content_length = int(os.environ.get('Content-Length', 0))
+print("Content-Type: text/html\n")
+print("<h2>Debug Info:</h2>")
+print("<pre>")
+print("Script started")
+print(f"stdin isatty: {sys.stdin.isatty()}")
+print(f"stdin encoding: {sys.stdin.encoding}")
+print(f"stdin mode: {sys.stdin.mode}")
+print("</pre>")
 
-# Read the POST data (request body) from stdin
+print("<h2>Environment Variables:</h2>")
+print("<pre>")
+for key, value in os.environ.items():
+    print(f"{key}: {value}")
+print("</pre>")
+
+content_length = int(os.environ.get('CONTENT_LENGTH', 0))
+print(f"<p>Reading {content_length} bytes from stdin...</p>")
+
+# Debug: Print raw stdin info
+print("<h2>Raw stdin data:</h2>")
+print("<pre>")
+print(f"stdin buffer info: {dir(sys.stdin.buffer)}")
+print(f"stdin fileno: {sys.stdin.fileno()}")
+try:
+    print(f"stdin ready: {sys.stdin.ready()}")
+except:
+    print("stdin.ready() not available")
+print("</pre>")
+
+# Lese alle Daten auf einmal
 post_data = sys.stdin.read(content_length)
 
-# Parse the query string
-parsed_data = urllib.parse.parse_qs(post_data)
+print(f"<p>Read complete. Got {len(post_data)} bytes</p>")
+print("<h2>Actual stdin content:</h2>")
+print(f"<pre>'{post_data}'</pre>")
 
-# Fetch form data
-name = parsed_data['name'][0]
-email = parsed_data['email'][0]
-age = parsed_data['age'][0]
-
-# Generate response
-print("Content-Type: text/html\n")  # CGI script needs to specify content type in the response
-print("<html><head><title>Contact Form Submission</title></head><body>")
-print("<h2>Thank you, {}!</h2>".format(name))
-print("<p>You are {} years old".format(age))
-if int(age) < 0:
-	print("... are you sure?</p>")
-elif int(age) < 10:
-	print("; that's cool!</p>")
-elif int(age) < 30:
-	print("; well you are still young ;) </p>")
-elif int(age) < 90:
-	print("; time flies huh?</p>")
-else:
-	print("; I bow before your wisdom!</p>")
-print("<p>We will reach out to you at {}</p>".format(email))
-print("<button onclick=\"location.href='/'\">Back to Home</button>")
-print("<button onclick=\"location.href='/upload'\">Go to Upload Page</button>")
-print("</body></html>")
+try:
+    # Debug: Rohdaten
+    print("<h2>Raw Data:</h2>")
+    print(f"<pre>Length: {len(post_data)}\nData: {repr(post_data)}</pre>")
+    
+    # Parse the query string
+    parsed_data = urllib.parse.parse_qs(post_data)
+    
+    print("<h2>Parsed Data:</h2>")
+    print(f"<pre>{parsed_data}</pre>")
+    
+    # Fetch form data
+    name = parsed_data.get('name', [''])[0]
+    email = parsed_data.get('email', [''])[0]
+    age = parsed_data.get('age', ['0'])[0]
+    
+    print("<h2>Form Data:</h2>")
+    print(f"<p>Name: {name}</p>")
+    print(f"<p>Email: {email}</p>")
+    print(f"<p>Age: {age}</p>")
+    
+except Exception as e:
+    print(f"<h1>Error</h1><p>An error occurred: {str(e)}</p>")

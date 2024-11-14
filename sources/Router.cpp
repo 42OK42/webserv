@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/14 16:51:42 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/14 19:17:25 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,8 @@
 #include <vector>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 Router::Router(ServerConfig& config) : _serverConfig(config) {}
 
@@ -90,6 +92,11 @@ std::vector<std::string> Router::getFilesInDirectory(const std::string&) {
 }
 
 void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
+	#ifdef DEBUG_MODE
+	std::cout << "\033[0;33m[DEBUG] Request URL: " << request.getUrl() << "\033[0m" << std::endl;
+	std::cout << "\033[0;33m[DEBUG] Request Method: " << request.getMethod() << "\033[0m" << std::endl;
+	#endif
+
 	std::string requestHost = request.getHeader("Host");
 	std::ostringstream expectedHost;
 	expectedHost << _serverConfig.getHost() << ":" << _serverConfig.getPort();
@@ -100,13 +107,34 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 	}
 
 	std::string path = request.getUrl();
+	
+	// Prüfe zuerst auf CGI-Anfrage
+	if (path.find("/cgi-bin/") == 0) {
+		#ifdef DEBUG_MODE
+		std::cout << "\033[0;33m[DEBUG] CGI Request detected for path: " << path << "\033[0m" << std::endl;
+		#endif
+		try {
+			const Location& location = _serverConfig.findLocation("/cgi-bin");
+			handleCGI(request, response, location);
+			return;
+		} catch (const ServerConfig::LocationNotFound& e) {
+			#ifdef DEBUG_MODE
+			std::cout << "\033[0;31m[DEBUG] CGI Location not found\033[0m" << std::endl;
+			#endif
+			setErrorResponse(response, 404);
+			return;
+		}
+	}
+
+	// Normale Request-Verarbeitung
 	size_t queryPos = path.find('?');
 	if (queryPos != std::string::npos) {
 		path = path.substr(0, queryPos);
 	}
 
 	try {
-		Location location = _serverConfig.findLocation(path);
+		const Location& location = _serverConfig.findLocation(path);
+		
 		if (!location.isMethodAllowed(request.getMethod())) {
 			setErrorResponse(response, 405);
 			return;
@@ -422,4 +450,164 @@ std::string Router::getCurrentTimestamp() const {
 	char buffer[20];
 	std::strftime(buffer, sizeof(buffer), "%Y%m%d_%H%M%S", std::localtime(&now));
 	return std::string(buffer);
+}
+
+void Router::handleCGI(const HttpRequest& request, HttpResponse& response, const Location& location) {
+	#ifdef DEBUG_MODE
+	std::cout << "[DEBUG] CGI Location settings:" << std::endl;
+	std::cout << "[DEBUG] CGI Enabled: " << location.isCgiEnabled() << std::endl;
+	std::cout << "[DEBUG] CGI Extension: " << location.getCgiExtension() << std::endl;
+	std::cout << "[DEBUG] CGI Path: " << location.getCgiBin() << std::endl;
+	std::cout << "[DEBUG] Location Root: " << location.getRoot() << std::endl;
+	#endif
+
+	if (!location.isCgiEnabled()) {
+		setErrorResponse(response, 403);
+		return;
+	}
+
+	std::string scriptPath = request.getUrl();
+	if (scriptPath.find("/cgi-bin/") == 0) {
+		scriptPath = location.getRoot() + scriptPath;
+	}
+
+	int input_pipe[2];
+	int output_pipe[2];
+	
+	if (pipe(input_pipe) < 0 || pipe(output_pipe) < 0) {
+		setErrorResponse(response, 500);
+		return;
+	}
+
+	pid_t pid = fork();
+	if (pid < 0) {
+		close(input_pipe[0]);
+		close(input_pipe[1]);
+		close(output_pipe[0]);
+		close(output_pipe[1]);
+		setErrorResponse(response, 500);
+		return;
+	}
+
+	if (pid == 0) { // Child-Prozess
+		#ifdef DEBUG_MODE
+		std::cout << "[DEBUG-CHILD] Setting environment variables..." << std::endl;
+		std::cout << "[DEBUG-CHILD] Content-Length: " << request.getBody().length() << std::endl;
+		std::cout << "[DEBUG-CHILD] Content-Type: " << request.getHeader("Content-Type") << std::endl;
+		std::cout << "[DEBUG-CHILD] Request-Method: " << request.getMethod() << std::endl;
+		std::cout << "[DEBUG-CHILD] Request-Body: " << request.getBody() << std::endl;
+		#endif
+
+		std::ostringstream oss;
+		oss << request.getBody().length();
+		setenv("CONTENT_LENGTH", oss.str().c_str(), 1);
+		setenv("CONTENT_TYPE", request.getHeader("Content-Type").c_str(), 1);
+		setenv("REQUEST_METHOD", request.getMethod().c_str(), 1);
+		setenv("QUERY_STRING", "", 1);
+
+		#ifdef DEBUG_MODE
+		std::cout << "[DEBUG-CHILD] Setting up pipes..." << std::endl;
+		std::cout << "[DEBUG-CHILD] input_pipe[0]: " << input_pipe[0] << std::endl;
+		std::cout << "[DEBUG-CHILD] input_pipe[1]: " << input_pipe[1] << std::endl;
+		std::cout << "[DEBUG-CHILD] output_pipe[0]: " << output_pipe[0] << std::endl;
+		std::cout << "[DEBUG-CHILD] output_pipe[1]: " << output_pipe[1] << std::endl;
+		#endif
+
+		// Schließe nicht benötigte Pipe-Enden
+		close(input_pipe[1]);  // Schließe Write-Ende der Input-Pipe
+		close(output_pipe[0]); // Schließe Read-Ende der Output-Pipe
+
+		#ifdef DEBUG_MODE
+		std::cout << "[DEBUG-CHILD] Pipes closed, setting up dup2..." << std::endl;
+		#endif
+
+		// Setze die Pipe-Umleitungen
+		if (dup2(input_pipe[0], STDIN_FILENO) == -1) {
+			#ifdef DEBUG_MODE
+			perror("[ERROR-CHILD] dup2 input failed");
+			#endif
+			exit(1);
+		}
+		
+		if (dup2(output_pipe[1], STDOUT_FILENO) == -1) {
+			#ifdef DEBUG_MODE
+			perror("[ERROR-CHILD] dup2 output failed");
+			#endif
+			exit(1);
+		}
+
+		#ifdef DEBUG_MODE
+		std::cout << "[DEBUG-CHILD] dup2 complete, closing remaining pipes..." << std::endl;
+		#endif
+
+		// Schließe die duplizierten Pipe-Enden
+		close(input_pipe[0]);
+		close(output_pipe[1]);
+
+		char* const args[] = {
+			const_cast<char*>(location.getCgiBin().c_str()),
+			const_cast<char*>(scriptPath.c_str()),
+			NULL
+		};
+
+		#ifdef DEBUG_MODE
+		std::cout << "[DEBUG-CHILD] Executing CGI script: " << location.getCgiBin() << std::endl;
+		std::cout << "[DEBUG-CHILD] Script path: " << scriptPath << std::endl;
+		#endif
+
+		execv(location.getCgiBin().c_str(), args);
+		perror("[ERROR-CHILD] execv failed");
+		exit(1);
+	}
+
+	// Parent-Prozess
+	#ifdef DEBUG_MODE
+	std::cout << "[DEBUG-PARENT] Starting parent process..." << std::endl;
+	#endif
+
+	close(input_pipe[0]);  // Schließe Read-Ende der Input-Pipe
+	close(output_pipe[1]); // Schließe Write-Ende der Output-Pipe
+
+	// Schreibe Request-Body in die Pipe
+	if (!request.getBody().empty()) {
+		#ifdef DEBUG_MODE
+		std::cout << "[DEBUG-PARENT] Writing to pipe..." << std::endl;
+		std::cout << "[DEBUG-PARENT] Body length: " << request.getBody().length() << std::endl;
+		std::cout << "[DEBUG-PARENT] Body content: " << request.getBody() << std::endl;
+		#endif
+		
+		ssize_t written = write(input_pipe[1], request.getBody().c_str(), request.getBody().length());
+		if (written != static_cast<ssize_t>(request.getBody().length())) {
+			#ifdef DEBUG_MODE
+			perror("[ERROR-PARENT] Write failed or incomplete");
+			#endif
+			close(input_pipe[1]);
+			setErrorResponse(response, 500);
+			return;
+		}
+		fsync(input_pipe[1]);
+	}
+
+	close(input_pipe[1]); // Schließe Write-Ende nach dem Schreiben
+
+	// Lese CGI-Output
+	std::string cgi_output;
+	char buffer[4096];
+	ssize_t bytes_read;
+	
+	while ((bytes_read = read(output_pipe[0], buffer, sizeof(buffer))) > 0) {
+		cgi_output.append(buffer, bytes_read);
+	}
+	close(output_pipe[0]);
+
+	int status;
+	waitpid(pid, &status, 0);
+
+	if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+		response.setStatusCode(200);
+		response.setBody(cgi_output);
+		response.setHeader("Content-Type", "text/html");
+	} else {
+		setErrorResponse(response, 500);
+	}
 }

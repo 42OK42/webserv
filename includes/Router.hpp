@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/13 17:36:08 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/14 17:44:58 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,8 @@
 #include <cerrno>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 class Router {
 private:
@@ -45,6 +47,7 @@ private:
 	void handleGET(const HttpRequest& request, HttpResponse& response, const Location& location);
 	void handlePOST(const HttpRequest& request, HttpResponse& response, const Location& location);
 	void handleDELETE(const HttpRequest& request, HttpResponse& response, const Location& location);
+	void handleCGI(const HttpRequest& request, HttpResponse& response, const Location& location);
 
 public:
 	Router(ServerConfig& config);
