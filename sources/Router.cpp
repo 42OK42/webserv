@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/14 20:08:37 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/14 20:23:32 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -453,7 +453,6 @@ std::string Router::getCurrentTimestamp() const {
 }
 
 void Router::handleCGI(const HttpRequest& request, HttpResponse& response, const Location& location) {
-    // Vérification de la configuration du CGI
     if (!isCgiEnabled(location)) {
         setErrorResponse(response, 403);
         return;
@@ -472,10 +471,8 @@ void Router::handleCGI(const HttpRequest& request, HttpResponse& response, const
     pid_t pid = createFork(input_pipe, output_pipe, response);
 
     if (pid == 0) {
-        // Code du processus fils
         executeCgi(request, input_pipe, output_pipe, location, scriptPath);
     } else {
-        // Code du processus parent
         handleParentProcess(request, response, input_pipe, output_pipe, pid);
     }
 }
@@ -561,15 +558,32 @@ void Router::handleParentProcess(const HttpRequest& request, HttpResponse& respo
     close(input_pipe[0]);
     close(output_pipe[1]);
 
-    if (!request.getBody().empty()) {
-        ssize_t written = write(input_pipe[1], request.getBody().c_str(), request.getBody().length());
-        if (written != static_cast<ssize_t>(request.getBody().length())) {
+    // Vérification de l'encodage chunked
+    if (request.getHeader("Transfer-Encoding") == "chunked") {
+        // Décodage du corps en chunks
+        std::string decoded_body = decodeChunkedBody(request.getBody());
+
+        // Écriture du corps décodé dans le pipe
+        ssize_t written = write(input_pipe[1], decoded_body.c_str(), decoded_body.length());
+        if (written != static_cast<ssize_t>(decoded_body.length())) {
             perror("[ERROR-PARENT] Write failed or incomplete");
             close(input_pipe[1]);
             setErrorResponse(response, 500);
             return;
         }
         fsync(input_pipe[1]);
+    } else {
+        // Pas d'encodage chunked, on écrit directement le corps de la requête
+        if (!request.getBody().empty()) {
+            ssize_t written = write(input_pipe[1], request.getBody().c_str(), request.getBody().length());
+            if (written != static_cast<ssize_t>(request.getBody().length())) {
+                perror("[ERROR-PARENT] Write failed or incomplete");
+                close(input_pipe[1]);
+                setErrorResponse(response, 500);
+                return;
+            }
+            fsync(input_pipe[1]);
+        }
     }
 
     close(input_pipe[1]);
@@ -593,4 +607,30 @@ void Router::handleParentProcess(const HttpRequest& request, HttpResponse& respo
     } else {
         setErrorResponse(response, 500);
     }
+}
+
+std::string Router::decodeChunkedBody(const std::string& body)
+{
+    std::string decoded_body;
+    size_t pos = 0;
+    while (pos < body.size()) {
+        size_t chunk_size_end = body.find("\r\n", pos);
+        if (chunk_size_end == std::string::npos) {
+            break;
+        }
+
+        std::string chunk_size_str = body.substr(pos, chunk_size_end - pos);
+        long chunk_size = strtol(chunk_size_str.c_str(), NULL, 16);
+
+        pos = chunk_size_end + 2;
+
+        if (pos + chunk_size > body.size()) {
+            break;
+        }
+
+        decoded_body.append(body.substr(pos, chunk_size));
+        pos += chunk_size + 2;
+    }
+
+    return decoded_body;
 }

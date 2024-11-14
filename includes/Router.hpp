@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/14 20:08:13 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/14 20:19:20 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,7 +54,7 @@ private:
 	pid_t createFork(int input_pipe[2], int output_pipe[2], HttpResponse& response);
 	void executeCgi(const HttpRequest& request, int input_pipe[2], int output_pipe[2], const Location& location, const std::string& scriptPath);
 	void handleParentProcess(const HttpRequest& request, HttpResponse& response, int input_pipe[2], int output_pipe[2], pid_t pid);
-
+	std::string decodeChunkedBody(const std::string& body);
 
 public:
 	Router(ServerConfig& config);
