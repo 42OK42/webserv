@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/14 21:49:25 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/14 22:10:33 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -707,16 +707,26 @@ void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int outpu
     close(input_pipe[0]);
     close(output_pipe[1]);
 
+    // Store the string values in local variables to extend their lifetimes
+    std::string cgi_bin_str = location.getCgiBin();
+    std::string script_path_str = scriptPath;
+
+    const char* cgi_bin = cgi_bin_str.c_str();
+    const char* script_path = script_path_str.c_str();
+
     char* const args[] = {
-        const_cast<char*>(location.getCgiBin().c_str()),
-        const_cast<char*>(scriptPath.c_str()),
+        const_cast<char*>(cgi_bin),  // We're still using const_cast for execv
+        const_cast<char*>(script_path),
         NULL
     };
 
-    execv(location.getCgiBin().c_str(), args);
+    execv(cgi_bin, args);
     perror("[ERROR-CHILD] execv failed");
     exit(1);
 }
+
+
+
 
 /*
 	Handles the parent process after forking for CGI execution.
