@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/14 16:29:51 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/14 16:51:42 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -259,28 +259,42 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 }
 
 void Router::handlePOST(const HttpRequest& request, HttpResponse& response, const Location& location) {
-	std::string uploadDir = location.getRoot() + "/uploads/";
-	ensureDirectoryExists(uploadDir);
-
-	const std::vector<std::string>& filenames = request.getFilenames();
-	const std::vector<std::string>& fileContents = request.getFileContents();
+	std::string contentType = request.getHeader("Content-Type");
 	
-	if (!filenames.empty() && filenames.size() == fileContents.size()) {
-		for (size_t i = 0; i < filenames.size(); ++i) {
-			std::string fullPath = uploadDir + filenames[i];
-			std::ofstream outFile(fullPath.c_str(), std::ios::binary);
-			if (outFile.is_open()) {
-				outFile.write(fileContents[i].c_str(), fileContents[i].length());
-				outFile.close();
-			}
-		}
+	if (contentType.find("multipart/form-data") != std::string::npos) {
+		std::string uploadDir = location.getRoot() + "/uploads/";
+		ensureDirectoryExists(uploadDir);
+
+		const std::vector<std::string>& filenames = request.getFilenames();
+		const std::vector<std::string>& fileContents = request.getFileContents();
 		
-		response.setStatusCode(303);
-		response.setHeader("Location", "/uploadSuccessful");
-		response.setHeader("Content-Type", "text/html");
-		response.setBody("<html><body>Redirecting to /uploadSuccessful</body></html>");
+		if (!filenames.empty() && filenames.size() == fileContents.size()) {
+			for (size_t i = 0; i < filenames.size(); ++i) {
+				std::string fullPath = uploadDir + filenames[i];
+				std::ofstream outFile(fullPath.c_str(), std::ios::binary);
+				if (outFile.is_open()) {
+					outFile.write(fileContents[i].c_str(), fileContents[i].length());
+					outFile.close();
+				}
+			}
+			
+			response.setStatusCode(303);
+			response.setHeader("Location", "/uploadSuccessful");
+			response.setHeader("Content-Type", "text/html");
+			response.setBody("<html><body>Redirecting to /uploadSuccessful</body></html>");
+		} else {
+			setErrorResponse(response, 400);
+		}
 	} else {
-		setErrorResponse(response, 400);
+		std::string body = request.getBody();
+		if (!body.empty()) {
+			response.setStatusCode(200);
+			response.setHeader("Content-Type", "text/plain");
+			response.setBody("Received: " + body);
+		} else {
+			setErrorResponse(response, 400);
+			response.setBody("No data received");
+		}
 	}
 }
 
@@ -297,18 +311,15 @@ void Router::handleDELETE(const HttpRequest& request, HttpResponse& response, co
 			std::string root = filename.substr(0, separatorPos);
 			std::string file = filename.substr(separatorPos + 1);
 			std::string fullPath = root + "/uploads/" + file;
-			
-			// Prüfe zuerst, ob die Datei existiert
+
 			struct stat statbuf;
 			if (stat(fullPath.c_str(), &statbuf) != 0) {
-				// Datei existiert nicht - sende 204
 				response.setStatusCode(204);
 				response.setBody("File not found");
 				response.setHeader("Content-Type", "text/plain");
 				return;
 			}
-			
-			// Versuche die Datei zu löschen
+
 			if (remove(fullPath.c_str()) == 0) {
 				response.setStatusCode(200);
 				response.setBody("File deleted successfully");
