@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserver.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/13 19:33:41 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/14 20:30:30 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -326,12 +326,12 @@ void Webserver::closeConnection(size_t index) {
     @returns void
 */
 void Webserver::setNonBlocking(int sockfd) {
-	int flags = fcntl(sockfd, F_GETFL, 0);
+	int flags = fcntl(sockfd, 3, 0);
 	if (flags == -1) {
 		std::cerr << "Error getting socket flags: " << strerror(errno) << std::endl;
 		return;
 	}
-	if (fcntl(sockfd, F_SETFL, flags | O_NONBLOCK) == -1) {
+	if (fcntl(sockfd, 4, flags | O_NONBLOCK) == -1) {
 		std::cerr << "Error setting socket to non-blocking: " << strerror(errno) << std::endl;
 	}
 }
@@ -403,7 +403,7 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 
 	HttpResponse httpResponse(httpRequest);
 	Router router(*server);
-	
+
 	router.handleRequest(httpRequest, httpResponse);
 
 	std::string responseStr = httpResponse.toString();

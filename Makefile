@@ -17,6 +17,10 @@ ifeq ($(PARSER),1)
 	CFLAGS += -DPARSER_MODE
 endif
 
+ifeq ($(PARSER),2)
+	CFLAGS += -DCGI
+endif
+
 
 SRCS = $(wildcard sources/*.cpp)
 OBJS = $(patsubst sources/%.cpp, objects/%.o, $(SRCS))

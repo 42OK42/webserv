@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpRequest.hpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:28:34 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/13 17:48:44 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/14 20:13:42 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,9 +35,6 @@ public:
 	std::string getHeader(const std::string& name) const;
 	const std::string& getHost() const;
 	int getPort() const;
-	std::string getUserAgent() const;
-	std::string getConnection() const;
-	std::string getAccept() const;
 
 	void print() const;
 

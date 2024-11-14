@@ -3,16 +3,18 @@
 /*                                                        :::      ::::::::   */
 /*   Location.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:01:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/13 18:28:13 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/14 17:40:59 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Location.hpp"
 
-Location::Location() {}
+Location::Location() : _cgiEnabled(false), _cgiExtension(""), _cgiBin("") {
+	// ... bestehender Konstruktor-Code ...
+}
 
 Location::~Location() {}
 

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Parser.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/13 18:29:01 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/14 18:48:32 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -366,15 +366,21 @@ bool Parser::parseLocation(std::stringstream& buffer, Location& location)
 			location.setAutoIndex(value);
 		}
 
+		else if (key == "cgi_enabled")
+		{
+			iss >> value;
+			value = removeSemicolon(value);
+			location.setCgiEnabled(value == "on" || value == "1" || value == "yes");
+		}
 		else if (key == "cgi_extension")
 		{
 			iss >> extension;
-			location.setExtension(removeSemicolon(extension));
+			location.setCgiExtension(removeSemicolon(extension));
 		}
 		else if (key == "cgi_path")
 		{
 			iss >> cgi_path;
-			location.setCgiPath(removeSemicolon(cgi_path));
+			location.setCgiBin(removeSemicolon(cgi_path));
 		}
 	}
 

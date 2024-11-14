@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Location.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:54 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/13 17:20:36 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/14 17:40:29 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,9 @@ class Location
 		std::string					_cgi_extension;
 		std::string					_cgi_path;
 		std::string					_redirectTo;
+		bool _cgiEnabled;
+		std::string _cgiExtension;
+		std::string _cgiBin;
 
 	public:
 		Location();
@@ -54,6 +57,9 @@ class Location
 		std::string getIndex() const;
 		bool getAutoIndex() const;
 		std::vector<std::string> getMethods() const;
+		bool isCgiEnabled() const { return _cgiEnabled; }
+		std::string getCgiExtension() const { return _cgiExtension; }
+		std::string getCgiBin() const { return _cgiBin; }
 
 		/* Setters */
 		void setExtension(const std::string& token);
@@ -64,6 +70,9 @@ class Location
 		void set_redirectTo(const std::string& token);
 		void setAutoIndex(const std::string& token);
 		void setMethods(const std::vector<std::string>& tokens);
+		void setCgiEnabled(bool enabled) { _cgiEnabled = enabled; }
+		void setCgiExtension(const std::string& ext) { _cgiExtension = ext; }
+		void setCgiBin(const std::string& bin) { _cgiBin = bin; }
 
 		bool isMethodAllowed(const std::string& method) const;
 
