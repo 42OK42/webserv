@@ -6,15 +6,13 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/17 03:10:16 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 03:42:07 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Parser.hpp"
 
-
 Parser::Parser() {}
-
 
 Parser::~Parser() {}
 

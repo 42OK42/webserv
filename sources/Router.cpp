@@ -6,22 +6,11 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/17 03:30:59 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 03:59:20 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Router.hpp"
-#include <sstream>
-#include <ctime>
-#include <iostream>
-#include <fstream>
-#include <algorithm>
-#include <cerrno>
-#include <vector>
-#include <dirent.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <sys/wait.h>
 
 Router::Router(ServerConfig& config) : _serverConfig(config) {}
 
@@ -156,6 +145,20 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 		#endif
 		try {
 			const Location& location = _serverConfig.findLocation("/cgi-bin");
+			std::string scriptPath = constructScriptPath(request, location);
+            if (access(scriptPath.c_str(), F_OK) == -1) {
+                // Si le script CGI n'existe pas, envoyer une erreur 404
+                std::cerr << "[ERROR] CGI script does not exist: " << scriptPath << std::endl;
+                setErrorResponse(response, 404);  // Script not found
+                return;
+            }
+
+            // Vérifier si le script CGI est exécutable
+            if (access(scriptPath.c_str(), X_OK) == -1) {
+                std::cerr << "[ERROR] CGI script is not executable: " << scriptPath << std::endl;
+                setErrorResponse(response, 403);  // Forbidden (CGI not executable)
+                return;
+            }
 			handleCGI(request, response, location);
 			return;
 		} catch (const ServerConfig::LocationNotFound& e) {
@@ -725,10 +728,10 @@ pid_t Router::createFork(int input_pipe[2], int output_pipe[2], HttpResponse& re
     @returns void
 */
 void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int output_pipe[2], const Location& location, const std::string& scriptPath) {
-    #ifdef DEBUG_MODE
-    // Message de débogage en rouge
-    std::cerr << "\033[1;31m[DEBUG-CHILD] Executing CGI script: " << location.getCgiBin() << "\033[0m" << std::endl;
-    std::cerr << "\033[1;31m[DEBUG-CHILD] Script path: " << scriptPath << "\033[0m" << std::endl;
+
+	#ifdef CGI
+    std::cerr << "\033[1;31m[DEBUG] CGI: Executing CGI script: " << location.getCgiBin() << "\033[0m" << std::endl;
+    std::cerr << "\033[1;31m[DEBUG] CGI: Script path: " << scriptPath << "\033[0m" << std::endl;
     #endif
 
     std::ostringstream oss;
@@ -771,18 +774,7 @@ void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int outpu
 	}
 
 	const char* cgi_bin = cgiBinStr.c_str();
-    const char* script_path = scriptPath.c_str();       // Chemin du script (sans paramètres)
-
-    #ifdef DEBUG_MODE
-    // Messages de débogage en rouge pour les variables d'environnement
-    std::cerr << "\033[1;31m[DEBUG-CHILD] Executing CGI script with environment variables:\033[0m" << std::endl;
-    std::cerr << "\033[1;31mCONTENT_LENGTH: " << getenv("CONTENT_LENGTH") << "\033[0m" << std::endl;
-    std::cerr << "\033[1;31mCONTENT_TYPE: " << getenv("CONTENT_TYPE") << "\033[0m" << std::endl;
-    std::cerr << "\033[1;31mREQUEST_METHOD: " << getenv("REQUEST_METHOD") << "\033[0m" << std::endl;
-    std::cerr << "\033[1;31mQUERY_STRING: " << getenv("QUERY_STRING") << "\033[0m" << std::endl;
-    std::cerr << "\033[1;31mSCRIPT_FILENAME: " << getenv("SCRIPT_FILENAME") << "\033[0m" << std::endl;
-    std::cerr << "\033[1;31mPATH_INFO: " << getenv("PATH_INFO") << "\033[0m" << std::endl;
-    #endif
+    const char* script_path = scriptPath.c_str();
 
 	char* const args[] = {
 		const_cast<char*>(cgi_bin),   // /usr/bin/python3
@@ -792,7 +784,7 @@ void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int outpu
 
 	std::cerr << "[DEBUG-CHILD] Executing with command: " << cgi_bin << " " << scriptPath << std::endl;
 
-	execv(cgi_bin, args);  // Cela tente d'exécuter le script avec l'interpréteur Python
+	execv(cgi_bin, args);
     std::cerr << "\033[1;31m[ERROR-CHILD] execv failed\033[0m" << std::endl;
     perror("[ERROR-CHILD] execv failed");
     exit(1);

@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/17 03:14:33 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 03:42:54 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,14 +15,10 @@
 #include "HttpResponse.hpp"
 #include "Router.hpp"
 #include <iostream>
-#include <vector>
-#include <sys/poll.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <cstring>
-#include <csignal>
-#include <set>
-#include <utility>
+
+
+
+
 
 Webserver::Webserver() {}
 

@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:01:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/17 03:31:38 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 03:38:08 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,6 @@ void Location::setClientMaxBodySize(size_t token) {
 
         token = sizeInMb * 1024 * 1024;
     }
-    std::cerr << "\033[1;31m[DEBUG] Setting client max body size: " << token << " bytes\033[0m" << std::endl;
 
     _clientMaxBodySize = token;
 }

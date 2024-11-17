@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/17 03:32:50 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/17 03:36:02 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 03:43:17 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,6 +43,8 @@ extern bool sigint_flag;
 #include <csignal>
 #include <netdb.h>
 #include <limits.h>
+#include <utility>
+#include <set>
 
 #define RESET   "\033[0m"
 #define BOLD    "\033[1m"

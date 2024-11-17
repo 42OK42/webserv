@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 14:18:42 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/13 19:08:47 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 03:36:45 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,15 +15,6 @@
 #include "../includes/ServerConfig.hpp"
 #include "../includes/Webserver.hpp"
 
-
-#define RESET       "\033[0m"
-#define BOLD        "\033[1m"
-#define UNDERLINE   "\033[4m"
-#define RED         "\033[31m"
-#define GREEN       "\033[32m"
-#define YELLOW      "\033[33m"
-#define BLUE        "\033[34m"
-#define CYAN        "\033[36m"
 
 bool sigint_flag = false;
 

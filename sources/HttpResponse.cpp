@@ -6,12 +6,11 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 18:05:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/14 17:30:58 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 03:41:56 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "HttpResponse.hpp"
-#include <sstream>
 
 HttpResponse::HttpResponse()
 	: version("HTTP/1.1"), statusCode(200), statusMessage("OK") {
