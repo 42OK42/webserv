@@ -6,11 +6,10 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:27 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/17 01:09:09 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 03:30:50 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Helper.hpp"
 #include "HttpRequest.hpp"
 
 HttpRequest::HttpRequest(const char* buffer, int bytesRead, const ServerConfig& serverConfig)
@@ -168,3 +167,16 @@ std::string HttpRequest::getQueryString() const {
 }
 
 
+std::string HttpRequest::extractFilename(const std::string& contentDisposition) {
+	std::string filename;
+	size_t pos = contentDisposition.find("filename=");
+	if (pos != std::string::npos) {
+		// Start after 'filename="'
+		pos += 10;
+		size_t endPos = contentDisposition.find("\"", pos);
+		if (endPos != std::string::npos) {
+			filename = contentDisposition.substr(pos, endPos - pos);
+		}
+	}
+	return filename;
+}

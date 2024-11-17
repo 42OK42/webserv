@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:28:34 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/17 03:19:05 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 03:29:53 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,6 +54,8 @@ class HttpRequest
 		std::string									getHeader(const std::string& name) const;
 		std::string									getQueryString() const;
 		int											getPort() const;
+
+		std::string extractFilename(const std::string& contentDisposition);
 
 };
 
