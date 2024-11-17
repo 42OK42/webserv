@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:28:34 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/14 23:40:50 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 00:58:08 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,7 @@ public:
 	std::string getHeader(const std::string& name) const;
 	const std::string& getHost() const;
 	int getPort() const;
+	std::string getQueryString() const;
 
 
 private:
@@ -51,6 +52,7 @@ private:
 
 	std::string _boundary;
 	const ServerConfig& _serverConfig;
+
 
 	void parse(const char* buffer, int bytesRead);
 	void parseMultipartData(const std::string& boundary);

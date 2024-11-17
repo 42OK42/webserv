@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:27 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/14 23:42:42 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 01:09:09 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -157,6 +157,14 @@ void HttpRequest::parse(const char* buffer, int bytesRead) {
 			parseMultipartData(boundary);
 		}
 	}
+}
+
+std::string HttpRequest::getQueryString() const {
+    size_t queryPos = this->url.find('?');
+    if (queryPos != std::string::npos) {
+        return this->url.substr(queryPos + 1);
+    }
+    return "";
 }
 
 

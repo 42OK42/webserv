@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/14 22:32:50 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 00:55:51 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ class Router {
 private:
 	ServerConfig& _serverConfig;
 
-	
+
 	std::string readFile(const std::string& filepath);
 	std::string generateDirectoryListing(const std::string& dirPath, const std::string& requestPath);
 	std::string getCurrentTimestamp() const;
@@ -55,6 +55,8 @@ private:
 	void executeCgi(const HttpRequest& request, int input_pipe[2], int output_pipe[2], const Location& location, const std::string& scriptPath);
 	void handleParentProcess(const HttpRequest& request, HttpResponse& response, int input_pipe[2], int output_pipe[2], pid_t pid);
 	std::string decodeChunkedBody(const std::string& body);
+	std::string getPathInfo(const std::string& url, const std::string& scriptPath);
+
 
 public:
 	Router(ServerConfig& config);

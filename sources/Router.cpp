@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/14 23:39:31 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 01:48:36 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -635,7 +635,7 @@ void Router::handleCGI(const HttpRequest& request, HttpResponse& response, const
 */
 bool Router::isCgiEnabled(const Location& location) {
     #ifdef DEBUG_MODE
-    std::cout << "[DEBUG] CGI Location settings:" << std::endl;
+    // std::cout << "[DEBUG] CGI Location settings:" << std::endl;
     std::cout << "[DEBUG] CGI Enabled: " << location.isCgiEnabled() << std::endl;
     std::cout << "[DEBUG] CGI Path: " << location.getCgiBin() << std::endl;
     #endif
@@ -652,10 +652,22 @@ bool Router::isCgiEnabled(const Location& location) {
     @returns A string containing the full script path for the CGI request.
 */
 std::string Router::constructScriptPath(const HttpRequest& request, const Location& location) {
-    std::string scriptPath = request.getUrl();
+    std::string fullUrl = request.getUrl();
+    std::string scriptPath;
+
+    size_t queryPos = fullUrl.find('?');
+    if (queryPos != std::string::npos) {
+        scriptPath = fullUrl.substr(0, queryPos);
+    } else {
+        scriptPath = fullUrl;
+    }
+
+	std::cerr << "\033[1;31m[DEBUG] Constructing script path: " << scriptPath << "\033[0m" << std::endl;
+
     if (scriptPath.find("/cgi-bin/") == 0) {
         scriptPath = location.getRoot() + scriptPath;
     }
+
     return scriptPath;
 }
 
@@ -709,8 +721,9 @@ pid_t Router::createFork(int input_pipe[2], int output_pipe[2], HttpResponse& re
 */
 void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int output_pipe[2], const Location& location, const std::string& scriptPath) {
     #ifdef DEBUG_MODE
-    std::cout << "[DEBUG-CHILD] Executing CGI script: " << location.getCgiBin() << std::endl;
-    std::cout << "[DEBUG-CHILD] Script path: " << scriptPath << std::endl;
+    // Message de débogage en rouge
+    std::cerr << "\033[1;31m[DEBUG-CHILD] Executing CGI script: " << location.getCgiBin() << "\033[0m" << std::endl;
+    std::cerr << "\033[1;31m[DEBUG-CHILD] Script path: " << scriptPath << "\033[0m" << std::endl;
     #endif
 
     std::ostringstream oss;
@@ -720,15 +733,22 @@ void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int outpu
     setenv("REQUEST_METHOD", request.getMethod().c_str(), 1);
     setenv("QUERY_STRING", "", 1);
 
+    std::string pathInfo = getPathInfo(request.getUrl(), scriptPath);
+    setenv("PATH_INFO", pathInfo.c_str(), 1);
+    setenv("QUERY_STRING", request.getQueryString().c_str(), 1);
+    setenv("SCRIPT_FILENAME", scriptPath.c_str(), 1);
+
     close(input_pipe[1]);
     close(output_pipe[0]);
 
     if (dup2(input_pipe[0], STDIN_FILENO) == -1) {
+        std::cerr << "\033[1;31m[ERROR-CHILD] dup2 input failed\033[0m" << std::endl;
         perror("[ERROR-CHILD] dup2 input failed");
         exit(1);
     }
 
     if (dup2(output_pipe[1], STDOUT_FILENO) == -1) {
+        std::cerr << "\033[1;31m[ERROR-CHILD] dup2 output failed\033[0m" << std::endl;
         perror("[ERROR-CHILD] dup2 output failed");
         exit(1);
     }
@@ -736,23 +756,43 @@ void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int outpu
     close(input_pipe[0]);
     close(output_pipe[1]);
 
-    // Stocker dans une std::string temporaire pour assurer une durée de vie valide
-    std::string cgiBinStr = location.getCgiBin();
+
     std::string scriptPathStr = scriptPath;
 
-    const char* cgi_bin = cgiBinStr.c_str();
-    const char* script_path = scriptPathStr.c_str();
+	std::string cgiBinStr = location.getCgiBin();
+	if (cgiBinStr.empty()) {
+		std::cerr << "[ERROR-CHILD] CGI bin path is empty!" << std::endl;
+		exit(1);
+	}
 
-    char* const args[] = {
-        const_cast<char*>(cgi_bin), // Convertir en char* pour execv
-        const_cast<char*>(script_path),
-        NULL
-    };
+	const char* cgi_bin = cgiBinStr.c_str();
+    const char* script_path = scriptPath.c_str();       // Chemin du script (sans paramètres)
 
-    execv(cgi_bin, args);
+    #ifdef DEBUG_MODE
+    // Messages de débogage en rouge pour les variables d'environnement
+    std::cerr << "\033[1;31m[DEBUG-CHILD] Executing CGI script with environment variables:\033[0m" << std::endl;
+    std::cerr << "\033[1;31mCONTENT_LENGTH: " << getenv("CONTENT_LENGTH") << "\033[0m" << std::endl;
+    std::cerr << "\033[1;31mCONTENT_TYPE: " << getenv("CONTENT_TYPE") << "\033[0m" << std::endl;
+    std::cerr << "\033[1;31mREQUEST_METHOD: " << getenv("REQUEST_METHOD") << "\033[0m" << std::endl;
+    std::cerr << "\033[1;31mQUERY_STRING: " << getenv("QUERY_STRING") << "\033[0m" << std::endl;
+    std::cerr << "\033[1;31mSCRIPT_FILENAME: " << getenv("SCRIPT_FILENAME") << "\033[0m" << std::endl;
+    std::cerr << "\033[1;31mPATH_INFO: " << getenv("PATH_INFO") << "\033[0m" << std::endl;
+    #endif
+
+	char* const args[] = {
+		const_cast<char*>(cgi_bin),   // /usr/bin/python3
+		const_cast<char*>(script_path),  // /home/ecarlier/Documents/ring5/webserv/cgi-bin/contact_form.py
+		NULL
+	};
+
+	std::cerr << "[DEBUG-CHILD] Executing with command: " << cgi_bin << " " << scriptPath << std::endl;
+
+	execv(cgi_bin, args);  // Cela tente d'exécuter le script avec l'interpréteur Python
+    std::cerr << "\033[1;31m[ERROR-CHILD] execv failed\033[0m" << std::endl;
     perror("[ERROR-CHILD] execv failed");
     exit(1);
 }
+
 
 
 
@@ -855,3 +895,18 @@ std::string Router::decodeChunkedBody(const std::string& body)
 
     return decoded_body;
 }
+
+std::string Router::getPathInfo(const std::string& fullUrl, const std::string& scriptPath) {
+    // Exemple : /cgi-bin/contact_form.py/foo/bar
+	(void)scriptPath;
+    size_t cgiPos = fullUrl.find("/cgi-bin/");
+    if (cgiPos != std::string::npos) {
+        // Récupérer ce qui vient après /cgi-bin/contact_form.py
+        std::string pathInfo = fullUrl.substr(cgiPos + 9); // 9 pour "cgi-bin/"
+        return pathInfo;  // Retourner le pathInfo
+    }
+    return "";  // Retourner vide si pas de pathInfo
+}
+
+
+

@@ -4,6 +4,26 @@ import urllib.parse
 import os
 import sys
 
+# Function to parse GET or POST data
+def get_form_data():
+    if os.environ.get('REQUEST_METHOD') == 'POST':
+        content_length = int(os.environ.get('CONTENT_LENGTH', 0))  # Get the length of the content
+        post_data = sys.stdin.read(content_length)  # Read the POST data
+        return urllib.parse.parse_qs(post_data)  # Parse the POST data
+    else:
+        # For GET requests, get the query string from the URL
+        query_string = os.environ.get('QUERY_STRING', '')  # Get the query string from the environment
+        return urllib.parse.parse_qs(query_string)  # Parse the GET data
+
+# Get the form data from either GET or POST
+form_data = get_form_data()
+
+# Retrieve values for each parameter from the parsed data
+name = form_data.get('name', [''])[0]
+email = form_data.get('email', [''])[0]
+age = form_data.get('age', [''])[0]
+
+# Generate the HTML response
 print("""
 <!DOCTYPE html>
 <html lang="en">
@@ -58,19 +78,7 @@ print("""
     <p>Here are the details you've submitted for the Tractor Worship Crew:</p>
 """)
 
-# Lire la longueur du contenu et récupérer les données du formulaire
-content_length = int(os.environ.get('CONTENT_LENGTH', 0))  # Utiliser os.environ pour les variables d'environnement
-post_data = sys.stdin.read(content_length)  # Utiliser sys.stdin pour lire les données envoyées
-
-# Décoder les données POST
-parsed_data = urllib.parse.parse_qs(post_data)
-
-# Récupérer les valeurs des champs du formulaire
-name = parsed_data.get('name', [''])[0]
-email = parsed_data.get('email', [''])[0]
-age = parsed_data.get('age', [''])[0]
-
-# Affichage des données saisies par l'utilisateur dans un style similaire à l'exemple HTML
+# Display the form data in the HTML
 print(f"""
     <div class="form-data">
         <p><strong>Tractor Lover's name:</strong> {name}</p>
