@@ -17,7 +17,7 @@ ifeq ($(PARSER),1)
 	CFLAGS += -DPARSER_MODE
 endif
 
-ifeq ($(PARSER),2)
+ifeq ($(CGI), 1)
 	CFLAGS += -DCGI
 endif
 

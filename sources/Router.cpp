@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/17 02:36:50 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 03:08:13 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -354,21 +354,20 @@ void Router::handlePOST(const HttpRequest& request, HttpResponse& response, cons
 
 
     #ifdef DEBUG_MODE
-    std::cout << "[DEBUG] Max body size allowed: " << maxBodySize << std::endl;
-    std::cout << "[DEBUG] Request body size: " << request.getBody().length() << std::endl;
+    std::cout << "[DEBUG] Router: Max body size allowed: " << maxBodySize << std::endl;
+    std::cout << "[DEBUG] Router: Request body size: " << request.getBody().length() << std::endl;
     #endif
 
 	if (maxBodySize)
 	{
 			#ifdef DEBUG_MODE
-				std::cerr << "[DEBUG] maxBodySize : " << maxBodySize << std::endl;
+				std::cerr << "[DEBUG] Router: maxBodySize : " << maxBodySize << std::endl;
 			#endif
 		if (request.getBody().length() > maxBodySize) {
 			#ifdef DEBUG_MODE
-			std::cerr << "[DEBUG] Request body exceeds maximum allowed size, sending 413" << std::endl;
+			std::cerr << "[DEBUG]Router: Request body exceeds maximum allowed size, sending 413" << std::endl;
 			#endif
 			setErrorResponse(response, 413);
-			response.setBody("Request body exceeds maximum allowed size");
 			return;
 		}
 	}

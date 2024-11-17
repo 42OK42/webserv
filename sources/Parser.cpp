@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/17 02:57:08 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 02:58:09 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -203,11 +203,9 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
 
 		if (key == "server") {
             if (line.find("{") != std::string::npos) {
-               // std::cout << "Entering new server block...\n";
             } else {
                 std::string nextLine;
                 if (std::getline(buffer, nextLine) && nextLine.find("{") != std::string::npos) {
-                    //std::cout << "Entering new server block...\n";
                 } else {
                     std::cerr << "Error: Expected '{' after 'server' declaration.\n";
                     return false;
