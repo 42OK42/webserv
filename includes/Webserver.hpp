@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:21 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/17 03:25:31 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 03:35:45 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,13 +17,9 @@
 #include "HttpResponse.hpp"
 #include "HttpRequest.hpp"
 #include "Router.hpp"
-#include <vector>
-#include <sys/poll.h>
-#include <unistd.h>
-#include <iostream>
-#include <map>
+#include "Common.hpp"
 
-extern bool sigint_flag;
+
 
 class Webserver
 {

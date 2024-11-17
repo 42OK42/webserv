@@ -6,29 +6,18 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/17 03:25:07 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 03:35:31 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef ROUTER_HPP
 #define ROUTER_HPP
 
+#include "Common.hpp"
 #include "ServerConfig.hpp"
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
-#include <map>
-#include <string>
-#include <vector>
-#include <sstream>
-#include <ctime>
-#include <iostream>
-#include <fstream>
-#include <algorithm>
-#include <cerrno>
-#include <dirent.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <sys/wait.h>
+
 
 class Router
 {

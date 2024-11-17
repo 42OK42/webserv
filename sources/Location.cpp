@@ -6,14 +6,13 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:01:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/17 02:32:36 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 03:31:38 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Location.hpp"
 
 Location::Location() : _cgiEnabled(false), _cgiExtension(""), _cgiBin("") {
-	// ... bestehender Konstruktor-Code ...
 }
 
 Location::~Location() {}

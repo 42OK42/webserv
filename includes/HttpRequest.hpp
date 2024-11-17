@@ -6,18 +6,14 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:28:34 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/17 03:29:53 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 03:35:13 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef HTTPREQUEST_HPP
 #define HTTPREQUEST_HPP
 
-#include <string>
-#include <map>
-#include <vector>
-#include <sstream>
-#include <iostream>
+#include "Common.hpp"
 #include "ServerConfig.hpp"
 
 class HttpRequest

@@ -6,18 +6,14 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:21 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/13 17:07:14 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 03:35:06 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef PARSER_HPP
 #define PARSER_HPP
 
-#include <string>
-#include <sstream>
-#include <fstream>
-#include <iostream>
-#include <vector>
+#include "Common.hpp"
 #include "ServerConfig.hpp"
 #include "Location.hpp"
 

@@ -6,38 +6,16 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 12:47:51 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/13 18:36:27 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 03:35:37 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef SERVERCONFIG_HPP
 #define SERVERCONFIG_HPP
+
+#include "Common.hpp"
 #include "Location.hpp"
-#include <map>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <cstdlib>
-#include <fstream>
-#include <string>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <iostream>
-#include <cstring>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/poll.h>
-#include <sys/ioctl.h>
-#include <exception>
-#include <csignal>
-#include <cstdlib>
-#include <netdb.h>
-#include <sstream>
-#include <string.h>
-#include <vector>
-#include <limits.h>
+
 
 extern bool sigint_flag;
 
