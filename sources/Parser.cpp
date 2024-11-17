@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/17 02:34:28 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 02:57:08 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -191,6 +191,8 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
     std::vector<std::string> locationVector, portVector, hostVector, nameVector;
     bool insideServerBlock = false;
 
+	size = 0;
+
     while (std::getline(buffer, line))
     {
         std::istringstream iss(line);
@@ -280,7 +282,11 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
                 Location location;
                 location.setPath(path);
 				if (size)
+				{
+					std::cerr << "Size not null" << std::endl;
 					location.setClientMaxBodySize(size);
+				}
+
                 parseLocation(buffer, location);
                 serverTemplate.addLocation(path, location);
             }
