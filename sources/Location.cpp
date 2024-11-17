@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 16:01:05 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/14 23:06:22 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 02:32:36 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,11 +42,24 @@ bool Location::isValidAutoIndex(const std::string& token)
 }
 
 /* ---------------------- Setters ---------------------- */
-
 void Location::setClientMaxBodySize(size_t token) {
-	_clientMaxBodySize = token;
-}
 
+
+    std::stringstream ss;
+    ss << token;
+    std::string sizeString = ss.str();
+
+    if (sizeString[sizeString.length() - 1] == 'M' || sizeString[sizeString.length() - 1] == 'm') {
+        sizeString = sizeString.substr(0, sizeString.length() - 1);
+        size_t sizeInMb = 0;
+        std::istringstream(sizeString) >> sizeInMb;
+
+        token = sizeInMb * 1024 * 1024;
+    }
+    std::cerr << "\033[1;31m[DEBUG] Setting client max body size: " << token << " bytes\033[0m" << std::endl;
+
+    _clientMaxBodySize = token;
+}
 
 void Location::setPath(const std::string& token)
 {

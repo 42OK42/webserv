@@ -44,7 +44,7 @@ clean:
 	@rm -f $(OBJS)
 	@echo "Removing upload directories..."
 	@find . -type d -name "uploads" -exec rm -rf {} +
-	@rm -rf /home/okrahl/sgoinfre/uploads_webserv/*
+	@rm -rf /home/ecarlier/sgoinfre/uploads_webserv/*
 
 fclean: clean
 	@echo "Cleaning all temporary files..."

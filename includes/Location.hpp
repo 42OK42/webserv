@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:54 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/14 23:05:33 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 02:24:28 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
 #include <vector>
 #include <algorithm>
 #include <iomanip>
-
+#include <sstream> 
 
 #define RESET   "\033[0m"
 #define BOLD    "\033[1m"
@@ -66,7 +66,7 @@ class Location
 		int			getClientMaxBodySize(void) const;
 
 		/* Setters */
-		
+
 		void	setClientMaxBodySize(size_t token);
 		void setExtension(const std::string& token);
 		void setCgiPath(const std::string& token);

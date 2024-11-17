@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/17 01:57:16 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 02:36:50 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -350,7 +350,7 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 */
 void Router::handlePOST(const HttpRequest& request, HttpResponse& response, const Location& location) {
 
-	    size_t maxBodySize = location.getClientMaxBodySize();
+	size_t maxBodySize = location.getClientMaxBodySize();
 
 
     #ifdef DEBUG_MODE
@@ -358,14 +358,21 @@ void Router::handlePOST(const HttpRequest& request, HttpResponse& response, cons
     std::cout << "[DEBUG] Request body size: " << request.getBody().length() << std::endl;
     #endif
 
-    if (request.getBody().length() > maxBodySize) {
-		#ifdef DEBUG_MODE
-        std::cerr << "[DEBUG] Request body exceeds maximum allowed size, sending 413" << std::endl;
-        #endif
-        setErrorResponse(response, 413);
-        response.setBody("Request body exceeds maximum allowed size");
-        return;
-    }
+	if (maxBodySize)
+	{
+			#ifdef DEBUG_MODE
+				std::cerr << "[DEBUG] maxBodySize : " << maxBodySize << std::endl;
+			#endif
+		if (request.getBody().length() > maxBodySize) {
+			#ifdef DEBUG_MODE
+			std::cerr << "[DEBUG] Request body exceeds maximum allowed size, sending 413" << std::endl;
+			#endif
+			setErrorResponse(response, 413);
+			response.setBody("Request body exceeds maximum allowed size");
+			return;
+		}
+	}
+
 
 	std::string contentType = request.getHeader("Content-Type");
 
@@ -756,7 +763,6 @@ void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int outpu
 
     close(input_pipe[0]);
     close(output_pipe[1]);
-
 
     std::string scriptPathStr = scriptPath;
 
