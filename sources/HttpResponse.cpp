@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 18:05:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/17 04:18:04 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 04:41:40 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,8 +54,6 @@ void HttpResponse::setHeader(const std::string& key, const std::string& value)
 void HttpResponse::setBody(const std::string& body)
 {
 	this->body = body;
-
-	// Convert body size to string for Content-Length header
 	std::stringstream ss;
 	ss << body.size();
 	setHeader("Content-Length", ss.str());

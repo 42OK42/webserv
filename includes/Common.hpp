@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/17 03:32:50 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/17 04:22:57 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 04:26:48 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,7 @@ extern bool sigint_flag;
 #include <utility>
 #include <set>
 
-#define MAX_REDIRECTS 10
+#define CGI_TIMEOUT 5 
 
 
 #define RESET   "\033[0m"

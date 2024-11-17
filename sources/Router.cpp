@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/17 04:23:47 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 04:46:21 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -127,7 +127,7 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 	std::cout << "\033[0;33m[DEBUG] Request Method: " << request.getMethod() << "\033[0m" << std::endl;
 	#endif
 
-\
+
 	std::string requestHost = request.getHeader("Host");
 	std::ostringstream expectedHost;
 	expectedHost << _serverConfig.getHost() << ":" << _serverConfig.getPort();
@@ -136,7 +136,6 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 		setErrorResponse(response, 400);
 		return;
 	}
-
 
 	std::string path = request.getUrl();
 
@@ -340,26 +339,13 @@ void Router::handlePOST(const HttpRequest& request, HttpResponse& response, cons
 
 	size_t maxBodySize = location.getClientMaxBodySize();
 
-
-    #ifdef DEBUG_MODE
-    std::cout << "[DEBUG] Router: Max body size allowed: " << maxBodySize << std::endl;
-    std::cout << "[DEBUG] Router: Request body size: " << request.getBody().length() << std::endl;
-    #endif
-
 	if (maxBodySize)
 	{
-			#ifdef DEBUG_MODE
-				std::cerr << "[DEBUG] Router: maxBodySize : " << maxBodySize << std::endl;
-			#endif
 		if (request.getBody().length() > maxBodySize) {
-			#ifdef DEBUG_MODE
-			std::cerr << "[DEBUG]Router: Request body exceeds maximum allowed size, sending 413" << std::endl;
-			#endif
 			setErrorResponse(response, 413);
 			return;
 		}
 	}
-
 
 	std::string contentType = request.getHeader("Content-Type");
 
@@ -563,19 +549,6 @@ std::string Router::generateDirectoryListing(const std::string& dirPath, const s
 	return html.str();
 }
 
-/*
-	Returns the current timestamp formatted as "YYYYMMDD_HHMMSS".
-
-    @returns A string containing the current timestamp.
-*/
-std::string Router::getCurrentTimestamp() const {
-	std::time_t now = std::time(NULL);
-	char buffer[20];
-	std::strftime(buffer, sizeof(buffer), "%Y%m%d_%H%M%S", std::localtime(&now));
-	return std::string(buffer);
-}
-
-
 
 /*
 	Handles an HTTP request for a CGI (Common Gateway Interface) script.
@@ -619,11 +592,6 @@ void Router::handleCGI(const HttpRequest& request, HttpResponse& response, const
     @returns A boolean indicating whether CGI is enabled for the specified location.
 */
 bool Router::isCgiEnabled(const Location& location) {
-    #ifdef DEBUG_MODE
-    // std::cout << "[DEBUG] CGI Location settings:" << std::endl;
-    std::cout << "[DEBUG] CGI Enabled: " << location.isCgiEnabled() << std::endl;
-    std::cout << "[DEBUG] CGI Path: " << location.getCgiBin() << std::endl;
-    #endif
 
     return location.isCgiEnabled();
 }
@@ -646,8 +614,6 @@ std::string Router::constructScriptPath(const HttpRequest& request, const Locati
     } else {
         scriptPath = fullUrl;
     }
-
-	std::cerr << "\033[1;31m[DEBUG] Constructing script path: " << scriptPath << "\033[0m" << std::endl;
 
     if (scriptPath.find("/cgi-bin/") == 0) {
         scriptPath = location.getRoot() + scriptPath;
@@ -871,15 +837,13 @@ std::string Router::decodeChunkedBody(const std::string& body)
 }
 
 std::string Router::getPathInfo(const std::string& fullUrl, const std::string& scriptPath) {
-    // Exemple : /cgi-bin/contact_form.py/foo/bar
 	(void)scriptPath;
     size_t cgiPos = fullUrl.find("/cgi-bin/");
     if (cgiPos != std::string::npos) {
-        // Récupérer ce qui vient après /cgi-bin/contact_form.py
-        std::string pathInfo = fullUrl.substr(cgiPos + 9); // 9 pour "cgi-bin/"
-        return pathInfo;  // Retourner le pathInfo
+        std::string pathInfo = fullUrl.substr(cgiPos + 9);
+        return pathInfo;
     }
-    return "";  // Retourner vide si pas de pathInfo
+    return "";
 }
 
 

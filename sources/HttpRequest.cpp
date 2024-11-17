@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:27 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/17 03:30:50 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 04:42:04 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,13 +87,10 @@ void HttpRequest::parse(const char* buffer, int bytesRead) {
 	std::string rawRequest(buffer, bytesRead);
 	std::istringstream stream(rawRequest);
 	std::string line;
-
-	// Parse the request line
 	std::getline(stream, line);
 	std::istringstream startLine(line);
 	startLine >> method >> url >> httpVersion;
 
-	// Parse headers
 	while (std::getline(stream, line) && line != "\r") {
 		if (!line.empty() && line[line.size() - 1] == '\r') {
 			line.erase(line.size() - 1);
@@ -108,7 +105,6 @@ void HttpRequest::parse(const char* buffer, int bytesRead) {
 		}
 	}
 
-	// Extract Host and Port
 	std::map<std::string, std::string>::const_iterator it = headers.find("Host");
 	if (it != headers.end()) {
 		std::string hostHeader = it->second;
@@ -121,13 +117,12 @@ void HttpRequest::parse(const char* buffer, int bytesRead) {
 			}
 		} else {
 			host = hostHeader;
-			port = 8080; // Default HTTP port
+			port = 8080;
 		}
 	} else {
 		throw std::runtime_error("Missing Host header");
 	}
 
-	// Read body if Content-Length is present
 	if (headers.count("Content-Length")) {
 		int contentLength;
 		std::istringstream(headers["Content-Length"]) >> contentLength;
