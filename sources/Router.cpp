@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/17 01:48:36 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 01:57:16 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -732,6 +732,7 @@ void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int outpu
     setenv("CONTENT_TYPE", request.getHeader("Content-Type").c_str(), 1);
     setenv("REQUEST_METHOD", request.getMethod().c_str(), 1);
     setenv("QUERY_STRING", "", 1);
+
 
     std::string pathInfo = getPathInfo(request.getUrl(), scriptPath);
     setenv("PATH_INFO", pathInfo.c_str(), 1);
