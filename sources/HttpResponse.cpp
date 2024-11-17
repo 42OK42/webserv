@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 18:05:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/17 03:41:56 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 04:18:04 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,7 @@ void HttpResponse::setStatusMessage(int code)
 		case 400: statusMessage = "Bad Request"; break;
 		case 403: statusMessage = "Forbidden"; break;
 		case 404: statusMessage = "Not Found"; break;
+		case 408: statusMessage = "Timeout" ; break;
 		case 405: statusMessage = "Method Not Allowed"; break;
 		case 413: statusMessage = "Payload Too Large"; break;
 		case 500: statusMessage = "Internal Server Error"; break;

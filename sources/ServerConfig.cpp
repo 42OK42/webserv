@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/18 17:04:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/13 19:07:52 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 04:19:48 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -306,6 +306,7 @@ void  ServerConfig::checkErrorPage()
 	errorsToCheck.push_back(403);
 	errorsToCheck.push_back(404);
 	errorsToCheck.push_back(405);
+	errorsToCheck.push_back(408);
 	errorsToCheck.push_back(413);
 	errorsToCheck.push_back(415);
 	errorsToCheck.push_back(500);
@@ -315,6 +316,7 @@ void  ServerConfig::checkErrorPage()
 	defaultErrorPaths[403] = "/HTMLFiles/error/403.html";
 	defaultErrorPaths[404] = "/HTMLFiles/error/404.html";
 	defaultErrorPaths[405] = "/HTMLFiles/error/405.html";
+	defaultErrorPaths[408] = "/HTMLFiles/error/408.html";
 	defaultErrorPaths[413] = "/HTMLFiles/error/413.html";
 	defaultErrorPaths[415] = "/HTMLFiles/error/415.html";
 	defaultErrorPaths[500] = "/HTMLFiles/error/500.html";

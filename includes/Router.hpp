@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/17 03:35:31 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 04:16:25 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,6 +53,7 @@ class Router
 		Router(ServerConfig& config);
 		~Router();
 
+		bool 	isRequestTimedOut(time_t startTime, int timeoutDuration) const;
 		void	handleRequest(const HttpRequest& request, HttpResponse& response);
 		void	setErrorResponse(HttpResponse& response, int errorCode);
 };

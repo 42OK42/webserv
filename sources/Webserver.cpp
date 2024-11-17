@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/17 03:42:54 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 04:08:54 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,7 +78,6 @@ void Webserver::initializeServers()
 			server_fd.events = POLLIN;
 			fds.push_back(server_fd);
 			initializedPorts.insert(port);
-			//std::cout << GREEN << "[INFO]" << RESET << " Socket initialized for port " << YELLOW << port << RESET << std::endl;
 		}
 		catch (const std::exception& e) {
 			std::cerr << RED << "[ERROR]" << RESET << " Error initializing socket for port " << YELLOW << port << RESET << ": " << e.what() << std::endl;

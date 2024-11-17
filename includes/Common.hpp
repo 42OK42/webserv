@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/17 03:32:50 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/17 03:43:17 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 04:22:57 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,6 +45,9 @@ extern bool sigint_flag;
 #include <limits.h>
 #include <utility>
 #include <set>
+
+#define MAX_REDIRECTS 10
+
 
 #define RESET   "\033[0m"
 #define BOLD    "\033[1m"

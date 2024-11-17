@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/17 03:59:20 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 04:23:47 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -127,7 +127,7 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 	std::cout << "\033[0;33m[DEBUG] Request Method: " << request.getMethod() << "\033[0m" << std::endl;
 	#endif
 
-
+\
 	std::string requestHost = request.getHeader("Host");
 	std::ostringstream expectedHost;
 	expectedHost << _serverConfig.getHost() << ":" << _serverConfig.getPort();
@@ -137,34 +137,20 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 		return;
 	}
 
+
 	std::string path = request.getUrl();
 
 	if (path.find("/cgi-bin/") == 0) {
-		#ifdef DEBUG_MODE
-		std::cout << "\033[0;33m[DEBUG] CGI Request detected for path: " << path << "\033[0m" << std::endl;
-		#endif
 		try {
 			const Location& location = _serverConfig.findLocation("/cgi-bin");
 			std::string scriptPath = constructScriptPath(request, location);
             if (access(scriptPath.c_str(), F_OK) == -1) {
-                // Si le script CGI n'existe pas, envoyer une erreur 404
-                std::cerr << "[ERROR] CGI script does not exist: " << scriptPath << std::endl;
-                setErrorResponse(response, 404);  // Script not found
-                return;
-            }
-
-            // Vérifier si le script CGI est exécutable
-            if (access(scriptPath.c_str(), X_OK) == -1) {
-                std::cerr << "[ERROR] CGI script is not executable: " << scriptPath << std::endl;
-                setErrorResponse(response, 403);  // Forbidden (CGI not executable)
+                setErrorResponse(response, 404);
                 return;
             }
 			handleCGI(request, response, location);
 			return;
 		} catch (const ServerConfig::LocationNotFound& e) {
-			#ifdef DEBUG_MODE
-			std::cout << "\033[0;31m[DEBUG] CGI Location not found\033[0m" << std::endl;
-			#endif
 			setErrorResponse(response, 404);
 			return;
 		}
@@ -414,15 +400,6 @@ void Router::handlePOST(const HttpRequest& request, HttpResponse& response, cons
 	}
 }
 
-
-/*
-	size_t maxBodySize = _serverConfig.getClientMaxBodySize();
-	  if ((request.getMethod() == "POST" || request.getMethod() == "PUT") && request.getBody().length() > maxBodySize) {
-        // Si la taille dépasse la limite, envoyer une réponse 413 Payload Too Large
-        setErrorResponse(response, 413);
-        return;
-    }
-*/
 
 /*
 	Handles an HTTP DELETE request by attempting to delete the specified file on the server.
