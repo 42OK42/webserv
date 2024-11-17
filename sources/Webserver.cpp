@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/14 23:45:29 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 03:14:33 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -292,7 +292,7 @@ void Webserver::handleClientData(size_t index) {
 
 	} catch (const std::exception& e) {
 		#ifdef DEBUG_MODE
-		std::cerr << "\033[0;31m[DEBUG] Webserver::handleClientData: Fehler: " << e.what() << "\033[0m" << std::endl;
+		std::cerr << "\033[0;31m[DEBUG] Webserver::handleClientData: Error: " << e.what() << "\033[0m" << std::endl;
 		#endif
 		closeConnection(index);
 	}
@@ -310,9 +310,7 @@ void Webserver::handleClientData(size_t index) {
 */
 void Webserver::closeConnection(size_t index) {
 	int client_fd = fds[index].fd;
-	#ifdef DEBUG_MODE
-	std::cout << "\033[0;36m[DEBUG] Webserver::closeConnection: Schließe Client " << client_fd << "\033[0m" << std::endl;
-	#endif
+	std::cout << "\033[0;36m[INFO] Webserver::closeConnection: Closing client " << client_fd << "\033[0m" << std::endl;
 	close(client_fd);
 	fds.erase(fds.begin() + index);
 	client_to_server.erase(client_fd);

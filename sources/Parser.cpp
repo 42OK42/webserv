@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/17 02:58:09 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 03:10:16 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -281,7 +281,6 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
                 location.setPath(path);
 				if (size)
 				{
-					std::cerr << "Size not null" << std::endl;
 					location.setClientMaxBodySize(size);
 				}
 

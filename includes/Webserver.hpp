@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:21 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/13 18:38:09 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/17 03:25:31 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,11 +28,12 @@ extern bool sigint_flag;
 class Webserver
 {
 	private:
-		Webserver(const Webserver &copy); // Private copy constructor to prevent copying
+
+		Webserver(const Webserver &copy);
+
 		std::vector<ServerConfig>		_servers;
 		std::vector<struct pollfd>		fds;
 		std::map<int, int>				client_to_server;
-
 
 
 		bool	isServerSocket(int fd);
