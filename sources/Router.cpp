@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/19 16:36:50 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/19 16:40:37 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -241,6 +241,10 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 					response.setHeader("Content-Type", "image/png");
 				else if (extension == "gif")
 					response.setHeader("Content-Type", "image/gif");
+				else if (extension == "txt")
+					response.setHeader("Content-Type", "text/plain");
+				else
+					response.setHeader("Content-Type", "application/octet-stream");
 				return;
 			}
 		}
