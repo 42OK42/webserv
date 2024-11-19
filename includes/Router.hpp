@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/19 19:48:09 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/19 21:05:46 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
 #include "Webserver.hpp"
+#include <string>
 
 
 class Router

@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/19 19:56:27 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/19 21:17:03 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -463,20 +463,26 @@ void Router::handleDELETE(const HttpRequest& request, HttpResponse& response, co
 	@returns void
 */
 void Router::setErrorResponse(HttpResponse& response, int errorCode) {
+	response.setStatusCode(errorCode);
+	response.setHeader("Connection", "close");
+	
 	const std::map<int, std::string>& errorPages = _serverConfig.getErrorPages();
-	std::map<int, std::string>::const_iterator errorPageIt = errorPages.find(errorCode);
-
-	if (errorPageIt != errorPages.end()) {
-		std::string errorPageContent = readFile(errorPageIt->second);
-		response.setStatusCode(errorCode);
-		response.setBody(errorPageContent);
-		response.setHeader("Content-Type", "text/html");
-		response.setHeader("Error-Page-Path", errorPageIt->second);
-	} else {
-		response.setStatusCode(errorCode);
-		response.setBody("");
-		response.setHeader("Content-Type", "text/html");
+	std::map<int, std::string>::const_iterator it = errorPages.find(errorCode);
+	
+	if (it != errorPages.end()) {
+		std::string errorBody = _serverConfig.readFile(it->second);
+		if (!errorBody.empty()) {
+			response.setBody(errorBody);
+			response.setHeader("Content-Type", "text/html");
+			return;
+		}
 	}
+	
+	std::ostringstream ss;
+	ss << "<html><body><h1>Error " << errorCode << "</h1></body></html>";
+	response.setBody(ss.str());
+	response.setHeader("Content-Type", "text/html");
+	response.setHeader("Connection", "close");
 }
 
 /*
@@ -808,12 +814,24 @@ void Router::handleParentProcess(const HttpRequest& request, HttpResponse& respo
 	int select_result = select(output_pipe[0] + 1, &read_fds, NULL, NULL, &timeout);
 	if (select_result == 0) {
 		std::cerr << "\033[1;31m[ERROR] CGI script timed out\033[0m" << std::endl;
-			kill(pid, SIGTERM);
-			usleep(100000);
-			kill(pid, SIGKILL);
-			setErrorResponse(response, 408);
-			close(output_pipe[0]);
-			return;
+		
+		// Kill process properly
+		kill(pid, SIGTERM);
+		usleep(100000);  // Wait a bit
+		kill(pid, SIGKILL);  // Force kill if still running
+		
+		// Clean up pipes
+		close(input_pipe[1]);
+		close(output_pipe[0]);
+		
+		// Set error response with immediate connection close
+		setErrorResponse(response, 408);
+		response.setHeader("Connection", "close");
+		
+		// Wait for process to avoid zombie
+		waitpid(pid, NULL, 0);
+		
+		return;
 	}
 
 	while ((bytes_read = read(output_pipe[0], buffer, sizeof(buffer))) > 0) {
