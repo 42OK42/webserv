@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/19 19:34:24 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/19 19:39:17 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,9 +16,7 @@
 #include "Router.hpp"
 #include <iostream>
 
-
-
-
+//time for olli mic drop commit?!
 
 Webserver::Webserver() {}
 
@@ -45,33 +43,33 @@ void Webserver::initializeServers()
 	std::set<int> initializedPorts;
 
 	/*
-        Iterates over the list of servers to initialize their sockets.
+		Iterates over the list of servers to initialize their sockets.
 
-        For each server in the `_servers` list, the port is checked to ensure it hasn't been initialized yet.
-        If the port is new, the server's socket is set up, and the port is added to the `initializedPorts` set
-        to avoid duplicate initialization. If an error occurs during socket setup, it is caught and logged.
-    */
+		For each server in the `_servers` list, the port is checked to ensure it hasn't been initialized yet.
+		If the port is new, the server's socket is set up, and the port is added to the `initializedPorts` set
+		to avoid duplicate initialization. If an error occurs during socket setup, it is caught and logged.
+	*/
 
 	for (size_t i = 0; i < _servers.size(); ++i) {
 		ServerConfig& server = _servers[i];
 		int port = server.getPort();
 		/*
-            Skips initializing the socket if the port has already been initialized.
-            If the current port has already been added to the `initializedPorts` set, the function moves on
-            to the next server without attempting to reinitialize the socket.
-        */
+			Skips initializing the socket if the port has already been initialized.
+			If the current port has already been added to the `initializedPorts` set, the function moves on
+			to the next server without attempting to reinitialize the socket.
+		*/
 		if (initializedPorts.find(port) != initializedPorts.end()) {
 			continue;
 		}
 		try {
-	    /*
-            Attempts to set up the server socket for the current server.
+		/*
+			Attempts to set up the server socket for the current server.
 
-            Calls the `setupServerSocket()` method of the server configuration object to create a socket.
-            If successful, the socket file descriptor is added to the list of file descriptors `fds`
-            for event polling. Any failure in this process throws an exception, which is handled in the
-            `catch` block below.
-        */
+			Calls the `setupServerSocket()` method of the server configuration object to create a socket.
+			If successful, the socket file descriptor is added to the list of file descriptors `fds`
+			for event polling. Any failure in this process throws an exception, which is handled in the
+			`catch` block below.
+		*/
 			int server_socket = server.setupServerSocket();
 			struct pollfd server_fd;
 			server_fd.fd = server_socket;
@@ -93,11 +91,11 @@ void Webserver::initializeServers()
 
 		}
 	/*
-        Starts the event loop to monitor server events.
+		Starts the event loop to monitor server events.
 
-        If there are valid server sockets in `fds`, the program enters an event loop to handle incoming
-        events like connections and data requests.
-    */
+		If there are valid server sockets in `fds`, the program enters an event loop to handle incoming
+		events like connections and data requests.
+	*/
 		runEventLoop();
 	} else {
 		throw std::runtime_error("No server sockets could be initialized");
@@ -105,89 +103,89 @@ void Webserver::initializeServers()
 }
 
 /*
-    Runs the event loop to monitor and handle I/O events for server sockets and client connections.
+	Runs the event loop to monitor and handle I/O events for server sockets and client connections.
 
-    The function uses `poll()` to check the file descriptors (representing server sockets and client connections)
-    for any events. If an event is detected, the function processes it: for server sockets, it handles new incoming
-    connections, and for client connections, it processes any data sent by the clients. The loop continues to run,
-    waiting for events, with a timeout of 1 second.
+	The function uses `poll()` to check the file descriptors (representing server sockets and client connections)
+	for any events. If an event is detected, the function processes it: for server sockets, it handles new incoming
+	connections, and for client connections, it processes any data sent by the clients. The loop continues to run,
+	waiting for events, with a timeout of 1 second.
 
-    @returns void
+	@returns void
 */
 void Webserver::runEventLoop() {
-    // Zähle aktive Client-Verbindungen
-    size_t activeClients = 0;
-    for (size_t i = 0; i < fds.size(); ++i) {
-        if (!isServerSocket(fds[i].fd)) {
-            activeClients++;
-        }
-    }
+	// Zähle aktive Client-Verbindungen
+	size_t activeClients = 0;
+	for (size_t i = 0; i < fds.size(); ++i) {
+		if (!isServerSocket(fds[i].fd)) {
+			activeClients++;
+		}
+	}
 
-    // Wenn keine aktiven Clients, verwende kurzen Timeout
-    int timeout = (activeClients > 0) ? SOCKET_TIMEOUT_SECONDS * 1000 : 1000;
-    int poll_count = poll(&fds[0], fds.size(), timeout);
+	// Wenn keine aktiven Clients, verwende kurzen Timeout
+	int timeout = (activeClients > 0) ? SOCKET_TIMEOUT_SECONDS * 1000 : 1000;
+	int poll_count = poll(&fds[0], fds.size(), timeout);
 
-    if (poll_count < 0) {
-        if (errno != EINTR) {
-            std::cerr << "Poll error: " << strerror(errno) << std::endl;
-        }
-        return;
-    }
+	if (poll_count < 0) {
+		if (errno != EINTR) {
+			std::cerr << "Poll error: " << strerror(errno) << std::endl;
+		}
+		return;
+	}
 
-    if (poll_count == 0 && activeClients > 0) {
-        #ifdef DEBUG_MODE
-        std::cout << "\033[0;36m[DEBUG] Server socket timeout reached\033[0m" << std::endl;
-        #endif
+	if (poll_count == 0 && activeClients > 0) {
+		#ifdef DEBUG_MODE
+		std::cout << "\033[0;36m[DEBUG] Server socket timeout reached\033[0m" << std::endl;
+		#endif
 
-        for (size_t i = 0; i < fds.size(); ++i) {
-            if (isServerSocket(fds[i].fd)) {
-                continue;
-            }
-            
-            int client_fd = fds[i].fd;
-            std::map<int, int>::iterator it = client_to_server.find(client_fd);
-            if (it != client_to_server.end()) {
-                ServerConfig* server = &_servers[it->second];
-                HttpResponse errorResponse;
-                Router router(*server);
-                router.setErrorResponse(errorResponse, 408);
-                
-                std::string responseStr = errorResponse.toString();
-                send(client_fd, responseStr.c_str(), responseStr.length(), MSG_NOSIGNAL);
-                
-                #ifdef DEBUG_MODE
-                std::cout << "\033[0;36m[DEBUG] Sending 408 timeout response to client " 
-                          << client_fd << "\033[0m" << std::endl;
-                #endif
-                
-                closeConnection(i);
-                i--;
-            }
-        }
-        return;
-    }
+		for (size_t i = 0; i < fds.size(); ++i) {
+			if (isServerSocket(fds[i].fd)) {
+				continue;
+			}
+			
+			int client_fd = fds[i].fd;
+			std::map<int, int>::iterator it = client_to_server.find(client_fd);
+			if (it != client_to_server.end()) {
+				ServerConfig* server = &_servers[it->second];
+				HttpResponse errorResponse;
+				Router router(*server);
+				router.setErrorResponse(errorResponse, 408);
+				
+				std::string responseStr = errorResponse.toString();
+				send(client_fd, responseStr.c_str(), responseStr.length(), MSG_NOSIGNAL);
+				
+				#ifdef DEBUG_MODE
+				std::cout << "\033[0;36m[DEBUG] Sending 408 timeout response to client " 
+						  << client_fd << "\033[0m" << std::endl;
+				#endif
+				
+				closeConnection(i);
+				i--;
+			}
+		}
+		return;
+	}
 
-    // Check each file descriptor for events
-    for (size_t i = 0; i < fds.size(); ++i) {
-        if (fds[i].revents & POLLIN) {
-            if (isServerSocket(fds[i].fd)) {
-                handleNewConnection(fds[i].fd);
-            } else {
-                handleClientData(i);
-            }
-        }
-    }
+	// Check each file descriptor for events
+	for (size_t i = 0; i < fds.size(); ++i) {
+		if (fds[i].revents & POLLIN) {
+			if (isServerSocket(fds[i].fd)) {
+				handleNewConnection(fds[i].fd);
+			} else {
+				handleClientData(i);
+			}
+		}
+	}
 }
 
 /*
-    Checks if a given file descriptor corresponds to a server socket.
+	Checks if a given file descriptor corresponds to a server socket.
 
-    The function iterates through the list of servers and compares each server's socket file descriptor
-    with the given `fd`. If a match is found, it returns `true`, indicating that the file descriptor
-    belongs to a server socket. Otherwise, it returns `false`.
+	The function iterates through the list of servers and compares each server's socket file descriptor
+	with the given `fd`. If a match is found, it returns `true`, indicating that the file descriptor
+	belongs to a server socket. Otherwise, it returns `false`.
 
-    @param fd The file descriptor to check.
-    @returns bool True if the file descriptor belongs to a server socket, false otherwise.
+	@param fd The file descriptor to check.
+	@returns bool True if the file descriptor belongs to a server socket, false otherwise.
 */
 bool Webserver::isServerSocket(int fd) {
 	for (size_t i = 0; i < _servers.size(); ++i) {
@@ -199,16 +197,16 @@ bool Webserver::isServerSocket(int fd) {
 }
 
 /*
-    Handles a new incoming connection from a client.
+	Handles a new incoming connection from a client.
 
-    The function accepts a new connection from the provided `server_socket`. After successfully accepting
-    the connection, it sets the socket to non-blocking mode and applies a 60-second timeout for the connection.
-    The new socket is added to the list of file descriptors (`fds`) for event monitoring, and the association
-    between the client socket and server socket is stored in the `client_to_server` map. A message is logged to
-    indicate that a new client has connected to the server.
+	The function accepts a new connection from the provided `server_socket`. After successfully accepting
+	the connection, it sets the socket to non-blocking mode and applies a 60-second timeout for the connection.
+	The new socket is added to the list of file descriptors (`fds`) for event monitoring, and the association
+	between the client socket and server socket is stored in the `client_to_server` map. A message is logged to
+	indicate that a new client has connected to the server.
 
-    @param server_socket The server socket that accepted the new connection.
-    @returns void
+	@param server_socket The server socket that accepted the new connection.
+	@returns void
 */
 void Webserver::handleNewConnection(int server_socket) {
 	struct sockaddr_in client_addr;
@@ -234,17 +232,17 @@ void Webserver::handleNewConnection(int server_socket) {
 }
 
 /*
-    Handles data from an existing client connection.
+	Handles data from an existing client connection.
 
-    This function processes incoming data from a client socket. First, it identifies the server socket associated
-    with the client and attempts to read the client data. If the data is successfully read, it attempts to parse the
-    HTTP request. If the request is valid, it determines which server should handle the request, and then processes
-    the request accordingly. If any errors occur (such as exceeding the maximum request body size), an error response
-    is sent back to the client. After processing, client data is erased, and the connection is closed if the client
-    requested to close it or if an error occurred.
+	This function processes incoming data from a client socket. First, it identifies the server socket associated
+	with the client and attempts to read the client data. If the data is successfully read, it attempts to parse the
+	HTTP request. If the request is valid, it determines which server should handle the request, and then processes
+	the request accordingly. If any errors occur (such as exceeding the maximum request body size), an error response
+	is sent back to the client. After processing, client data is erased, and the connection is closed if the client
+	requested to close it or if an error occurred.
 
-    @param index The index in the `fds` array corresponding to the client connection to handle.
-    @returns void
+	@param index The index in the `fds` array corresponding to the client connection to handle.
+	@returns void
 */
 void Webserver::handleClientData(size_t index) {
 	int client_fd = fds[index].fd;
@@ -334,14 +332,14 @@ void Webserver::handleClientData(size_t index) {
 }
 
 /*
-    Closes a client connection and removes it from monitoring.
+	Closes a client connection and removes it from monitoring.
 
-    The function closes the specified client connection by shutting down the socket and removing it from the
-    list of file descriptors (`fds`). It also removes the mapping between the client socket and the server socket
-    from the `client_to_server` map. A debug message is logged when the connection is closed.
+	The function closes the specified client connection by shutting down the socket and removing it from the
+	list of file descriptors (`fds`). It also removes the mapping between the client socket and the server socket
+	from the `client_to_server` map. A debug message is logged when the connection is closed.
 
-    @param index The index in the `fds` array of the client connection to close.
-    @returns void
+	@param index The index in the `fds` array of the client connection to close.
+	@returns void
 */
 void Webserver::closeConnection(size_t index) {
 	int client_fd = fds[index].fd;
@@ -352,10 +350,10 @@ void Webserver::closeConnection(size_t index) {
 }
 
 /*
-    Sets the socket to non-blocking mode.
+	Sets the socket to non-blocking mode.
 
-    @param sockfd The socket file descriptor to modify.
-    @returns void
+	@param sockfd The socket file descriptor to modify.
+	@returns void
 */
 void Webserver::setNonBlocking(int sockfd) {
 	int flags = fcntl(sockfd, 3, 0);
@@ -369,11 +367,11 @@ void Webserver::setNonBlocking(int sockfd) {
 }
 
 /*
-    Sets the receive and send timeouts for a socket.
+	Sets the receive and send timeouts for a socket.
 
-    @param sockfd The socket file descriptor to configure.
-    @param timeout_seconds The timeout duration in seconds.
-    @returns void
+	@param sockfd The socket file descriptor to configure.
+	@param timeout_seconds The timeout duration in seconds.
+	@returns void
 */
 void Webserver::setSocketTimeout(int sockfd, int timeout_seconds) {
 	struct timeval timeout;
@@ -394,11 +392,11 @@ void Webserver::setSocketTimeout(int sockfd, int timeout_seconds) {
 }
 
 /*
-    Searches for a matching server based on the host and port.
+	Searches for a matching server based on the host and port.
 
-    @param host The host to match.
-    @param port The port to match.
-    @returns ServerConfig* Pointer to the matching server configuration, or NULL if no match is found.
+	@param host The host to match.
+	@param port The port to match.
+	@returns ServerConfig* Pointer to the matching server configuration, or NULL if no match is found.
 */
 ServerConfig* Webserver::findMatchingServer(const std::string& host, int port) {
 	std::cout << "\033[0;33m[Router]\033[0m Searching server for " << host << ":" << port << std::endl;  // Gelb
@@ -421,16 +419,16 @@ ServerConfig* Webserver::findMatchingServer(const std::string& host, int port) {
 
 
 /*
-    Processes an HTTP request from a client.
+	Processes an HTTP request from a client.
 
-    The function processes the given HTTP request by passing it to the router for handling the necessary routes.
-    After handling the request, it generates the corresponding HTTP response and sends it back to the client.
-    Debug messages are logged during each stage of processing, including the sending of the response.
+	The function processes the given HTTP request by passing it to the router for handling the necessary routes.
+	After handling the request, it generates the corresponding HTTP response and sends it back to the client.
+	Debug messages are logged during each stage of processing, including the sending of the response.
 
-    @param httpRequest The HTTP request to be processed.
-    @param server The server configuration that will handle the request.
-    @param client_fd The client socket file descriptor to send the response to.
-    @returns void
+	@param httpRequest The HTTP request to be processed.
+	@param server The server configuration that will handle the request.
+	@param client_fd The client socket file descriptor to send the response to.
+	@returns void
 */
 void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, int client_fd) {
 	#ifdef DEBUG_MODE
