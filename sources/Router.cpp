@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/17 04:46:21 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/19 16:36:50 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -127,6 +127,14 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 	std::cout << "\033[0;33m[DEBUG] Request Method: " << request.getMethod() << "\033[0m" << std::endl;
 	#endif
 
+    if (request.getUrl() == "/favicon.ico") {
+        #ifdef DEBUG_MODE
+        std::cout << "\033[0;33m[DEBUG] Ignoring favicon.ico request\033[0m" << std::endl;
+        #endif
+        setErrorResponse(response, 204);
+        response.setHeader("Content-Length", "0");
+        return;
+    }
 
 	std::string requestHost = request.getHeader("Host");
 	std::ostringstream expectedHost;
