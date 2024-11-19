@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Router.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/17 04:46:21 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/19 17:07:04 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -787,6 +787,26 @@ void Router::handleParentProcess(const HttpRequest& request, HttpResponse& respo
     char buffer[4096];
     ssize_t bytes_read;
 
+    // Setze ein Timeout für die CGI-Ausführung
+    struct timeval timeout;
+    timeout.tv_sec = 10; // Setze das Timeout auf 10 Sekunden (oder eine andere Zeit)
+    timeout.tv_usec = 0;
+
+    fd_set read_fds;
+    FD_ZERO(&read_fds);
+    FD_SET(output_pipe[0], &read_fds);
+
+    // Überprüfe, ob das Skript innerhalb des Timeouts antwortet
+    int select_result = select(output_pipe[0] + 1, &read_fds, NULL, NULL, &timeout);
+    if (select_result == 0) {
+        // Timeout erreicht, das Skript hat nicht geantwortet
+        std::cerr << "\033[1;31m[ERROR] CGI script timed out\033[0m" << std::endl;
+        setErrorResponse(response, 408); // Setze den 408 Fehler
+        close(output_pipe[0]);
+        return;
+    }
+
+    // Wenn das Skript geantwortet hat, lese die Ausgabe
     while ((bytes_read = read(output_pipe[0], buffer, sizeof(buffer))) > 0) {
         cgi_output.append(buffer, bytes_read);
     }
