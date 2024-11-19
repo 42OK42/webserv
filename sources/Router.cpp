@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/19 16:40:37 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/19 19:14:01 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -220,9 +220,6 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 		std::string filename = path.substr(queryPos + 6);
 		std::string uploadPath = location.getRoot() + "/uploads/" + filename;
 
-		#ifdef DEBUG_MODE
-		std::cout << "Suche Datei: " << uploadPath << std::endl;
-		#endif
 
 		struct stat statbuf;
 		if (stat(uploadPath.c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
