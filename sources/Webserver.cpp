@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserver.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/17 04:08:54 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/19 19:34:24 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -115,25 +115,68 @@ void Webserver::initializeServers()
     @returns void
 */
 void Webserver::runEventLoop() {
-	int poll_count = poll(&fds[0], fds.size(), 1000);  // 1 second timeout
+    // Zähle aktive Client-Verbindungen
+    size_t activeClients = 0;
+    for (size_t i = 0; i < fds.size(); ++i) {
+        if (!isServerSocket(fds[i].fd)) {
+            activeClients++;
+        }
+    }
 
-	if (poll_count < 0) {
-		if (errno != EINTR) {  // Ignore if interrupted by signal
-			std::cerr << "Poll error: " << strerror(errno) << std::endl;
-		}
-		return;
-	}
+    // Wenn keine aktiven Clients, verwende kurzen Timeout
+    int timeout = (activeClients > 0) ? SOCKET_TIMEOUT_SECONDS * 1000 : 1000;
+    int poll_count = poll(&fds[0], fds.size(), timeout);
 
-	// Check each file descriptor for events
-	for (size_t i = 0; i < fds.size(); ++i) {
-		if (fds[i].revents & POLLIN) {
-			if (isServerSocket(fds[i].fd)) {
-				handleNewConnection(fds[i].fd);
-			} else {
-				handleClientData(i);
-			}
-		}
-	}
+    if (poll_count < 0) {
+        if (errno != EINTR) {
+            std::cerr << "Poll error: " << strerror(errno) << std::endl;
+        }
+        return;
+    }
+
+    if (poll_count == 0 && activeClients > 0) {
+        #ifdef DEBUG_MODE
+        std::cout << "\033[0;36m[DEBUG] Server socket timeout reached\033[0m" << std::endl;
+        #endif
+
+        for (size_t i = 0; i < fds.size(); ++i) {
+            if (isServerSocket(fds[i].fd)) {
+                continue;
+            }
+            
+            int client_fd = fds[i].fd;
+            std::map<int, int>::iterator it = client_to_server.find(client_fd);
+            if (it != client_to_server.end()) {
+                ServerConfig* server = &_servers[it->second];
+                HttpResponse errorResponse;
+                Router router(*server);
+                router.setErrorResponse(errorResponse, 408);
+                
+                std::string responseStr = errorResponse.toString();
+                send(client_fd, responseStr.c_str(), responseStr.length(), MSG_NOSIGNAL);
+                
+                #ifdef DEBUG_MODE
+                std::cout << "\033[0;36m[DEBUG] Sending 408 timeout response to client " 
+                          << client_fd << "\033[0m" << std::endl;
+                #endif
+                
+                closeConnection(i);
+                i--;
+            }
+        }
+        return;
+    }
+
+    // Check each file descriptor for events
+    for (size_t i = 0; i < fds.size(); ++i) {
+        if (fds[i].revents & POLLIN) {
+            if (isServerSocket(fds[i].fd)) {
+                handleNewConnection(fds[i].fd);
+            } else {
+                handleClientData(i);
+            }
+        }
+    }
 }
 
 /*
@@ -178,7 +221,7 @@ void Webserver::handleNewConnection(int server_socket) {
 	}
 
 	setNonBlocking(new_fd);
-	setSocketTimeout(new_fd, 60);  // 60 second timeout
+	setSocketTimeout(new_fd, SOCKET_TIMEOUT_SECONDS);
 
 	struct pollfd client_fd;
 	client_fd.fd = new_fd;
@@ -217,12 +260,12 @@ void Webserver::handleClientData(size_t index) {
 
 	if (!server) {
 		#ifdef DEBUG_MODE
-		std::cerr << "\033[0;31m[DEBUG] Webserver::handleClientData: No server found for socket "
-				  << server_socket << "\033[0m" << std::endl;
+		std::cerr << "\033[0;31m[DEBUG] Webserver::handleClientData: No server found for socket " << server_socket << "\033[0m" << std::endl;
 		#endif
 		closeConnection(index);
 		return;
 	}
+
 	try {
 		bool requestComplete = server->readClientData(client_fd);
 		if (!requestComplete) {
@@ -238,12 +281,10 @@ void Webserver::handleClientData(size_t index) {
 
 		try {
 			HttpRequest httpRequest(requestData.c_str(), requestData.length(), *server);
-
 			bool shouldClose = (httpRequest.getHeader("Connection") == "close");
 
 			#ifdef DEBUG_MODE
-			std::cout << "\033[0;36m[DEBUG] Webserver::handleClientData: Connection Header = "
-					  << httpRequest.getHeader("Connection") << "\033[0m" << std::endl;
+			std::cout << "\033[0;36m[DEBUG] Webserver::handleClientData: Connection Header = " << httpRequest.getHeader("Connection") << "\033[0m" << std::endl;
 			#endif
 
 			ServerConfig* matchingServer = findMatchingServer(httpRequest.getHost(), httpRequest.getPort());
@@ -274,7 +315,6 @@ void Webserver::handleClientData(size_t index) {
 				router.setErrorResponse(errorResponse, 413);
 
 				std::string responseStr = errorResponse.toString();
-
 				send(client_fd, responseStr.c_str(), responseStr.length(), MSG_NOSIGNAL);
 
 				server->eraseClientData(client_fd);
@@ -339,6 +379,11 @@ void Webserver::setSocketTimeout(int sockfd, int timeout_seconds) {
 	struct timeval timeout;
 	timeout.tv_sec = timeout_seconds;
 	timeout.tv_usec = 0;
+
+	#ifdef DEBUG_MODE
+	std::cout << "\033[0;36m[DEBUG] Setting socket timeout for fd: " << sockfd 
+			  << " to " << timeout_seconds << " seconds\033[0m" << std::endl;
+	#endif
 
 	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
 		std::cerr << "Error setting receive timeout: " << strerror(errno) << std::endl;
