@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:21 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/19 17:38:02 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/19 19:56:59 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,15 +21,24 @@
 
 class Webserver
 {
+	public:
+		static const int SOCKET_TIMEOUT_SECONDS = 10;
+		static const int READ_TIMEOUT_SECONDS = 30;
+
+		Webserver();
+		~Webserver();
+		Webserver(const std::vector<ServerConfig>& servers);
+
+		void	runEventLoop();
+		void	initializeServers();
+		void	cleanup();
+
 	private:
 		Webserver(const Webserver &copy);
 
 		std::vector<ServerConfig>		_servers;
 		std::vector<struct pollfd>		fds;
 		std::map<int, int>				client_to_server;
-
-		static const int SOCKET_TIMEOUT_SECONDS = 10;
-		static const int READ_TIMEOUT_SECONDS = 30;
 
 		bool	isServerSocket(int fd);
 		void	handleNewConnection(int server_socket);
@@ -40,14 +49,6 @@ class Webserver
 
 		ServerConfig*	findMatchingServer(const std::string& host, int port);
 		void			processRequest(HttpRequest& httpRequest, ServerConfig* server, int client_fd);
-
-	public:
-		Webserver();
-		~Webserver();
-		Webserver(const std::vector<ServerConfig>& servers);
-
-		void	runEventLoop();
-		void	initializeServers();
 };
 
 #endif

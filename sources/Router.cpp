@@ -6,21 +6,22 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/19 19:37:52 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/19 19:56:27 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Router.hpp"
+#include "Webserver.hpp"
 
 Router::Router(ServerConfig& config) : _serverConfig(config) {}
 
 Router::~Router() {}
 
 /*
-    Reads the content of a file and returns it as a string.
+	Reads the content of a file and returns it as a string.
 
-    @param filepath The path to the file to be read.
-    @returns A string containing the file content. Returns a "404 Not Found" HTML message if the file cannot be opened.
+	@param filepath The path to the file to be read.
+	@returns A string containing the file content. Returns a "404 Not Found" HTML message if the file cannot be opened.
 */
 std::string Router::readFile(const std::string& filepath) {
 	std::ifstream file(filepath.c_str(), std::ios::binary);
@@ -33,10 +34,10 @@ std::string Router::readFile(const std::string& filepath) {
 }
 
 /*
-    Ensures that the directories leading up to a specified path exist, creating them if necessary.
+	Ensures that the directories leading up to a specified path exist, creating them if necessary.
 
-    @param path The path where directories should be ensured to exist.
-    @returns void
+	@param path The path where directories should be ensured to exist.
+	@returns void
 */
 void Router::ensureDirectoryExists(const std::string& path) {
 	size_t pos = 0;
@@ -50,10 +51,10 @@ void Router::ensureDirectoryExists(const std::string& path) {
 }
 
 /*
-    Extracts the filename from a URL query string.
+	Extracts the filename from a URL query string.
 
-    @param url The URL containing the filename query parameter.
-    @returns The extracted filename as a string, or an empty string if no filename is found.
+	@param url The URL containing the filename query parameter.
+	@returns The extracted filename as a string, or an empty string if no filename is found.
 */
 std::string Router::extractFilenameFromUrl(const std::string& url) {
 	size_t pos = url.find("filename=");
@@ -64,10 +65,10 @@ std::string Router::extractFilenameFromUrl(const std::string& url) {
 }
 
 /*
-    Extracts the filename from a Content-Disposition header.
+	Extracts the filename from a Content-Disposition header.
 
-    @param contentDisposition The Content-Disposition header containing the filename.
-    @returns The extracted filename as a string, or an empty string if the filename is not found.
+	@param contentDisposition The Content-Disposition header containing the filename.
+	@returns The extracted filename as a string, or an empty string if the filename is not found.
 */
 std::string Router::extractFilename(const std::string& contentDisposition) {
 	std::string filename;
@@ -83,10 +84,10 @@ std::string Router::extractFilename(const std::string& contentDisposition) {
 }
 
 /*
-    Retrieves a list of files in the upload directory for each location.
+	Retrieves a list of files in the upload directory for each location.
 
-    @param The path of the directory (not used in this implementation).
-    @returns A vector of strings containing the paths to the files in the upload directories.
+	@param The path of the directory (not used in this implementation).
+	@returns A vector of strings containing the paths to the files in the upload directories.
 */
 std::vector<std::string> Router::getFilesInDirectory(const std::string&) {
 	std::vector<std::string> files;
@@ -110,16 +111,16 @@ std::vector<std::string> Router::getFilesInDirectory(const std::string&) {
 }
 
 /*
-    Handles an incoming HTTP request and processes it based on the request's method and URL.
+	Handles an incoming HTTP request and processes it based on the request's method and URL.
 
-    This function checks if the request is directed to a CGI location, if the request method is allowed,
-    and processes the request accordingly. It handles GET, POST, DELETE methods and returns the appropriate
-    response for each.
+	This function checks if the request is directed to a CGI location, if the request method is allowed,
+	and processes the request accordingly. It handles GET, POST, DELETE methods and returns the appropriate
+	response for each.
 
-    @param request The HTTP request object containing the request details such as method, headers, and URL.
-    @param response The HTTP response object where the status code, headers, and body will be set.
+	@param request The HTTP request object containing the request details such as method, headers, and URL.
+	@param response The HTTP response object where the status code, headers, and body will be set.
 
-    @returns void
+	@returns void
 */
 void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 	#ifdef DEBUG_MODE
@@ -127,14 +128,14 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 	std::cout << "\033[0;33m[DEBUG] Request Method: " << request.getMethod() << "\033[0m" << std::endl;
 	#endif
 
-    if (request.getUrl() == "/favicon.ico") {
-        #ifdef DEBUG_MODE
-        std::cout << "\033[0;33m[DEBUG] Ignoring favicon.ico request\033[0m" << std::endl;
-        #endif
-        setErrorResponse(response, 204);
-        response.setHeader("Content-Length", "0");
-        return;
-    }
+	if (request.getUrl() == "/favicon.ico") {
+		#ifdef DEBUG_MODE
+		std::cout << "\033[0;33m[DEBUG] Ignoring favicon.ico request\033[0m" << std::endl;
+		#endif
+		setErrorResponse(response, 204);
+		response.setHeader("Content-Length", "0");
+		return;
+	}
 
 	std::string requestHost = request.getHeader("Host");
 	std::ostringstream expectedHost;
@@ -151,10 +152,10 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 		try {
 			const Location& location = _serverConfig.findLocation("/cgi-bin");
 			std::string scriptPath = constructScriptPath(request, location);
-            if (access(scriptPath.c_str(), F_OK) == -1) {
-                setErrorResponse(response, 404);
-                return;
-            }
+			if (access(scriptPath.c_str(), F_OK) == -1) {
+				setErrorResponse(response, 404);
+				return;
+			}
 			handleCGI(request, response, location);
 			return;
 		} catch (const ServerConfig::LocationNotFound& e) {
@@ -194,18 +195,18 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 }
 
 /*
-    Handles an HTTP GET request by fetching the requested resource and generating the appropriate response.
+	Handles an HTTP GET request by fetching the requested resource and generating the appropriate response.
 
-    This function processes the GET request in different ways:
-    - If a query string indicates a file, it attempts to find and return the requested file from the server.
-    - If the request is for an image file, it tries to find and return the file from the `/uploads/` directory.
-    - If the request is for a directory, it may return the directory listing or an index file, depending on the location configuration.
+	This function processes the GET request in different ways:
+	- If a query string indicates a file, it attempts to find and return the requested file from the server.
+	- If the request is for an image file, it tries to find and return the file from the `/uploads/` directory.
+	- If the request is for a directory, it may return the directory listing or an index file, depending on the location configuration.
 
-    @param request The HTTP request object containing the request details such as method, headers, and URL.
-    @param response The HTTP response object where the status code, headers, and body will be set.
-    @param location The location object that contains configuration details for the path being accessed.
+	@param request The HTTP request object containing the request details such as method, headers, and URL.
+	@param response The HTTP response object where the status code, headers, and body will be set.
+	@param location The location object that contains configuration details for the path being accessed.
 
-    @returns void
+	@returns void
 */
 void Router::handleGET(const HttpRequest& request, HttpResponse& response, const Location& location) {
 	if (!location.isMethodAllowed("GET")) {
@@ -334,15 +335,15 @@ void Router::handleGET(const HttpRequest& request, HttpResponse& response, const
 /*
 	Handles an HTTP POST request, typically used for receiving form submissions or file uploads.
 
-    This function processes the POST request in two main scenarios:
-    - If the request content type is `multipart/form-data`, it handles file uploads by saving files to the server's `/uploads/` directory.
-    - If the request body contains plain text or data, it simply echoes the received data back in the response.
+	This function processes the POST request in two main scenarios:
+	- If the request content type is `multipart/form-data`, it handles file uploads by saving files to the server's `/uploads/` directory.
+	- If the request body contains plain text or data, it simply echoes the received data back in the response.
 
-    @param request The HTTP request object containing the request details such as method, headers, and body.
-    @param response The HTTP response object where the status code, headers, and body will be set.
-    @param location The location object that contains configuration details for the path being accessed.
+	@param request The HTTP request object containing the request details such as method, headers, and body.
+	@param response The HTTP response object where the status code, headers, and body will be set.
+	@param location The location object that contains configuration details for the path being accessed.
 
-    @returns void
+	@returns void
 */
 void Router::handlePOST(const HttpRequest& request, HttpResponse& response, const Location& location) {
 
@@ -399,16 +400,16 @@ void Router::handlePOST(const HttpRequest& request, HttpResponse& response, cons
 /*
 	Handles an HTTP DELETE request by attempting to delete the specified file on the server.
 
-    This function:
-    - Checks if the DELETE method is allowed for the requested location.
-    - Attempts to extract the filename from the URL and delete the corresponding file from the server's `/uploads/` directory.
-    - Returns a success message if the file is deleted, or an error message if the file is not found or there is an issue with deletion.
+	This function:
+	- Checks if the DELETE method is allowed for the requested location.
+	- Attempts to extract the filename from the URL and delete the corresponding file from the server's `/uploads/` directory.
+	- Returns a success message if the file is deleted, or an error message if the file is not found or there is an issue with deletion.
 
-    @param request The HTTP request object containing the request details such as method, headers, and URL.
-    @param response The HTTP response object where the status code, headers, and body will be set.
-    @param location The location object that contains configuration details for the path being accessed.
+	@param request The HTTP request object containing the request details such as method, headers, and URL.
+	@param response The HTTP response object where the status code, headers, and body will be set.
+	@param location The location object that contains configuration details for the path being accessed.
 
-    @returns void
+	@returns void
 */
 void Router::handleDELETE(const HttpRequest& request, HttpResponse& response, const Location& location) {
 	if (!location.isMethodAllowed("DELETE")) {
@@ -451,15 +452,15 @@ void Router::handleDELETE(const HttpRequest& request, HttpResponse& response, co
 /*
 	Sets an error response with the given status code and an optional custom error page.
 
-    This function:
-    - Checks if a custom error page is configured for the given error code in the server's configuration.
-    - If a custom error page exists, it reads the content and sets it as the response body.
-    - If no custom error page exists, it sets a default empty body and the error status code.
+	This function:
+	- Checks if a custom error page is configured for the given error code in the server's configuration.
+	- If a custom error page exists, it reads the content and sets it as the response body.
+	- If no custom error page exists, it sets a default empty body and the error status code.
 
-    @param response The HTTP response object where the status code, headers, and body will be set.
-    @param errorCode The error code to set in the response (e.g., 404 for "Not Found", 500 for "Internal Server Error").
+	@param response The HTTP response object where the status code, headers, and body will be set.
+	@param errorCode The error code to set in the response (e.g., 404 for "Not Found", 500 for "Internal Server Error").
 
-    @returns void
+	@returns void
 */
 void Router::setErrorResponse(HttpResponse& response, int errorCode) {
 	const std::map<int, std::string>& errorPages = _serverConfig.getErrorPages();
@@ -481,17 +482,17 @@ void Router::setErrorResponse(HttpResponse& response, int errorCode) {
 /*
 Generates an HTML directory listing for the specified directory.
 
-    This function:
-    - Scans the specified directory for files and subdirectories.
-    - Sorts the entries alphabetically.
-    - Generates an HTML page displaying the name, last modified time, and size of each entry.
-    - Creates links to each entry (directories will have a trailing slash).
-    - Returns the generated HTML as a string.
+	This function:
+	- Scans the specified directory for files and subdirectories.
+	- Sorts the entries alphabetically.
+	- Generates an HTML page displaying the name, last modified time, and size of each entry.
+	- Creates links to each entry (directories will have a trailing slash).
+	- Returns the generated HTML as a string.
 
-    @param dirPath The path to the directory whose contents are to be listed.
-    @param requestPath The original URL path that was requested, used to create relative links.
+	@param dirPath The path to the directory whose contents are to be listed.
+	@param requestPath The original URL path that was requested, used to create relative links.
 
-    @returns A string containing the HTML for the directory listing.
+	@returns A string containing the HTML for the directory listing.
 */
 std::string Router::generateDirectoryListing(const std::string& dirPath, const std::string& requestPath) {
 	std::stringstream html;
@@ -562,162 +563,162 @@ std::string Router::generateDirectoryListing(const std::string& dirPath, const s
 /*
 	Handles an HTTP request for a CGI (Common Gateway Interface) script.
 
-    @param request The HTTP request object containing the request details such as method, headers, and URL.
-    @param response The HTTP response object where the status code, headers, and body will be set.
-    @param location The location object that contains configuration details for the path being accessed.
+	@param request The HTTP request object containing the request details such as method, headers, and URL.
+	@param response The HTTP response object where the status code, headers, and body will be set.
+	@param location The location object that contains configuration details for the path being accessed.
 
-    @returns void
+	@returns void
 */
 void Router::handleCGI(const HttpRequest& request, HttpResponse& response, const Location& location) {
-    if (!isCgiEnabled(location)) {
-        setErrorResponse(response, 403);
-        return;
-    }
+	if (!isCgiEnabled(location)) {
+		setErrorResponse(response, 403);
+		return;
+	}
 
-    std::string scriptPath = constructScriptPath(request, location);
+	std::string scriptPath = constructScriptPath(request, location);
 
-    int input_pipe[2];
-    int output_pipe[2];
+	int input_pipe[2];
+	int output_pipe[2];
 
-    if (!createPipes(input_pipe, output_pipe)) {
-        setErrorResponse(response, 500);
-        return;
-    }
+	if (!createPipes(input_pipe, output_pipe)) {
+		setErrorResponse(response, 500);
+		return;
+	}
 
-    pid_t pid = createFork(input_pipe, output_pipe, response);
+	pid_t pid = createFork(input_pipe, output_pipe, response);
 
-    if (pid == 0) {
-        executeCgi(request, input_pipe, output_pipe, location, scriptPath);
-    } else {
-        handleParentProcess(request, response, input_pipe, output_pipe, pid);
-    }
+	if (pid == 0) {
+		executeCgi(request, input_pipe, output_pipe, location, scriptPath);
+	} else {
+		handleParentProcess(request, response, input_pipe, output_pipe, pid);
+	}
 }
 
 /*
 	Checks whether CGI is enabled for the specified location.
 
-    @param location The location object that contains the configuration details for the path being accessed.
+	@param location The location object that contains the configuration details for the path being accessed.
 
-    @returns A boolean indicating whether CGI is enabled for the specified location.
+	@returns A boolean indicating whether CGI is enabled for the specified location.
 */
 bool Router::isCgiEnabled(const Location& location) {
 
-    return location.isCgiEnabled();
+	return location.isCgiEnabled();
 }
 
 /*
 	Constructs the full script path for a CGI request.
 
-    @param request The HTTP request object containing the request details such as method, headers, and URL.
-    @param location The location object that contains configuration details for the path being accessed.
+	@param request The HTTP request object containing the request details such as method, headers, and URL.
+	@param location The location object that contains configuration details for the path being accessed.
 
-    @returns A string containing the full script path for the CGI request.
+	@returns A string containing the full script path for the CGI request.
 */
 std::string Router::constructScriptPath(const HttpRequest& request, const Location& location) {
-    std::string fullUrl = request.getUrl();
-    std::string scriptPath;
+	std::string fullUrl = request.getUrl();
+	std::string scriptPath;
 
-    size_t queryPos = fullUrl.find('?');
-    if (queryPos != std::string::npos) {
-        scriptPath = fullUrl.substr(0, queryPos);
-    } else {
-        scriptPath = fullUrl;
-    }
+	size_t queryPos = fullUrl.find('?');
+	if (queryPos != std::string::npos) {
+		scriptPath = fullUrl.substr(0, queryPos);
+	} else {
+		scriptPath = fullUrl;
+	}
 
-    if (scriptPath.find("/cgi-bin/") == 0) {
-        scriptPath = location.getRoot() + scriptPath;
-    }
+	if (scriptPath.find("/cgi-bin/") == 0) {
+		scriptPath = location.getRoot() + scriptPath;
+	}
 
-    return scriptPath;
+	return scriptPath;
 }
 
 
 /*
 	Creates two pipes for inter-process communication.
 
-    @param input_pipe
-    @param output_pipe
+	@param input_pipe
+	@param output_pipe
 
-    @returns A boolean indicating whether both pipes were successfully created.
+	@returns A boolean indicating whether both pipes were successfully created.
 */
 bool Router::createPipes(int input_pipe[2], int output_pipe[2]) {
-    if (pipe(input_pipe) < 0 || pipe(output_pipe) < 0) {
-        return false;
-    }
-    return true;
+	if (pipe(input_pipe) < 0 || pipe(output_pipe) < 0) {
+		return false;
+	}
+	return true;
 }
 
 /*
 	Creates a new process by forking the current process.
 
-    @param input_pipe .
-    @param output_pipe
-    @param response The HTTP response object to handle error responses in case of failure.
+	@param input_pipe .
+	@param output_pipe
+	@param response The HTTP response object to handle error responses in case of failure.
 
-    @returns The PID of the child process, or -1 if forking fails.
+	@returns The PID of the child process, or -1 if forking fails.
 */
 pid_t Router::createFork(int input_pipe[2], int output_pipe[2], HttpResponse& response) {
-    pid_t pid = fork();
-    if (pid < 0) {
-        close(input_pipe[0]);
-        close(input_pipe[1]);
-        close(output_pipe[0]);
-        close(output_pipe[1]);
-        setErrorResponse(response, 500);
-    }
-    return pid;
+	pid_t pid = fork();
+	if (pid < 0) {
+		close(input_pipe[0]);
+		close(input_pipe[1]);
+		close(output_pipe[0]);
+		close(output_pipe[1]);
+		setErrorResponse(response, 500);
+	}
+	return pid;
 }
 
 /*
 	Executes a CGI script by redirecting input/output through pipes.
 
-    @param request The HTTP request object
-    @param input_pipe
-    @param output_pipe .
-    @param location The location object containing the path to the CGI binary.
-    @param scriptPath The full path to the CGI script that needs to be executed.
+	@param request The HTTP request object
+	@param input_pipe
+	@param output_pipe .
+	@param location The location object containing the path to the CGI binary.
+	@param scriptPath The full path to the CGI script that needs to be executed.
 
-    @returns void
+	@returns void
 */
 void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int output_pipe[2], const Location& location, const std::string& scriptPath) {
 
 	#ifdef CGI
-    std::cerr << "\033[1;31m[DEBUG] CGI: Executing CGI script: " << location.getCgiBin() << "\033[0m" << std::endl;
-    std::cerr << "\033[1;31m[DEBUG] CGI: Script path: " << scriptPath << "\033[0m" << std::endl;
-    #endif
+	std::cerr << "\033[1;31m[DEBUG] CGI: Executing CGI script: " << location.getCgiBin() << "\033[0m" << std::endl;
+	std::cerr << "\033[1;31m[DEBUG] CGI: Script path: " << scriptPath << "\033[0m" << std::endl;
+	#endif
 
-    std::ostringstream oss;
-    oss << request.getBody().length();
-    setenv("CONTENT_LENGTH", oss.str().c_str(), 1);
-    setenv("CONTENT_TYPE", request.getHeader("Content-Type").c_str(), 1);
-    setenv("REQUEST_METHOD", request.getMethod().c_str(), 1);
-    setenv("QUERY_STRING", "", 1);
+	std::ostringstream oss;
+	oss << request.getBody().length();
+	setenv("CONTENT_LENGTH", oss.str().c_str(), 1);
+	setenv("CONTENT_TYPE", request.getHeader("Content-Type").c_str(), 1);
+	setenv("REQUEST_METHOD", request.getMethod().c_str(), 1);
+	setenv("QUERY_STRING", "", 1);
 
 
-    std::string pathInfo = getPathInfo(request.getUrl(), scriptPath);
-    setenv("PATH_INFO", pathInfo.c_str(), 1);
-    setenv("QUERY_STRING", request.getQueryString().c_str(), 1);
-    setenv("SCRIPT_FILENAME", scriptPath.c_str(), 1);
+	std::string pathInfo = getPathInfo(request.getUrl(), scriptPath);
+	setenv("PATH_INFO", pathInfo.c_str(), 1);
+	setenv("QUERY_STRING", request.getQueryString().c_str(), 1);
+	setenv("SCRIPT_FILENAME", scriptPath.c_str(), 1);
 
-    close(input_pipe[1]);
-    close(output_pipe[0]);
+	close(input_pipe[1]);
+	close(output_pipe[0]);
 
-    if (dup2(input_pipe[0], STDIN_FILENO) == -1) {
-        std::cerr << "\033[1;31m[ERROR-CHILD] dup2 input failed\033[0m" << std::endl;
-        perror("[ERROR-CHILD] dup2 input failed");
-        exit(1);
-    }
+	if (dup2(input_pipe[0], STDIN_FILENO) == -1) {
+		std::cerr << "\033[1;31m[ERROR-CHILD] dup2 input failed\033[0m" << std::endl;
+		perror("[ERROR-CHILD] dup2 input failed");
+		exit(1);
+	}
 
-    if (dup2(output_pipe[1], STDOUT_FILENO) == -1) {
-        std::cerr << "\033[1;31m[ERROR-CHILD] dup2 output failed\033[0m" << std::endl;
-        perror("[ERROR-CHILD] dup2 output failed");
-        exit(1);
-    }
+	if (dup2(output_pipe[1], STDOUT_FILENO) == -1) {
+		std::cerr << "\033[1;31m[ERROR-CHILD] dup2 output failed\033[0m" << std::endl;
+		perror("[ERROR-CHILD] dup2 output failed");
+		exit(1);
+	}
 
-    close(input_pipe[0]);
-    close(output_pipe[1]);
+	close(input_pipe[0]);
+	close(output_pipe[1]);
 
-    std::string scriptPathStr = scriptPath;
+	std::string scriptPathStr = scriptPath;
 
 	std::string cgiBinStr = location.getCgiBin();
 	if (cgiBinStr.empty()) {
@@ -726,7 +727,7 @@ void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int outpu
 	}
 
 	const char* cgi_bin = cgiBinStr.c_str();
-    const char* script_path = scriptPath.c_str();
+	const char* script_path = scriptPath.c_str();
 
 	char* const args[] = {
 		const_cast<char*>(cgi_bin),   // /usr/bin/python3
@@ -737,9 +738,9 @@ void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int outpu
 	std::cerr << "[DEBUG-CHILD] Executing with command: " << cgi_bin << " " << scriptPath << std::endl;
 
 	execv(cgi_bin, args);
-    std::cerr << "\033[1;31m[ERROR-CHILD] execv failed\033[0m" << std::endl;
-    perror("[ERROR-CHILD] execv failed");
-    exit(1);
+	std::cerr << "\033[1;31m[ERROR-CHILD] execv failed\033[0m" << std::endl;
+	perror("[ERROR-CHILD] execv failed");
+	exit(1);
 }
 
 
@@ -749,130 +750,129 @@ void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int outpu
 /*
 	Handles the parent process after forking for CGI execution.
 
-    This function:
-    - Writes the request body to the input pipe (either chunked or non-chunked).
-    - Reads the output from the CGI script via the output pipe.
-    - Waits for the child process to finish and sets the HTTP response based on the CGI output.
+	This function:
+	- Writes the request body to the input pipe (either chunked or non-chunked).
+	- Reads the output from the CGI script via the output pipe.
+	- Waits for the child process to finish and sets the HTTP response based on the CGI output.
 
-    @param request The HTTP request object containing the request details.
-    @param response The HTTP response object to set the response headers, status, and body.
-    @param input_pipe
-    @param output_pipe
-    @param pid The PID of the child process to wait for.
+	@param request The HTTP request object containing the request details.
+	@param response The HTTP response object to set the response headers, status, and body.
+	@param input_pipe
+	@param output_pipe
+	@param pid The PID of the child process to wait for.
 
-    @returns void
+	@returns void
 */
 void Router::handleParentProcess(const HttpRequest& request, HttpResponse& response, int input_pipe[2], int output_pipe[2], pid_t pid) {
-    close(input_pipe[0]);
-    close(output_pipe[1]);
+	close(input_pipe[0]);
+	close(output_pipe[1]);
 
-    if (request.getHeader("Transfer-Encoding") == "chunked") {
-        std::string decoded_body = decodeChunkedBody(request.getBody());
+	if (request.getHeader("Transfer-Encoding") == "chunked") {
+		std::string decoded_body = decodeChunkedBody(request.getBody());
 
-        ssize_t written = write(input_pipe[1], decoded_body.c_str(), decoded_body.length());
-        if (written != static_cast<ssize_t>(decoded_body.length())) {
-            perror("[ERROR-PARENT] Write failed or incomplete");
-            close(input_pipe[1]);
-            setErrorResponse(response, 500);
-            return;
-        }
-        fsync(input_pipe[1]);
-    } else {
-        if (!request.getBody().empty()) {
-            ssize_t written = write(input_pipe[1], request.getBody().c_str(), request.getBody().length());
-            if (written != static_cast<ssize_t>(request.getBody().length())) {
-                perror("[ERROR-PARENT] Write failed or incomplete");
-                close(input_pipe[1]);
-                setErrorResponse(response, 500);
-                return;
-            }
-            fsync(input_pipe[1]);
-        }
-    }
+		ssize_t written = write(input_pipe[1], decoded_body.c_str(), decoded_body.length());
+		if (written != static_cast<ssize_t>(decoded_body.length())) {
+			perror("[ERROR-PARENT] Write failed or incomplete");
+			close(input_pipe[1]);
+			setErrorResponse(response, 500);
+			return;
+		}
+		fsync(input_pipe[1]);
+	} else {
+		if (!request.getBody().empty()) {
+			ssize_t written = write(input_pipe[1], request.getBody().c_str(), request.getBody().length());
+			if (written != static_cast<ssize_t>(request.getBody().length())) {
+				perror("[ERROR-PARENT] Write failed or incomplete");
+				close(input_pipe[1]);
+				setErrorResponse(response, 500);
+				return;
+			}
+			fsync(input_pipe[1]);
+		}
+	}
 
-    close(input_pipe[1]);
+	close(input_pipe[1]);
 
-    std::string cgi_output;
-    char buffer[4096];
-    ssize_t bytes_read;
+	std::string cgi_output;
+	char buffer[4096];
+	ssize_t bytes_read;
 
-    // Setze ein Timeout für die CGI-Ausführung
-    struct timeval timeout;
-    timeout.tv_sec = 10; // Setze das Timeout auf 10 Sekunden (oder eine andere Zeit)
-    timeout.tv_usec = 0;
+	struct timeval timeout;
+	timeout.tv_sec = Webserver::READ_TIMEOUT_SECONDS;
+	timeout.tv_usec = 0;
 
-    fd_set read_fds;
-    FD_ZERO(&read_fds);
-    FD_SET(output_pipe[0], &read_fds);
+	fd_set read_fds;
+	FD_ZERO(&read_fds);
+	FD_SET(output_pipe[0], &read_fds);
 
-    // Überprüfe, ob das Skript innerhalb des Timeouts antwortet
-    int select_result = select(output_pipe[0] + 1, &read_fds, NULL, NULL, &timeout);
-    if (select_result == 0) {
-        // Timeout erreicht, das Skript hat nicht geantwortet
-        std::cerr << "\033[1;31m[ERROR] CGI script timed out\033[0m" << std::endl;
-        setErrorResponse(response, 408); // Setze den 408 Fehler
-        close(output_pipe[0]);
-        return;
-    }
+	int select_result = select(output_pipe[0] + 1, &read_fds, NULL, NULL, &timeout);
+	if (select_result == 0) {
+		std::cerr << "\033[1;31m[ERROR] CGI script timed out\033[0m" << std::endl;
+			kill(pid, SIGTERM);
+			usleep(100000);
+			kill(pid, SIGKILL);
+			setErrorResponse(response, 408);
+			close(output_pipe[0]);
+			return;
+	}
 
-    // Wenn das Skript geantwortet hat, lese die Ausgabe
-    while ((bytes_read = read(output_pipe[0], buffer, sizeof(buffer))) > 0) {
-        cgi_output.append(buffer, bytes_read);
-    }
-    close(output_pipe[0]);
+	while ((bytes_read = read(output_pipe[0], buffer, sizeof(buffer))) > 0) {
+		cgi_output.append(buffer, bytes_read);
+	}
+	close(output_pipe[0]);
 
-    int status;
-    waitpid(pid, &status, 0);
+	int status;
+	waitpid(pid, &status, 0);
 
-    if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-        response.setStatusCode(200);
-        response.setBody(cgi_output);
-        response.setHeader("Content-Type", "text/html");
-    } else {
-        setErrorResponse(response, 500);
-    }
+	if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+		response.setStatusCode(200);
+		response.setBody(cgi_output);
+		response.setHeader("Content-Type", "text/html");
+	} else {
+		setErrorResponse(response, 500);
+	}
 }
 
 /* Decodes a chunked transfer-encoded HTTP body.
 
-    @param body The chunked HTTP body to decode.
+	@param body The chunked HTTP body to decode.
 
-    @returns The decoded body as a string.
+	@returns The decoded body as a string.
 */
 std::string Router::decodeChunkedBody(const std::string& body)
 {
-    std::string decoded_body;
-    size_t pos = 0;
-    while (pos < body.size()) {
-        size_t chunk_size_end = body.find("\r\n", pos);
-        if (chunk_size_end == std::string::npos) {
-            break;
-        }
+	std::string decoded_body;
+	size_t pos = 0;
+	while (pos < body.size()) {
+		size_t chunk_size_end = body.find("\r\n", pos);
+		if (chunk_size_end == std::string::npos) {
+			break;
+		}
 
-        std::string chunk_size_str = body.substr(pos, chunk_size_end - pos);
-        long chunk_size = strtol(chunk_size_str.c_str(), NULL, 16);
+		std::string chunk_size_str = body.substr(pos, chunk_size_end - pos);
+		long chunk_size = strtol(chunk_size_str.c_str(), NULL, 16);
 
-        pos = chunk_size_end + 2;
+		pos = chunk_size_end + 2;
 
-        if (pos + chunk_size > body.size()) {
-            break;
-        }
+		if (pos + chunk_size > body.size()) {
+			break;
+		}
 
-        decoded_body.append(body.substr(pos, chunk_size));
-        pos += chunk_size + 2;
-    }
+		decoded_body.append(body.substr(pos, chunk_size));
+		pos += chunk_size + 2;
+	}
 
-    return decoded_body;
+	return decoded_body;
 }
 
 std::string Router::getPathInfo(const std::string& fullUrl, const std::string& scriptPath) {
 	(void)scriptPath;
-    size_t cgiPos = fullUrl.find("/cgi-bin/");
-    if (cgiPos != std::string::npos) {
-        std::string pathInfo = fullUrl.substr(cgiPos + 9);
-        return pathInfo;
-    }
-    return "";
+	size_t cgiPos = fullUrl.find("/cgi-bin/");
+	if (cgiPos != std::string::npos) {
+		std::string pathInfo = fullUrl.substr(cgiPos + 9);
+		return pathInfo;
+	}
+	return "";
 }
 
 

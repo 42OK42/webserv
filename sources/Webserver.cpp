@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/19 19:39:17 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/19 19:58:54 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -113,7 +113,7 @@ void Webserver::initializeServers()
 	@returns void
 */
 void Webserver::runEventLoop() {
-	// Zähle aktive Client-Verbindungen
+
 	size_t activeClients = 0;
 	for (size_t i = 0; i < fds.size(); ++i) {
 		if (!isServerSocket(fds[i].fd)) {
@@ -121,7 +121,6 @@ void Webserver::runEventLoop() {
 		}
 	}
 
-	// Wenn keine aktiven Clients, verwende kurzen Timeout
 	int timeout = (activeClients > 0) ? SOCKET_TIMEOUT_SECONDS * 1000 : 1000;
 	int poll_count = poll(&fds[0], fds.size(), timeout);
 
@@ -460,4 +459,22 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 		}
 		total_sent += sent;
 	}
+}
+
+void Webserver::cleanup() {
+	for (size_t i = 0; i < fds.size(); ++i) {
+		if (!isServerSocket(fds[i].fd)) {
+			closeConnection(i);
+			i--;
+		}
+	}
+	
+	for (size_t i = 0; i < fds.size(); ++i) {
+		if (isServerSocket(fds[i].fd)) {
+			close(fds[i].fd);
+		}
+	}
+	
+	fds.clear();
+	client_to_server.clear();
 }
