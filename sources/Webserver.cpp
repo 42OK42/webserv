@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/19 19:58:54 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/19 20:36:36 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -121,7 +121,7 @@ void Webserver::runEventLoop() {
 		}
 	}
 
-	int timeout = (activeClients > 0) ? SOCKET_TIMEOUT_SECONDS * 1000 : 1000;
+	int timeout = -1;
 	int poll_count = poll(&fds[0], fds.size(), timeout);
 
 	if (poll_count < 0) {
@@ -136,8 +136,9 @@ void Webserver::runEventLoop() {
 		std::cout << "\033[0;36m[DEBUG] Server socket timeout reached\033[0m" << std::endl;
 		#endif
 
-		for (size_t i = 0; i < fds.size(); ++i) {
+		for (size_t i = 0; i < fds.size(); ) {
 			if (isServerSocket(fds[i].fd)) {
+				i++;
 				continue;
 			}
 			
@@ -158,7 +159,8 @@ void Webserver::runEventLoop() {
 				#endif
 				
 				closeConnection(i);
-				i--;
+			} else {
+				i++;
 			}
 		}
 		return;
@@ -328,6 +330,12 @@ void Webserver::handleClientData(size_t index) {
 		#endif
 		closeConnection(index);
 	}
+
+	struct timeval no_timeout;
+	no_timeout.tv_sec = 0;
+	no_timeout.tv_usec = 0;
+	setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &no_timeout, sizeof(no_timeout));
+	setsockopt(client_fd, SOL_SOCKET, SO_SNDTIMEO, &no_timeout, sizeof(no_timeout));
 }
 
 /*
