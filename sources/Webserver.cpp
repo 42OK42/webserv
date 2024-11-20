@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/20 14:51:52 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/20 17:21:23 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -120,51 +120,13 @@ void Webserver::runEventLoop() {
 		}
 	}
 
-	int timeout = SOCKET_TIMEOUT_SECONDS;
-	int poll_count = poll(&fds[0], fds.size(), timeout);
+	int poll_count = poll(&fds[0], fds.size(), -1);
 
 	if (poll_count < 0) {
 		if (errno != EINTR) {
 			std::cerr << "Poll error: " << strerror(errno) << std::endl;
 		}
 		return;
-	}
-
-	// Timeout
-	if (poll_count == 0 && activeClients > 0) {
-		#ifdef DEBUG_MODE
-		std::cout << "\033[0;36m[DEBUG] Server socket timeout reached\033[0m" << std::endl;
-		#endif
-
-		std::vector<size_t> timeoutIndices;
-		for (size_t i = 0; i < fds.size(); ++i) {
-			if (!isServerSocket(fds[i].fd)) {
-				timeoutIndices.push_back(i);
-			}
-		}
-		
-		for (std::vector<size_t>::reverse_iterator it = timeoutIndices.rbegin(); 
-			 it != timeoutIndices.rend(); ++it) {
-			int client_fd = fds[*it].fd;
-			std::map<int, int>::iterator server_it = client_to_server.find(client_fd);
-			
-			if (server_it != client_to_server.end()) {
-				ServerConfig* server = &_servers[server_it->second];
-				HttpResponse errorResponse;
-				Router router(*server);
-				router.setErrorResponse(errorResponse, 408);
-				
-				std::string responseStr = errorResponse.toString();
-				send(client_fd, responseStr.c_str(), responseStr.length(), MSG_NOSIGNAL);
-				
-				#ifdef DEBUG_MODE
-				std::cout << "\033[0;36m[DEBUG] Sending 408 timeout response to client " 
-						  << client_fd << "\033[0m" << std::endl;
-				#endif
-				
-				closeConnection(*it);
-			}
-		}
 	}
 
 	for (size_t i = 0; i < fds.size(); ++i) {
@@ -220,7 +182,6 @@ void Webserver::handleNewConnection(int server_socket) {
 	}
 
 	setNonBlocking(new_fd);
-	setSocketTimeout(new_fd, SOCKET_TIMEOUT_SECONDS);
 
 	struct pollfd client_fd;
 	client_fd.fd = new_fd;
@@ -330,12 +291,6 @@ void Webserver::handleClientData(size_t index) {
 		#endif
 		closeConnection(index);
 	}
-
-	struct timeval no_timeout;
-	no_timeout.tv_sec = 0;
-	no_timeout.tv_usec = 0;
-	setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &no_timeout, sizeof(no_timeout));
-	setsockopt(client_fd, SOL_SOCKET, SO_SNDTIMEO, &no_timeout, sizeof(no_timeout));
 }
 
 /*
@@ -370,31 +325,6 @@ void Webserver::setNonBlocking(int sockfd) {
 	}
 	if (fcntl(sockfd, 4, flags | O_NONBLOCK) == -1) {
 		std::cerr << "Error setting socket to non-blocking: " << strerror(errno) << std::endl;
-	}
-}
-
-/*
-	Sets the receive and send timeouts for a socket.
-
-	@param sockfd The socket file descriptor to configure.
-	@param timeout_seconds The timeout duration in seconds.
-	@returns void
-*/
-void Webserver::setSocketTimeout(int sockfd, int timeout_seconds) {
-	struct timeval timeout;
-	timeout.tv_sec = timeout_seconds;
-	timeout.tv_usec = 0;
-
-	#ifdef DEBUG_MODE
-	std::cout << "\033[0;36m[DEBUG] Setting socket timeout for fd: " << sockfd 
-			  << " to " << timeout_seconds << " seconds\033[0m" << std::endl;
-	#endif
-
-	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
-		std::cerr << "Error setting receive timeout: " << strerror(errno) << std::endl;
-	}
-	if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) < 0) {
-		std::cerr << "Error setting send timeout: " << strerror(errno) << std::endl;
 	}
 }
 

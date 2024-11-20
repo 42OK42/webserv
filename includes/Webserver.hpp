@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:21 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/19 19:56:59 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/20 17:19:50 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,8 +22,7 @@
 class Webserver
 {
 	public:
-		static const int SOCKET_TIMEOUT_SECONDS = 10;
-		static const int READ_TIMEOUT_SECONDS = 30;
+		static const int READ_TIMEOUT_SECONDS = 10;
 
 		Webserver();
 		~Webserver();
