@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/20 18:13:57 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/20 19:24:50 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -407,28 +407,79 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 	}
 }
 
-void Webserver::cleanup() {
-	// Zuerst alle CGI-Prozesse beenden
+void Webserver::checkCgiTimeouts() {
+	time_t current_time = time(NULL);
+	std::vector<pid_t> completed_processes;
+
 	for (std::map<pid_t, CgiProcess>::iterator it = cgi_processes.begin(); 
 		 it != cgi_processes.end(); ++it) {
-		// Sende SIGTERM und warte kurz
+		
+		if (current_time - it->second.start_time > READ_TIMEOUT_SECONDS) {
+			// Speichere wichtige Informationen
+			pid_t pid = it->first;
+			int client_fd = it->second.client_fd;
+			size_t client_index = it->second.client_index;
+			int output_pipe = it->second.output_pipe;
+
+			// Beende den Prozess
+			kill(pid, SIGTERM);
+			usleep(100000);
+			kill(pid, SIGKILL);
+
+			// Warte auf den Prozess
+			int status;
+			waitpid(pid, &status, WNOHANG);
+
+			// Schließe Pipes
+			if (output_pipe > 0) {
+				close(output_pipe);
+			}
+
+			// Sende Timeout-Response
+			HttpResponse errorResponse;
+			Router router(_servers[client_to_server[client_fd]], this);
+			router.setErrorResponse(errorResponse, 408);
+			std::string responseStr = errorResponse.toString();
+			send(client_fd, responseStr.c_str(), responseStr.length(), MSG_NOSIGNAL);
+
+			// Schließe die Verbindung
+			closeConnection(client_index);
+
+			// Markiere für Entfernung
+			completed_processes.push_back(pid);
+		}
+	}
+
+	// Entferne beendete Prozesse
+	for (size_t i = 0; i < completed_processes.size(); ++i) {
+		cgi_processes.erase(completed_processes[i]);
+	}
+}
+
+void Webserver::cleanup() {
+	// Beende zuerst alle CGI-Prozesse
+	std::vector<pid_t> pids;
+	for (std::map<pid_t, CgiProcess>::iterator it = cgi_processes.begin(); 
+		 it != cgi_processes.end(); ++it) {
+		pids.push_back(it->first);
 		kill(it->first, SIGTERM);
-		usleep(100000);  // 100ms warten
-		// Falls der Prozess noch läuft, SIGKILL senden
+		usleep(100000);
 		kill(it->first, SIGKILL);
 		
-		// Warte auf den Prozess, um Zombies zu vermeiden
-		int status;
-		waitpid(it->first, &status, 0);
-		
-		// Schließe den output pipe
 		if (it->second.output_pipe > 0) {
 			close(it->second.output_pipe);
 		}
 	}
+	
+	// Warte auf alle Prozesse
+	for (size_t i = 0; i < pids.size(); ++i) {
+		int status;
+		waitpid(pids[i], &status, 0);
+	}
+	
 	cgi_processes.clear();
 
-	// Dann normale Cleanup fortsetzen
+	// Dann normale Cleanup
 	for (size_t i = 0; i < fds.size(); ++i) {
 		if (!isServerSocket(fds[i].fd)) {
 			closeConnection(i);
@@ -448,46 +499,4 @@ void Webserver::cleanup() {
 
 void Webserver::registerCgiProcess(const CgiProcess& process) {
 	cgi_processes[process.pid] = process;
-}
-
-void Webserver::checkCgiTimeouts() {
-	time_t current_time = time(NULL);
-	std::vector<pid_t> completed_processes;
-
-	for (std::map<pid_t, CgiProcess>::iterator it = cgi_processes.begin(); 
-		 it != cgi_processes.end(); ++it) {
-		
-		if (current_time - it->second.start_time > READ_TIMEOUT_SECONDS) {
-			kill(it->first, SIGTERM);
-			usleep(100000);
-			kill(it->first, SIGKILL);
-			
-			// Finde den ursprünglichen Server für den Client
-			int server_socket = client_to_server[it->second.client_fd];
-			ServerConfig* server = NULL;
-			
-			// Suche den passenden Server basierend auf dem Socket
-			for (size_t i = 0; i < _servers.size(); ++i) {
-				if (_servers[i].getSocket() == server_socket) {
-					server = &_servers[i];
-					break;
-				}
-			}
-			
-			if (server) {
-				HttpResponse errorResponse;
-				Router router(*server, this);
-				router.setErrorResponse(errorResponse, 408);
-				std::string responseStr = errorResponse.toString();
-				send(it->second.client_fd, responseStr.c_str(), responseStr.length(), MSG_NOSIGNAL);
-			}
-			
-			closeConnection(it->second.client_index);
-			completed_processes.push_back(it->first);
-		}
-	}
-
-	for (size_t i = 0; i < completed_processes.size(); ++i) {
-		cgi_processes.erase(completed_processes[i]);
-	}
 }

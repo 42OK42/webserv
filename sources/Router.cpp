@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/20 18:08:37 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/20 19:22:22 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -701,67 +701,65 @@ pid_t Router::createFork(int input_pipe[2], int output_pipe[2], HttpResponse& re
 
 	@returns void
 */
-void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int output_pipe[2], const Location& location, const std::string& scriptPath) {
+void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int output_pipe[2], 
+                       const Location& location, const std::string& scriptPath) {
+    // Schließe nicht benötigte Pipe-Enden
+    close(input_pipe[1]);
+    close(output_pipe[0]);
 
-	#ifdef CGI
-	std::cerr << "\033[1;31m[DEBUG] CGI: Executing CGI script: " << location.getCgiBin() << "\033[0m" << std::endl;
-	std::cerr << "\033[1;31m[DEBUG] CGI: Script path: " << scriptPath << "\033[0m" << std::endl;
-	#endif
+    // Setze Umgebungsvariablen
+    std::ostringstream oss;
+    oss << request.getBody().length();
+    setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
+    setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);
+    setenv("SERVER_SOFTWARE", "Webserv/1.0", 1);
+    setenv("CONTENT_LENGTH", oss.str().c_str(), 1);
+    setenv("CONTENT_TYPE", request.getHeader("Content-Type").c_str(), 1);
+    setenv("REQUEST_METHOD", request.getMethod().c_str(), 1);
+    setenv("QUERY_STRING", request.getQueryString().c_str(), 1);
+    setenv("SCRIPT_NAME", request.getUrl().c_str(), 1);
+    setenv("PATH_INFO", getPathInfo(request.getUrl(), scriptPath).c_str(), 1);
+    setenv("SCRIPT_FILENAME", scriptPath.c_str(), 1);
 
-	std::ostringstream oss;
-	oss << request.getBody().length();
-	setenv("CONTENT_LENGTH", oss.str().c_str(), 1);
-	setenv("CONTENT_TYPE", request.getHeader("Content-Type").c_str(), 1);
-	setenv("REQUEST_METHOD", request.getMethod().c_str(), 1);
-	setenv("QUERY_STRING", "", 1);
+    // Dupliziere Pipes zu stdin/stdout
+    if (dup2(input_pipe[0], STDIN_FILENO) == -1) {
+        std::cerr << "[ERROR-CHILD] dup2 input failed" << std::endl;
+        perror("[ERROR-CHILD] dup2 input failed");
+        exit(1);
+    }
 
+    if (dup2(output_pipe[1], STDOUT_FILENO) == -1) {
+        std::cerr << "[ERROR-CHILD] dup2 output failed" << std::endl;
+        perror("[ERROR-CHILD] dup2 output failed");
+        exit(1);
+    }
 
-	std::string pathInfo = getPathInfo(request.getUrl(), scriptPath);
-	setenv("PATH_INFO", pathInfo.c_str(), 1);
-	setenv("QUERY_STRING", request.getQueryString().c_str(), 1);
-	setenv("SCRIPT_FILENAME", scriptPath.c_str(), 1);
+    // Hole CGI Binary Path
+    std::string cgiBinStr = location.getCgiBin();
+    if (cgiBinStr.empty()) {
+        std::cerr << "[ERROR-CHILD] CGI bin path is empty!" << std::endl;
+        exit(1);
+    }
 
-	close(input_pipe[1]);
-	close(output_pipe[0]);
+    // Bereite execv Argumente vor
+    const char* cgi_bin = cgiBinStr.c_str();
+    const char* script_path = scriptPath.c_str();
+    char* const args[] = {
+        const_cast<char*>(cgi_bin),
+        const_cast<char*>(script_path),
+        NULL
+    };
 
-	if (dup2(input_pipe[0], STDIN_FILENO) == -1) {
-		std::cerr << "\033[1;31m[ERROR-CHILD] dup2 input failed\033[0m" << std::endl;
-		perror("[ERROR-CHILD] dup2 input failed");
-		exit(1);
-	}
+    // Debug Output
+    std::cerr << "[DEBUG-CHILD] Executing with command: " << cgi_bin << " " << script_path << std::endl;
 
-	if (dup2(output_pipe[1], STDOUT_FILENO) == -1) {
-		std::cerr << "\033[1;31m[ERROR-CHILD] dup2 output failed\033[0m" << std::endl;
-		perror("[ERROR-CHILD] dup2 output failed");
-		exit(1);
-	}
+    // Führe CGI-Skript aus
+    execv(cgi_bin, args);
 
-	close(input_pipe[0]);
-	close(output_pipe[1]);
-
-	std::string scriptPathStr = scriptPath;
-
-	std::string cgiBinStr = location.getCgiBin();
-	if (cgiBinStr.empty()) {
-		std::cerr << "[ERROR-CHILD] CGI bin path is empty!" << std::endl;
-		exit(1);
-	}
-
-	const char* cgi_bin = cgiBinStr.c_str();
-	const char* script_path = scriptPath.c_str();
-
-	char* const args[] = {
-		const_cast<char*>(cgi_bin),   // /usr/bin/python3
-		const_cast<char*>(script_path),  // /home/ecarlier/Documents/ring5/webserv/cgi-bin/contact_form.py
-		NULL
-	};
-
-	std::cerr << "[DEBUG-CHILD] Executing with command: " << cgi_bin << " " << scriptPath << std::endl;
-
-	execv(cgi_bin, args);
-	std::cerr << "\033[1;31m[ERROR-CHILD] execv failed\033[0m" << std::endl;
-	perror("[ERROR-CHILD] execv failed");
-	exit(1);
+    // Wenn wir hier ankommen, ist execv fehlgeschlagen
+    std::cerr << "[ERROR-CHILD] execv failed" << std::endl;
+    perror("[ERROR-CHILD] execv failed");
+    exit(1);
 }
 
 

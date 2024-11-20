@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:21 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/20 18:08:41 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/20 19:14:04 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,13 +21,13 @@
 
 // Neue Struktur für CGI-Prozesse
 struct CgiProcess {
-    pid_t pid;
-    int output_pipe;
-    time_t start_time;
-    std::string output;
-    int client_fd;
-    size_t client_index;
-    HttpResponse* response;
+	pid_t pid;
+	int output_pipe;
+	time_t start_time;
+	std::string output;
+	int client_fd;
+	size_t client_index;
+	HttpResponse* response;
 };
 
 class Webserver
