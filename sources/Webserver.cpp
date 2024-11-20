@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/20 14:46:15 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/20 14:51:52 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -120,7 +120,7 @@ void Webserver::runEventLoop() {
 		}
 	}
 
-	int timeout = 1000; // 1 Sekunde Timeout
+	int timeout = SOCKET_TIMEOUT_SECONDS;
 	int poll_count = poll(&fds[0], fds.size(), timeout);
 
 	if (poll_count < 0) {
@@ -130,21 +130,19 @@ void Webserver::runEventLoop() {
 		return;
 	}
 
-	// Timeout-Behandlung
+	// Timeout
 	if (poll_count == 0 && activeClients > 0) {
 		#ifdef DEBUG_MODE
 		std::cout << "\033[0;36m[DEBUG] Server socket timeout reached\033[0m" << std::endl;
 		#endif
 
 		std::vector<size_t> timeoutIndices;
-		// Sammle erst alle Indices die einen Timeout haben
 		for (size_t i = 0; i < fds.size(); ++i) {
 			if (!isServerSocket(fds[i].fd)) {
 				timeoutIndices.push_back(i);
 			}
 		}
 		
-		// Verarbeite die Timeouts rückwärts
 		for (std::vector<size_t>::reverse_iterator it = timeoutIndices.rbegin(); 
 			 it != timeoutIndices.rend(); ++it) {
 			int client_fd = fds[*it].fd;
@@ -169,7 +167,6 @@ void Webserver::runEventLoop() {
 		}
 	}
 
-	// Normale Event-Verarbeitung
 	for (size_t i = 0; i < fds.size(); ++i) {
 		if (fds[i].revents & POLLIN) {
 			if (isServerSocket(fds[i].fd)) {
