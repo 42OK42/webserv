@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpResponse.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 18:05:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/19 16:37:35 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/20 17:29:34 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,6 +57,15 @@ void HttpResponse::setBody(const std::string& body)
 	std::stringstream ss;
 	ss << body.size();
 	setHeader("Content-Length", ss.str());
+}
+
+const std::string& HttpResponse::getHeader(const std::string& key) const {
+    static const std::string empty_string;
+    std::map<std::string, std::string>::const_iterator it = headers.find(key);
+    if (it != headers.end()) {
+        return it->second;
+    }
+    return empty_string;
 }
 
 std::string HttpResponse::toString() const

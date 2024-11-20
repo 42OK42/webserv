@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/20 17:21:23 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/20 17:30:23 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -396,6 +396,12 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 			break;
 		}
 		total_sent += sent;
+	}
+
+	if (httpResponse.getHeader("Connection") == "close") {
+		shutdown(client_fd, SHUT_RDWR);  // Explizites Shutdown
+		usleep(10000);                   // 10ms warten
+		closeConnection(client_fd);          // Verbindung schließen
 	}
 }
 
