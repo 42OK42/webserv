@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/19 20:36:36 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/20 14:46:15 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -113,7 +113,6 @@ void Webserver::initializeServers()
 	@returns void
 */
 void Webserver::runEventLoop() {
-
 	size_t activeClients = 0;
 	for (size_t i = 0; i < fds.size(); ++i) {
 		if (!isServerSocket(fds[i].fd)) {
@@ -121,7 +120,7 @@ void Webserver::runEventLoop() {
 		}
 	}
 
-	int timeout = -1;
+	int timeout = 1000; // 1 Sekunde Timeout
 	int poll_count = poll(&fds[0], fds.size(), timeout);
 
 	if (poll_count < 0) {
@@ -131,21 +130,28 @@ void Webserver::runEventLoop() {
 		return;
 	}
 
+	// Timeout-Behandlung
 	if (poll_count == 0 && activeClients > 0) {
 		#ifdef DEBUG_MODE
 		std::cout << "\033[0;36m[DEBUG] Server socket timeout reached\033[0m" << std::endl;
 		#endif
 
-		for (size_t i = 0; i < fds.size(); ) {
-			if (isServerSocket(fds[i].fd)) {
-				i++;
-				continue;
+		std::vector<size_t> timeoutIndices;
+		// Sammle erst alle Indices die einen Timeout haben
+		for (size_t i = 0; i < fds.size(); ++i) {
+			if (!isServerSocket(fds[i].fd)) {
+				timeoutIndices.push_back(i);
 			}
+		}
+		
+		// Verarbeite die Timeouts rückwärts
+		for (std::vector<size_t>::reverse_iterator it = timeoutIndices.rbegin(); 
+			 it != timeoutIndices.rend(); ++it) {
+			int client_fd = fds[*it].fd;
+			std::map<int, int>::iterator server_it = client_to_server.find(client_fd);
 			
-			int client_fd = fds[i].fd;
-			std::map<int, int>::iterator it = client_to_server.find(client_fd);
-			if (it != client_to_server.end()) {
-				ServerConfig* server = &_servers[it->second];
+			if (server_it != client_to_server.end()) {
+				ServerConfig* server = &_servers[server_it->second];
 				HttpResponse errorResponse;
 				Router router(*server);
 				router.setErrorResponse(errorResponse, 408);
@@ -158,15 +164,12 @@ void Webserver::runEventLoop() {
 						  << client_fd << "\033[0m" << std::endl;
 				#endif
 				
-				closeConnection(i);
-			} else {
-				i++;
+				closeConnection(*it);
 			}
 		}
-		return;
 	}
 
-	// Check each file descriptor for events
+	// Normale Event-Verarbeitung
 	for (size_t i = 0; i < fds.size(); ++i) {
 		if (fds[i].revents & POLLIN) {
 			if (isServerSocket(fds[i].fd)) {
