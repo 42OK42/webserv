@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:21 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/19 19:56:59 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/20 16:09:21 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,12 +18,13 @@
 #include "HttpRequest.hpp"
 #include "Router.hpp"
 #include "Common.hpp"
+#include <iostream>
 
 class Webserver
 {
 	public:
 		static const int SOCKET_TIMEOUT_SECONDS = 10;
-		static const int READ_TIMEOUT_SECONDS = 30;
+		static const int READ_TIMEOUT_SECONDS = 10;
 
 		Webserver();
 		~Webserver();
@@ -39,6 +40,7 @@ class Webserver
 		std::vector<ServerConfig>		_servers;
 		std::vector<struct pollfd>		fds;
 		std::map<int, int>				client_to_server;
+		std::set<std::string>			recent_timeouts;
 
 		bool	isServerSocket(int fd);
 		void	handleNewConnection(int server_socket);

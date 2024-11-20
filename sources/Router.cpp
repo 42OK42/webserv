@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/19 19:56:27 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/20 15:44:23 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -807,13 +807,23 @@ void Router::handleParentProcess(const HttpRequest& request, HttpResponse& respo
 
 	int select_result = select(output_pipe[0] + 1, &read_fds, NULL, NULL, &timeout);
 	if (select_result == 0) {
-		std::cerr << "\033[1;31m[ERROR] CGI script timed out\033[0m" << std::endl;
-			kill(pid, SIGTERM);
-			usleep(100000);
-			kill(pid, SIGKILL);
-			setErrorResponse(response, 408);
-			close(output_pipe[0]);
-			return;
+		#ifdef DEBUG_MODE
+		std::cerr << "\033[1;31m[DEBUG-CGI] CGI script timed out after " 
+				  << Webserver::READ_TIMEOUT_SECONDS << " seconds\033[0m" << std::endl;
+		std::cerr << "\033[1;31m[DEBUG-CGI] Setting Connection: close header\033[0m" << std::endl;
+		#endif
+		
+		kill(pid, SIGTERM);
+		usleep(100000);
+		kill(pid, SIGKILL);
+		
+		setErrorResponse(response, 408);
+		response.setHeader("Connection", "close");
+		response.setHeader("Cache-Control", "no-cache, no-store");
+		response.setHeader("Pragma", "no-cache");
+		
+		close(output_pipe[0]);
+		return;
 	}
 
 	while ((bytes_read = read(output_pipe[0], buffer, sizeof(buffer))) > 0) {

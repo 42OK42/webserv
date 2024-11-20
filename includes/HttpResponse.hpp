@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpResponse.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 17:16:51 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/17 03:35:17 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/20 15:35:18 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,8 @@ class HttpResponse
 		void setBody(const std::string& body);
 
 		std::string toString() const;
+		int getStatusCode() const;
+		std::string getHeader(const std::string& key) const;
 
 	private:
 

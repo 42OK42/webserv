@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/20 14:51:52 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/20 16:12:28 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -139,6 +139,16 @@ void Webserver::runEventLoop() {
 		std::vector<size_t> timeoutIndices;
 		for (size_t i = 0; i < fds.size(); ++i) {
 			if (!isServerSocket(fds[i].fd)) {
+				int client_fd = fds[i].fd;
+				struct sockaddr_in addr;
+				socklen_t addr_len = sizeof(addr);
+				getpeername(client_fd, (struct sockaddr*)&addr, &addr_len);
+				
+				char client_ip[INET_ADDRSTRLEN];
+				inet_ntop(AF_INET, &(addr.sin_addr), client_ip, INET_ADDRSTRLEN);
+				std::string client_identifier = std::string(client_ip);
+				
+				recent_timeouts.insert(client_identifier);
 				timeoutIndices.push_back(i);
 			}
 		}
@@ -154,6 +164,10 @@ void Webserver::runEventLoop() {
 				Router router(*server);
 				router.setErrorResponse(errorResponse, 408);
 				
+				errorResponse.setHeader("Connection", "close");
+				errorResponse.setHeader("Cache-Control", "no-cache, no-store");
+				errorResponse.setHeader("Pragma", "no-cache");
+				
 				std::string responseStr = errorResponse.toString();
 				send(client_fd, responseStr.c_str(), responseStr.length(), MSG_NOSIGNAL);
 				
@@ -162,7 +176,7 @@ void Webserver::runEventLoop() {
 						  << client_fd << "\033[0m" << std::endl;
 				#endif
 				
-				closeConnection(*it);
+				closeConnection(client_fd);
 			}
 		}
 	}
@@ -215,21 +229,37 @@ void Webserver::handleNewConnection(int server_socket) {
 
 	int new_fd = accept(server_socket, (struct sockaddr*)&client_addr, &client_len);
 	if (new_fd < 0) {
-		std::cerr << "Accept error: " << strerror(errno) << std::endl;
+		return;
+	}
+
+	char client_ip[INET_ADDRSTRLEN];
+	inet_ntop(AF_INET, &(client_addr.sin_addr), client_ip, INET_ADDRSTRLEN);
+	std::string client_identifier = std::string(client_ip);
+
+	if (recent_timeouts.find(client_identifier) != recent_timeouts.end()) {
+		#ifdef DEBUG_MODE
+		std::cout << "\033[0;31m[DEBUG] Connection rejected: Client " 
+				  << client_identifier << " had recent timeout\033[0m" << std::endl;
+		#endif
+		close(new_fd);
 		return;
 	}
 
 	setNonBlocking(new_fd);
 	setSocketTimeout(new_fd, SOCKET_TIMEOUT_SECONDS);
-
+	
 	struct pollfd client_fd;
 	client_fd.fd = new_fd;
 	client_fd.events = POLLIN;
 	fds.push_back(client_fd);
-
+	
 	client_to_server[new_fd] = server_socket;
-	std::cout << "\033[0;35m[Connection]\033[0m New client " << new_fd
-			  << " connected to server socket " << server_socket << std::endl;
+	
+	#ifdef DEBUG_MODE
+	std::cout << "\033[0;35m[DEBUG] New client " << new_fd 
+			  << " (" << client_identifier << ") connected to server socket " 
+			  << server_socket << "\033[0m" << std::endl;
+	#endif
 }
 
 /*
@@ -348,12 +378,21 @@ void Webserver::handleClientData(size_t index) {
 	@param index The index in the `fds` array of the client connection to close.
 	@returns void
 */
-void Webserver::closeConnection(size_t index) {
-	int client_fd = fds[index].fd;
+void Webserver::closeConnection(size_t fd_index) {
+	if (fd_index >= fds.size()) {
+		return;
+	}
+	int client_fd = fds[fd_index].fd;
 	std::cout << "\033[0;36m[INFO] Webserver::closeConnection: Closing client " << client_fd << "\033[0m" << std::endl;
+	
+	#ifdef DEBUG_MODE
+	std::cout << "\033[0;36m[DEBUG] Closing connection for client " 
+			  << client_fd << "\033[0m" << std::endl;
+	#endif
+	
 	close(client_fd);
-	fds.erase(fds.begin() + index);
 	client_to_server.erase(client_fd);
+	fds.erase(fds.begin() + fd_index);
 }
 
 /*
@@ -466,6 +505,28 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 			break;
 		}
 		total_sent += sent;
+	}
+
+	// Finde den Index für den client_fd
+	size_t fd_index = 0;
+	for (; fd_index < fds.size(); ++fd_index) {
+		if (fds[fd_index].fd == client_fd) {
+			break;
+		}
+	}
+
+	#ifdef DEBUG_MODE
+	std::cout << "\033[0;36m[DEBUG] Found fd_index " << fd_index 
+			  << " for client_fd " << client_fd << "\033[0m" << std::endl;
+	#endif
+
+	if (httpResponse.getStatusCode() == 408 || 
+		httpResponse.getHeader("Connection") == "close") {
+		#ifdef DEBUG_MODE
+		std::cout << "\033[0;36m[DEBUG] Closing connection due to status " 
+				  << httpResponse.getStatusCode() << " or Connection: close\033[0m" << std::endl;
+		#endif
+		closeConnection(fd_index);
 	}
 }
 
