@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/20 17:30:23 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/20 18:13:57 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -120,7 +120,10 @@ void Webserver::runEventLoop() {
 		}
 	}
 
-	int poll_count = poll(&fds[0], fds.size(), -1);
+	// Überprüfe CGI-Timeouts vor dem Poll
+	checkCgiTimeouts();
+
+	int poll_count = poll(&fds[0], fds.size(), 100);
 
 	if (poll_count < 0) {
 		if (errno != EINTR) {
@@ -249,9 +252,9 @@ void Webserver::handleClientData(size_t index) {
 
 			ServerConfig* matchingServer = findMatchingServer(httpRequest.getHost(), httpRequest.getPort());
 			if (matchingServer) {
-				processRequest(httpRequest, matchingServer, client_fd);
+				processRequest(httpRequest, matchingServer, client_fd, index);
 			} else {
-				processRequest(httpRequest, server, client_fd);
+				processRequest(httpRequest, server, client_fd, index);
 			}
 
 			server->eraseClientData(client_fd);
@@ -270,7 +273,7 @@ void Webserver::handleClientData(size_t index) {
 				#endif
 
 				HttpResponse errorResponse;
-				Router router(*server);
+				Router router(*server, this);
 
 				router.setErrorResponse(errorResponse, 413);
 
@@ -367,16 +370,11 @@ ServerConfig* Webserver::findMatchingServer(const std::string& host, int port) {
 	@param client_fd The client socket file descriptor to send the response to.
 	@returns void
 */
-void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, int client_fd) {
-	#ifdef DEBUG_MODE
-	std::cout << "\033[0;36m[DEBUG] Webserver::processRequest: Processing request for client "
-			  << client_fd << "\033[0m" << std::endl;
-	#endif
-
+void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, int client_fd, size_t index) {
 	HttpResponse httpResponse(httpRequest);
-	Router router(*server);
+	Router router(*server, this);
 
-	router.handleRequest(httpRequest, httpResponse);
+	router.handleRequest(httpRequest, httpResponse, client_fd, index);
 
 	std::string responseStr = httpResponse.toString();
 
@@ -399,13 +397,38 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 	}
 
 	if (httpResponse.getHeader("Connection") == "close") {
-		shutdown(client_fd, SHUT_RDWR);  // Explizites Shutdown
-		usleep(10000);                   // 10ms warten
-		closeConnection(client_fd);          // Verbindung schließen
+		shutdown(client_fd, SHUT_WR);  // Nur Write-Ende schließen
+		char buffer[1024];
+		while (recv(client_fd, buffer, sizeof(buffer), MSG_DONTWAIT) > 0) {
+			// Warte auf verbleibende Daten
+		}
+		usleep(50000);  // 50ms warten
+		closeConnection(index);
 	}
 }
 
 void Webserver::cleanup() {
+	// Zuerst alle CGI-Prozesse beenden
+	for (std::map<pid_t, CgiProcess>::iterator it = cgi_processes.begin(); 
+		 it != cgi_processes.end(); ++it) {
+		// Sende SIGTERM und warte kurz
+		kill(it->first, SIGTERM);
+		usleep(100000);  // 100ms warten
+		// Falls der Prozess noch läuft, SIGKILL senden
+		kill(it->first, SIGKILL);
+		
+		// Warte auf den Prozess, um Zombies zu vermeiden
+		int status;
+		waitpid(it->first, &status, 0);
+		
+		// Schließe den output pipe
+		if (it->second.output_pipe > 0) {
+			close(it->second.output_pipe);
+		}
+	}
+	cgi_processes.clear();
+
+	// Dann normale Cleanup fortsetzen
 	for (size_t i = 0; i < fds.size(); ++i) {
 		if (!isServerSocket(fds[i].fd)) {
 			closeConnection(i);
@@ -421,4 +444,50 @@ void Webserver::cleanup() {
 	
 	fds.clear();
 	client_to_server.clear();
+}
+
+void Webserver::registerCgiProcess(const CgiProcess& process) {
+	cgi_processes[process.pid] = process;
+}
+
+void Webserver::checkCgiTimeouts() {
+	time_t current_time = time(NULL);
+	std::vector<pid_t> completed_processes;
+
+	for (std::map<pid_t, CgiProcess>::iterator it = cgi_processes.begin(); 
+		 it != cgi_processes.end(); ++it) {
+		
+		if (current_time - it->second.start_time > READ_TIMEOUT_SECONDS) {
+			kill(it->first, SIGTERM);
+			usleep(100000);
+			kill(it->first, SIGKILL);
+			
+			// Finde den ursprünglichen Server für den Client
+			int server_socket = client_to_server[it->second.client_fd];
+			ServerConfig* server = NULL;
+			
+			// Suche den passenden Server basierend auf dem Socket
+			for (size_t i = 0; i < _servers.size(); ++i) {
+				if (_servers[i].getSocket() == server_socket) {
+					server = &_servers[i];
+					break;
+				}
+			}
+			
+			if (server) {
+				HttpResponse errorResponse;
+				Router router(*server, this);
+				router.setErrorResponse(errorResponse, 408);
+				std::string responseStr = errorResponse.toString();
+				send(it->second.client_fd, responseStr.c_str(), responseStr.length(), MSG_NOSIGNAL);
+			}
+			
+			closeConnection(it->second.client_index);
+			completed_processes.push_back(it->first);
+		}
+	}
+
+	for (size_t i = 0; i < completed_processes.size(); ++i) {
+		cgi_processes.erase(completed_processes[i]);
+	}
 }

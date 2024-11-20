@@ -6,14 +6,14 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/20 17:26:01 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/20 18:08:37 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Router.hpp"
 #include "Webserver.hpp"
 
-Router::Router(ServerConfig& config) : _serverConfig(config) {}
+Router::Router(ServerConfig& config, Webserver* webserver) : _serverConfig(config), _webserver(webserver) {}
 
 Router::~Router() {}
 
@@ -122,7 +122,8 @@ std::vector<std::string> Router::getFilesInDirectory(const std::string&) {
 
 	@returns void
 */
-void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
+void Router::handleRequest(const HttpRequest& request, HttpResponse& response,
+                         int client_fd, size_t client_index) {
 	#ifdef DEBUG_MODE
 	std::cout << "\033[0;33m[DEBUG] Request URL: " << request.getUrl() << "\033[0m" << std::endl;
 	std::cout << "\033[0;33m[DEBUG] Request Method: " << request.getMethod() << "\033[0m" << std::endl;
@@ -156,7 +157,7 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 				setErrorResponse(response, 404);
 				return;
 			}
-			handleCGI(request, response, location);
+			handleCGI(request, response, location, client_fd, client_index);
 			return;
 		} catch (const ServerConfig::LocationNotFound& e) {
 			setErrorResponse(response, 404);
@@ -169,28 +170,48 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 		path = path.substr(0, queryPos);
 	}
 
-	try {
-		const Location& location = _serverConfig.findLocation(path);
+	// Finde die passende Location für die URL
+	const std::map<std::string, Location>& locations = _serverConfig.getLocations();
+	std::string url = request.getUrl();
+	
+	// Suche die längste übereinstimmende Location
+	std::string matchingPath;
+	for (std::map<std::string, Location>::const_iterator it = locations.begin(); 
+		 it != locations.end(); ++it) {
+		if (url.find(it->first) == 0) {
+			if (it->first.length() > matchingPath.length()) {
+				matchingPath = it->first;
+			}
+		}
+	}
 
-		if (!location.isMethodAllowed(request.getMethod())) {
-			setErrorResponse(response, 405);
-			return;
-		}
-
-		if (request.getMethod() == "GET") {
-			handleGET(request, response, location);
-		}
-		else if (request.getMethod() == "POST") {
-			handlePOST(request, response, location);
-		}
-		else if (request.getMethod() == "DELETE") {
-			handleDELETE(request, response, location);
-		}
-		else {
-			setErrorResponse(response, 405);
-		}
-	} catch (const ServerConfig::LocationNotFound& e) {
+	if (matchingPath.empty()) {
 		setErrorResponse(response, 404);
+		return;
+	}
+
+	const Location& location = locations.find(matchingPath)->second;
+
+	if (!location.isMethodAllowed(request.getMethod())) {
+		setErrorResponse(response, 405);
+		return;
+	}
+
+	if (request.getMethod() == "GET") {
+		handleGET(request, response, location);
+	}
+	else if (request.getMethod() == "POST") {
+		handlePOST(request, response, location);
+	}
+	else if (request.getMethod() == "DELETE") {
+		handleDELETE(request, response, location);
+	}
+	else {
+		setErrorResponse(response, 405);
+	}
+
+	if (isCgiEnabled(location)) {
+		handleCGI(request, response, location, client_fd, client_index);
 	}
 }
 
@@ -569,29 +590,29 @@ std::string Router::generateDirectoryListing(const std::string& dirPath, const s
 
 	@returns void
 */
-void Router::handleCGI(const HttpRequest& request, HttpResponse& response, const Location& location) {
-	if (!isCgiEnabled(location)) {
-		setErrorResponse(response, 403);
-		return;
-	}
+void Router::handleCGI(const HttpRequest& request, HttpResponse& response, 
+                      const Location& location, int client_fd, size_t client_index) {
+    if (!isCgiEnabled(location)) {
+        setErrorResponse(response, 403);
+        return;
+    }
 
-	std::string scriptPath = constructScriptPath(request, location);
+    std::string scriptPath = constructScriptPath(request, location);
+    int input_pipe[2];
+    int output_pipe[2];
 
-	int input_pipe[2];
-	int output_pipe[2];
+    if (!createPipes(input_pipe, output_pipe)) {
+        setErrorResponse(response, 500);
+        return;
+    }
 
-	if (!createPipes(input_pipe, output_pipe)) {
-		setErrorResponse(response, 500);
-		return;
-	}
-
-	pid_t pid = createFork(input_pipe, output_pipe, response);
-
-	if (pid == 0) {
-		executeCgi(request, input_pipe, output_pipe, location, scriptPath);
-	} else {
-		handleParentProcess(request, response, input_pipe, output_pipe, pid);
-	}
+    pid_t pid = createFork(input_pipe, output_pipe, response);
+    if (pid == 0) {
+        executeCgi(request, input_pipe, output_pipe, location, scriptPath);
+    } else if (pid > 0) {
+        handleParentProcess(request, response, input_pipe, output_pipe, pid,
+                          client_fd, client_index);
+    }
 }
 
 /*
@@ -763,75 +784,37 @@ void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int outpu
 
 	@returns void
 */
-void Router::handleParentProcess(const HttpRequest& request, HttpResponse& response, int input_pipe[2], int output_pipe[2], pid_t pid) {
-	close(input_pipe[0]);
-	close(output_pipe[1]);
+void Router::handleParentProcess(const HttpRequest& request, HttpResponse& response,
+                               int input_pipe[2], int output_pipe[2], pid_t pid,
+                               int client_fd, size_t client_index) {
+    close(input_pipe[0]);
+    close(output_pipe[1]);
 
-	if (request.getHeader("Transfer-Encoding") == "chunked") {
-		std::string decoded_body = decodeChunkedBody(request.getBody());
+    // Schreibe Request-Body nicht-blockierend
+    if (request.getHeader("Transfer-Encoding") == "chunked") {
+        std::string decoded_body = decodeChunkedBody(request.getBody());
+        write(input_pipe[1], decoded_body.c_str(), decoded_body.length());
+    } else if (!request.getBody().empty()) {
+        write(input_pipe[1], request.getBody().c_str(), request.getBody().length());
+    }
 
-		ssize_t written = write(input_pipe[1], decoded_body.c_str(), decoded_body.length());
-		if (written != static_cast<ssize_t>(decoded_body.length())) {
-			perror("[ERROR-PARENT] Write failed or incomplete");
-			close(input_pipe[1]);
-			setErrorResponse(response, 500);
-			return;
-		}
-		fsync(input_pipe[1]);
-	} else {
-		if (!request.getBody().empty()) {
-			ssize_t written = write(input_pipe[1], request.getBody().c_str(), request.getBody().length());
-			if (written != static_cast<ssize_t>(request.getBody().length())) {
-				perror("[ERROR-PARENT] Write failed or incomplete");
-				close(input_pipe[1]);
-				setErrorResponse(response, 500);
-				return;
-			}
-			fsync(input_pipe[1]);
-		}
-	}
+    close(input_pipe[1]);
 
-	close(input_pipe[1]);
+    // Setze initial Response-Header
+    response.setHeader("Content-Type", "text/html");
+    response.setStatusCode(200);
 
-	std::string cgi_output;
-	char buffer[4096];
-	ssize_t bytes_read;
+    // Registriere CGI-Prozess für asynchrone Verarbeitung
+    CgiProcess process;
+    process.pid = pid;
+    process.output_pipe = output_pipe[0];
+    process.start_time = time(NULL);
+    process.client_fd = client_fd;
+    process.client_index = client_index;
 
-	struct timeval timeout;
-	timeout.tv_sec = Webserver::READ_TIMEOUT_SECONDS;
-	timeout.tv_usec = 0;
-
-	fd_set read_fds;
-	FD_ZERO(&read_fds);
-	FD_SET(output_pipe[0], &read_fds);
-
-	int select_result = select(output_pipe[0] + 1, &read_fds, NULL, NULL, &timeout);
-	if (select_result == 0) {
-		std::cerr << "\033[1;31m[ERROR] CGI script timed out\033[0m" << std::endl;
-		kill(pid, SIGTERM);
-		usleep(100000);
-		kill(pid, SIGKILL);
-		setErrorResponse(response, 408);
-		response.setHeader("Connection", "close");
-		close(output_pipe[0]);
-		return;
-	}
-
-	while ((bytes_read = read(output_pipe[0], buffer, sizeof(buffer))) > 0) {
-		cgi_output.append(buffer, bytes_read);
-	}
-	close(output_pipe[0]);
-
-	int status;
-	waitpid(pid, &status, 0);
-
-	if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-		response.setStatusCode(200);
-		response.setBody(cgi_output);
-		response.setHeader("Content-Type", "text/html");
-	} else {
-		setErrorResponse(response, 500);
-	}
+    if (_webserver) {
+        _webserver->registerCgiProcess(process);
+    }
 }
 
 /* Decodes a chunked transfer-encoded HTTP body.

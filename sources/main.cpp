@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 14:18:42 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/19 19:57:39 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/20 18:13:54 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,12 @@ bool sigint_flag = false;
 void    handle_sigint(int sig) {
 	(void)sig;
 	sigint_flag = true;
-	return ;
+	
+	// Blockiere SIGINT während der Cleanup
+	sigset_t mask;
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGINT);
+	sigprocmask(SIG_BLOCK, &mask, NULL);
 }
 
 
