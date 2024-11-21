@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/20 19:22:22 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/21 15:04:02 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -124,94 +124,49 @@ std::vector<std::string> Router::getFilesInDirectory(const std::string&) {
 */
 void Router::handleRequest(const HttpRequest& request, HttpResponse& response,
                          int client_fd, size_t client_index) {
-	#ifdef DEBUG_MODE
-	std::cout << "\033[0;33m[DEBUG] Request URL: " << request.getUrl() << "\033[0m" << std::endl;
-	std::cout << "\033[0;33m[DEBUG] Request Method: " << request.getMethod() << "\033[0m" << std::endl;
-	#endif
-
-	if (request.getUrl() == "/favicon.ico") {
-		#ifdef DEBUG_MODE
-		std::cout << "\033[0;33m[DEBUG] Ignoring favicon.ico request\033[0m" << std::endl;
-		#endif
-		setErrorResponse(response, 204);
-		response.setHeader("Content-Length", "0");
-		return;
-	}
-
-	std::string requestHost = request.getHeader("Host");
-	std::ostringstream expectedHost;
-	expectedHost << _serverConfig.getHost() << ":" << _serverConfig.getPort();
-
-	if (requestHost != expectedHost.str()) {
-		setErrorResponse(response, 400);
-		return;
-	}
-
 	std::string path = request.getUrl();
-
+	
+	// Zuerst prüfen ob es ein CGI-Request ist
 	if (path.find("/cgi-bin/") == 0) {
 		try {
 			const Location& location = _serverConfig.findLocation("/cgi-bin");
-			std::string scriptPath = constructScriptPath(request, location);
-			if (access(scriptPath.c_str(), F_OK) == -1) {
-				setErrorResponse(response, 404);
+			if (!isCgiEnabled(location)) {
+				setErrorResponse(response, 403);
 				return;
 			}
 			handleCGI(request, response, location, client_fd, client_index);
-			return;
+			return;  // Wichtig: Hier direkt zurückkehren!
 		} catch (const ServerConfig::LocationNotFound& e) {
 			setErrorResponse(response, 404);
 			return;
 		}
 	}
 
-	size_t queryPos = path.find('?');
-	if (queryPos != std::string::npos) {
-		path = path.substr(0, queryPos);
-	}
-
-	// Finde die passende Location für die URL
-	const std::map<std::string, Location>& locations = _serverConfig.getLocations();
-	std::string url = request.getUrl();
-	
-	// Suche die längste übereinstimmende Location
-	std::string matchingPath;
-	for (std::map<std::string, Location>::const_iterator it = locations.begin(); 
-		 it != locations.end(); ++it) {
-		if (url.find(it->first) == 0) {
-			if (it->first.length() > matchingPath.length()) {
-				matchingPath = it->first;
-			}
+	// Nur wenn es KEIN CGI-Request ist, normale Request-Verarbeitung
+	try {
+		const Location& location = _serverConfig.findLocation(path);
+		
+		// Prüfe erlaubte Methoden
+		if (!location.isMethodAllowed(request.getMethod())) {
+			setErrorResponse(response, 405);
+			return;
 		}
-	}
 
-	if (matchingPath.empty()) {
+		// Handle normale Requests
+		if (request.getMethod() == "GET") {
+			handleGET(request, response, location);
+		}
+		else if (request.getMethod() == "POST") {
+			handlePOST(request, response, location);
+		}
+		else if (request.getMethod() == "DELETE") {
+			handleDELETE(request, response, location);
+		}
+		else {
+			setErrorResponse(response, 405);
+		}
+	} catch (const ServerConfig::LocationNotFound& e) {
 		setErrorResponse(response, 404);
-		return;
-	}
-
-	const Location& location = locations.find(matchingPath)->second;
-
-	if (!location.isMethodAllowed(request.getMethod())) {
-		setErrorResponse(response, 405);
-		return;
-	}
-
-	if (request.getMethod() == "GET") {
-		handleGET(request, response, location);
-	}
-	else if (request.getMethod() == "POST") {
-		handlePOST(request, response, location);
-	}
-	else if (request.getMethod() == "DELETE") {
-		handleDELETE(request, response, location);
-	}
-	else {
-		setErrorResponse(response, 405);
-	}
-
-	if (isCgiEnabled(location)) {
-		handleCGI(request, response, location, client_fd, client_index);
 	}
 }
 
@@ -785,10 +740,13 @@ void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int outpu
 void Router::handleParentProcess(const HttpRequest& request, HttpResponse& response,
                                int input_pipe[2], int output_pipe[2], pid_t pid,
                                int client_fd, size_t client_index) {
+    (void)client_fd;      // Markiert als absichtlich ungenutzt
+    (void)client_index;   // Markiert als absichtlich ungenutzt
+    
     close(input_pipe[0]);
     close(output_pipe[1]);
 
-    // Schreibe Request-Body nicht-blockierend
+    // Schreibe Request-Body
     if (request.getHeader("Transfer-Encoding") == "chunked") {
         std::string decoded_body = decodeChunkedBody(request.getBody());
         write(input_pipe[1], decoded_body.c_str(), decoded_body.length());
@@ -798,21 +756,44 @@ void Router::handleParentProcess(const HttpRequest& request, HttpResponse& respo
 
     close(input_pipe[1]);
 
-    // Setze initial Response-Header
+    // Warte auf CGI-Output (mit Timeout)
+    char buffer[4096];
+    std::string cgi_output;
+    fd_set read_fds;
+    struct timeval tv;
+    
+    FD_ZERO(&read_fds);
+    FD_SET(output_pipe[0], &read_fds);
+    tv.tv_sec = 5;  // 5 Sekunden Timeout
+    tv.tv_usec = 0;
+
+    while (true) {
+        fd_set tmp_fds = read_fds;
+        int ready = select(output_pipe[0] + 1, &tmp_fds, NULL, NULL, &tv);
+        
+        if (ready <= 0) {
+            // Timeout oder Fehler
+            kill(pid, SIGTERM);
+            close(output_pipe[0]);
+            setErrorResponse(response, 504);  // Gateway Timeout
+            return;
+        }
+
+        ssize_t bytes_read = read(output_pipe[0], buffer, sizeof(buffer));
+        if (bytes_read <= 0) break;
+        cgi_output.append(buffer, bytes_read);
+    }
+
+    close(output_pipe[0]);
+
+    // Setze Response
     response.setHeader("Content-Type", "text/html");
     response.setStatusCode(200);
+    response.setBody(cgi_output);
 
-    // Registriere CGI-Prozess für asynchrone Verarbeitung
-    CgiProcess process;
-    process.pid = pid;
-    process.output_pipe = output_pipe[0];
-    process.start_time = time(NULL);
-    process.client_fd = client_fd;
-    process.client_index = client_index;
-
-    if (_webserver) {
-        _webserver->registerCgiProcess(process);
-    }
+    // Warte auf Child-Prozess
+    int status;
+    waitpid(pid, &status, 0);
 }
 
 /* Decodes a chunked transfer-encoded HTTP body.
