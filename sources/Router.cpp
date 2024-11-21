@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/21 15:04:02 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/21 15:12:50 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -126,7 +126,6 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response,
                          int client_fd, size_t client_index) {
 	std::string path = request.getUrl();
 	
-	// Zuerst prüfen ob es ein CGI-Request ist
 	if (path.find("/cgi-bin/") == 0) {
 		try {
 			const Location& location = _serverConfig.findLocation("/cgi-bin");
@@ -135,24 +134,21 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response,
 				return;
 			}
 			handleCGI(request, response, location, client_fd, client_index);
-			return;  // Wichtig: Hier direkt zurückkehren!
+			return;
 		} catch (const ServerConfig::LocationNotFound& e) {
 			setErrorResponse(response, 404);
 			return;
 		}
 	}
 
-	// Nur wenn es KEIN CGI-Request ist, normale Request-Verarbeitung
 	try {
 		const Location& location = _serverConfig.findLocation(path);
 		
-		// Prüfe erlaubte Methoden
 		if (!location.isMethodAllowed(request.getMethod())) {
 			setErrorResponse(response, 405);
 			return;
 		}
 
-		// Handle normale Requests
 		if (request.getMethod() == "GET") {
 			handleGET(request, response, location);
 		}
@@ -658,11 +654,9 @@ pid_t Router::createFork(int input_pipe[2], int output_pipe[2], HttpResponse& re
 */
 void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int output_pipe[2], 
                        const Location& location, const std::string& scriptPath) {
-    // Schließe nicht benötigte Pipe-Enden
     close(input_pipe[1]);
     close(output_pipe[0]);
 
-    // Setze Umgebungsvariablen
     std::ostringstream oss;
     oss << request.getBody().length();
     setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
@@ -676,7 +670,6 @@ void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int outpu
     setenv("PATH_INFO", getPathInfo(request.getUrl(), scriptPath).c_str(), 1);
     setenv("SCRIPT_FILENAME", scriptPath.c_str(), 1);
 
-    // Dupliziere Pipes zu stdin/stdout
     if (dup2(input_pipe[0], STDIN_FILENO) == -1) {
         std::cerr << "[ERROR-CHILD] dup2 input failed" << std::endl;
         perror("[ERROR-CHILD] dup2 input failed");
@@ -689,14 +682,12 @@ void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int outpu
         exit(1);
     }
 
-    // Hole CGI Binary Path
     std::string cgiBinStr = location.getCgiBin();
     if (cgiBinStr.empty()) {
         std::cerr << "[ERROR-CHILD] CGI bin path is empty!" << std::endl;
         exit(1);
     }
 
-    // Bereite execv Argumente vor
     const char* cgi_bin = cgiBinStr.c_str();
     const char* script_path = scriptPath.c_str();
     char* const args[] = {
@@ -705,13 +696,8 @@ void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int outpu
         NULL
     };
 
-    // Debug Output
-    std::cerr << "[DEBUG-CHILD] Executing with command: " << cgi_bin << " " << script_path << std::endl;
-
-    // Führe CGI-Skript aus
     execv(cgi_bin, args);
 
-    // Wenn wir hier ankommen, ist execv fehlgeschlagen
     std::cerr << "[ERROR-CHILD] execv failed" << std::endl;
     perror("[ERROR-CHILD] execv failed");
     exit(1);
@@ -740,13 +726,12 @@ void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int outpu
 void Router::handleParentProcess(const HttpRequest& request, HttpResponse& response,
                                int input_pipe[2], int output_pipe[2], pid_t pid,
                                int client_fd, size_t client_index) {
-    (void)client_fd;      // Markiert als absichtlich ungenutzt
-    (void)client_index;   // Markiert als absichtlich ungenutzt
+    (void)client_fd;
+    (void)client_index;
     
     close(input_pipe[0]);
     close(output_pipe[1]);
 
-    // Schreibe Request-Body
     if (request.getHeader("Transfer-Encoding") == "chunked") {
         std::string decoded_body = decodeChunkedBody(request.getBody());
         write(input_pipe[1], decoded_body.c_str(), decoded_body.length());
@@ -756,7 +741,7 @@ void Router::handleParentProcess(const HttpRequest& request, HttpResponse& respo
 
     close(input_pipe[1]);
 
-    // Warte auf CGI-Output (mit Timeout)
+    
     char buffer[4096];
     std::string cgi_output;
     fd_set read_fds;
@@ -764,7 +749,7 @@ void Router::handleParentProcess(const HttpRequest& request, HttpResponse& respo
     
     FD_ZERO(&read_fds);
     FD_SET(output_pipe[0], &read_fds);
-    tv.tv_sec = 5;  // 5 Sekunden Timeout
+    tv.tv_sec = READ_TIMEOUT_SECONDS;
     tv.tv_usec = 0;
 
     while (true) {
@@ -772,10 +757,9 @@ void Router::handleParentProcess(const HttpRequest& request, HttpResponse& respo
         int ready = select(output_pipe[0] + 1, &tmp_fds, NULL, NULL, &tv);
         
         if (ready <= 0) {
-            // Timeout oder Fehler
             kill(pid, SIGTERM);
             close(output_pipe[0]);
-            setErrorResponse(response, 504);  // Gateway Timeout
+            setErrorResponse(response, 504);
             return;
         }
 
@@ -786,7 +770,6 @@ void Router::handleParentProcess(const HttpRequest& request, HttpResponse& respo
 
     close(output_pipe[0]);
 
-    // Setze Response
     response.setHeader("Content-Type", "text/html");
     response.setStatusCode(200);
     response.setBody(cgi_output);

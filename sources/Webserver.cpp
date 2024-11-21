@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/20 19:24:50 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/21 15:10:49 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,6 @@
 #include "Router.hpp"
 #include <iostream>
 
-//time for olli mic drop commit?!
 
 Webserver::Webserver() {}
 
@@ -120,7 +119,6 @@ void Webserver::runEventLoop() {
 		}
 	}
 
-	// Überprüfe CGI-Timeouts vor dem Poll
 	checkCgiTimeouts();
 
 	int poll_count = poll(&fds[0], fds.size(), 100);
@@ -339,7 +337,7 @@ void Webserver::setNonBlocking(int sockfd) {
 	@returns ServerConfig* Pointer to the matching server configuration, or NULL if no match is found.
 */
 ServerConfig* Webserver::findMatchingServer(const std::string& host, int port) {
-	std::cout << "\033[0;33m[Router]\033[0m Searching server for " << host << ":" << port << std::endl;  // Gelb
+	std::cout << "\033[0;33m[Router]\033[0m Searching server for " << host << ":" << port << std::endl;
 
 	for (size_t i = 0; i < _servers.size(); ++i) {
 		const ServerConfig& server = _servers[i];
@@ -347,13 +345,13 @@ ServerConfig* Webserver::findMatchingServer(const std::string& host, int port) {
 		if (server.getPort() == port) {
 			if (server.getHost() == host) {
 				std::cout << "\033[0;32m[Router]\033[0m Found matching server: "
-						  << server.getHost() << ":" << server.getPort() << std::endl;  // Grün
+						  << server.getHost() << ":" << server.getPort() << std::endl;
 				return &_servers[i];
 			}
 		}
 	}
 
-	std::cout << "\033[0;31m[Router]\033[0m No matching server found!" << std::endl;  // Rot
+	std::cout << "\033[0;31m[Router]\033[0m No matching server found!" << std::endl;
 	return NULL;
 }
 
@@ -397,12 +395,11 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 	}
 
 	if (httpResponse.getHeader("Connection") == "close") {
-		shutdown(client_fd, SHUT_WR);  // Nur Write-Ende schließen
+		shutdown(client_fd, SHUT_WR);
 		char buffer[1024];
 		while (recv(client_fd, buffer, sizeof(buffer), MSG_DONTWAIT) > 0) {
-			// Warte auf verbleibende Daten
 		}
-		usleep(50000);  // 50ms warten
+		usleep(50000);
 		closeConnection(index);
 	}
 }
@@ -415,49 +412,40 @@ void Webserver::checkCgiTimeouts() {
 		 it != cgi_processes.end(); ++it) {
 		
 		if (current_time - it->second.start_time > READ_TIMEOUT_SECONDS) {
-			// Speichere wichtige Informationen
 			pid_t pid = it->first;
 			int client_fd = it->second.client_fd;
 			size_t client_index = it->second.client_index;
 			int output_pipe = it->second.output_pipe;
 
-			// Beende den Prozess
 			kill(pid, SIGTERM);
 			usleep(100000);
 			kill(pid, SIGKILL);
 
-			// Warte auf den Prozess
 			int status;
 			waitpid(pid, &status, WNOHANG);
 
-			// Schließe Pipes
 			if (output_pipe > 0) {
 				close(output_pipe);
 			}
 
-			// Sende Timeout-Response
 			HttpResponse errorResponse;
 			Router router(_servers[client_to_server[client_fd]], this);
 			router.setErrorResponse(errorResponse, 408);
 			std::string responseStr = errorResponse.toString();
 			send(client_fd, responseStr.c_str(), responseStr.length(), MSG_NOSIGNAL);
 
-			// Schließe die Verbindung
 			closeConnection(client_index);
 
-			// Markiere für Entfernung
 			completed_processes.push_back(pid);
 		}
 	}
 
-	// Entferne beendete Prozesse
 	for (size_t i = 0; i < completed_processes.size(); ++i) {
 		cgi_processes.erase(completed_processes[i]);
 	}
 }
 
 void Webserver::cleanup() {
-	// Beende zuerst alle CGI-Prozesse
 	std::vector<pid_t> pids;
 	for (std::map<pid_t, CgiProcess>::iterator it = cgi_processes.begin(); 
 		 it != cgi_processes.end(); ++it) {
@@ -471,7 +459,6 @@ void Webserver::cleanup() {
 		}
 	}
 	
-	// Warte auf alle Prozesse
 	for (size_t i = 0; i < pids.size(); ++i) {
 		int status;
 		waitpid(pids[i], &status, 0);
@@ -479,7 +466,6 @@ void Webserver::cleanup() {
 	
 	cgi_processes.clear();
 
-	// Dann normale Cleanup
 	for (size_t i = 0; i < fds.size(); ++i) {
 		if (!isServerSocket(fds[i].fd)) {
 			closeConnection(i);
