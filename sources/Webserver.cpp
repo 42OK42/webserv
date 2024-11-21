@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/21 15:10:49 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/21 15:35:06 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -373,7 +373,6 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 	Router router(*server, this);
 
 	router.handleRequest(httpRequest, httpResponse, client_fd, index);
-
 	std::string responseStr = httpResponse.toString();
 
 	#ifdef DEBUG_MODE
@@ -381,26 +380,33 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 			  << responseStr << "\033[0m" << std::endl;
 	#endif
 
+	// Sofort Socket schließen nach dem Senden
+	if (httpResponse.getHeader("Connection") == "close") {
+		// Erst Response senden
+		send(client_fd, responseStr.c_str(), responseStr.length(), MSG_NOSIGNAL);
+		
+		// Dann sofort Socket schließen
+		shutdown(client_fd, SHUT_RDWR);
+		close(client_fd);
+		
+		// Aus der fds Liste entfernen
+		for (size_t i = 0; i < fds.size(); ++i) {
+			if (fds[i].fd == client_fd) {
+				fds.erase(fds.begin() + i);
+				break;
+			}
+		}
+		client_to_server.erase(client_fd);
+		return;
+	}
+
+	// Normale Response für andere Fälle
 	ssize_t total_sent = 0;
 	while (total_sent < static_cast<ssize_t>(responseStr.length())) {
 		ssize_t sent = send(client_fd, responseStr.c_str() + total_sent,
 						  responseStr.length() - total_sent, MSG_NOSIGNAL);
-		if (sent <= 0) {
-			#ifdef DEBUG_MODE
-			std::cerr << "\033[0;31m[DEBUG] Webserver::processRequest: Error while sending\033[0m" << std::endl;
-			#endif
-			break;
-		}
+		if (sent <= 0) break;
 		total_sent += sent;
-	}
-
-	if (httpResponse.getHeader("Connection") == "close") {
-		shutdown(client_fd, SHUT_WR);
-		char buffer[1024];
-		while (recv(client_fd, buffer, sizeof(buffer), MSG_DONTWAIT) > 0) {
-		}
-		usleep(50000);
-		closeConnection(index);
 	}
 }
 
@@ -413,28 +419,19 @@ void Webserver::checkCgiTimeouts() {
 		
 		if (current_time - it->second.start_time > READ_TIMEOUT_SECONDS) {
 			pid_t pid = it->first;
-			int client_fd = it->second.client_fd;
-			size_t client_index = it->second.client_index;
-			int output_pipe = it->second.output_pipe;
-
-			kill(pid, SIGTERM);
+			
+			// Kill Prozessgruppe statt einzelnem Prozess
+			kill(-pid, SIGTERM);
 			usleep(100000);
-			kill(pid, SIGKILL);
+			kill(-pid, SIGKILL);
 
-			int status;
-			waitpid(pid, &status, WNOHANG);
-
-			if (output_pipe > 0) {
-				close(output_pipe);
+			if (it->second.output_pipe > 0) {
+				close(it->second.output_pipe);
 			}
 
-			HttpResponse errorResponse;
-			Router router(_servers[client_to_server[client_fd]], this);
-			router.setErrorResponse(errorResponse, 408);
-			std::string responseStr = errorResponse.toString();
-			send(client_fd, responseStr.c_str(), responseStr.length(), MSG_NOSIGNAL);
-
-			closeConnection(client_index);
+			// Warte auf den Prozess
+			int status;
+			waitpid(pid, &status, 0);
 
 			completed_processes.push_back(pid);
 		}
@@ -446,19 +443,21 @@ void Webserver::checkCgiTimeouts() {
 }
 
 void Webserver::cleanup() {
+	// Erst alle CGI-Prozesse beenden
 	std::vector<pid_t> pids;
 	for (std::map<pid_t, CgiProcess>::iterator it = cgi_processes.begin(); 
 		 it != cgi_processes.end(); ++it) {
 		pids.push_back(it->first);
-		kill(it->first, SIGTERM);
+		kill(-it->first, SIGTERM);  // Negative PID für Prozessgruppe
 		usleep(100000);
-		kill(it->first, SIGKILL);
+		kill(-it->first, SIGKILL);
 		
 		if (it->second.output_pipe > 0) {
 			close(it->second.output_pipe);
 		}
 	}
 	
+	// Auf alle Prozesse warten
 	for (size_t i = 0; i < pids.size(); ++i) {
 		int status;
 		waitpid(pids[i], &status, 0);
@@ -466,13 +465,14 @@ void Webserver::cleanup() {
 	
 	cgi_processes.clear();
 
+	// Keine weiteren Responses senden während Cleanup
 	for (size_t i = 0; i < fds.size(); ++i) {
 		if (!isServerSocket(fds[i].fd)) {
-			closeConnection(i);
-			i--;
+			close(fds[i].fd);  // Direkt schließen ohne Response
 		}
 	}
 	
+	// Server-Sockets schließen
 	for (size_t i = 0; i < fds.size(); ++i) {
 		if (isServerSocket(fds[i].fd)) {
 			close(fds[i].fd);

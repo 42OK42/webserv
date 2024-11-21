@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 14:54:59 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/20 18:07:07 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/21 15:31:37 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,8 +52,7 @@ class Router
 		pid_t	createFork(int input_pipe[2], int output_pipe[2], HttpResponse& response);
 
 	public:
-		static const int SOCKET_TIMEOUT_SECONDS = 10;
-		static const int READ_TIMEOUT_SECONDS = 30;
+		static const int READ_TIMEOUT_SECONDS = 10;
 
 		Router(ServerConfig& config, Webserver* webserver);
 		~Router();

@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/21 15:12:50 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/21 16:08:55 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -123,7 +123,7 @@ std::vector<std::string> Router::getFilesInDirectory(const std::string&) {
 	@returns void
 */
 void Router::handleRequest(const HttpRequest& request, HttpResponse& response,
-                         int client_fd, size_t client_index) {
+						 int client_fd, size_t client_index) {
 	std::string path = request.getUrl();
 	
 	if (path.find("/cgi-bin/") == 0) {
@@ -435,20 +435,23 @@ void Router::handleDELETE(const HttpRequest& request, HttpResponse& response, co
 	@returns void
 */
 void Router::setErrorResponse(HttpResponse& response, int errorCode) {
-	const std::map<int, std::string>& errorPages = _serverConfig.getErrorPages();
-	std::map<int, std::string>::const_iterator errorPageIt = errorPages.find(errorCode);
-
-	if (errorPageIt != errorPages.end()) {
-		std::string errorPageContent = readFile(errorPageIt->second);
-		response.setStatusCode(errorCode);
-		response.setBody(errorPageContent);
-		response.setHeader("Content-Type", "text/html");
-		response.setHeader("Error-Page-Path", errorPageIt->second);
-	} else {
-		response.setStatusCode(errorCode);
-		response.setBody("");
-		response.setHeader("Content-Type", "text/html");
+	response.setStatusCode(errorCode);
+	
+	std::string errorPage;
+	try {
+		const Location& errorLocation = _serverConfig.findLocation("/error");
+		std::stringstream ss;
+		ss << errorCode;
+		std::string errorFilePath = errorLocation.getRoot() + "/" + ss.str() + ".html";
+		errorPage = readFile(errorFilePath);
+	} catch (const ServerConfig::LocationNotFound&) {
+		std::stringstream ss;
+		ss << errorCode;
+		errorPage = "<html><body><h1>" + ss.str() + " Error</h1></body></html>";
 	}
+	
+	response.setHeader("Content-Type", "text/html");
+	response.setBody(errorPage);
 }
 
 /*
@@ -542,28 +545,25 @@ std::string Router::generateDirectoryListing(const std::string& dirPath, const s
 	@returns void
 */
 void Router::handleCGI(const HttpRequest& request, HttpResponse& response, 
-                      const Location& location, int client_fd, size_t client_index) {
-    if (!isCgiEnabled(location)) {
-        setErrorResponse(response, 403);
-        return;
-    }
+					  const Location& location, int client_fd, size_t client_index) {
+	int input_pipe[2];
+	int output_pipe[2];
+	
+	if (!createPipes(input_pipe, output_pipe)) {
+		setErrorResponse(response, 500);
+		return;
+	}
 
-    std::string scriptPath = constructScriptPath(request, location);
-    int input_pipe[2];
-    int output_pipe[2];
-
-    if (!createPipes(input_pipe, output_pipe)) {
-        setErrorResponse(response, 500);
-        return;
-    }
-
-    pid_t pid = createFork(input_pipe, output_pipe, response);
-    if (pid == 0) {
-        executeCgi(request, input_pipe, output_pipe, location, scriptPath);
-    } else if (pid > 0) {
-        handleParentProcess(request, response, input_pipe, output_pipe, pid,
-                          client_fd, client_index);
-    }
+	pid_t pid = createFork(input_pipe, output_pipe, response);
+	if (pid == 0) {
+		// Child Prozess
+		setpgid(0, 0);  // Setze neue Prozessgruppe
+		executeCgi(request, input_pipe, output_pipe, location, constructScriptPath(request, location));
+		exit(1);
+	} else if (pid > 0) {
+		// Parent Prozess
+		handleParentProcess(request, response, input_pipe, output_pipe, pid, client_fd, client_index);
+	}
 }
 
 /*
@@ -653,54 +653,54 @@ pid_t Router::createFork(int input_pipe[2], int output_pipe[2], HttpResponse& re
 	@returns void
 */
 void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int output_pipe[2], 
-                       const Location& location, const std::string& scriptPath) {
-    close(input_pipe[1]);
-    close(output_pipe[0]);
+					   const Location& location, const std::string& scriptPath) {
+	close(input_pipe[1]);
+	close(output_pipe[0]);
 
-    std::ostringstream oss;
-    oss << request.getBody().length();
-    setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
-    setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);
-    setenv("SERVER_SOFTWARE", "Webserv/1.0", 1);
-    setenv("CONTENT_LENGTH", oss.str().c_str(), 1);
-    setenv("CONTENT_TYPE", request.getHeader("Content-Type").c_str(), 1);
-    setenv("REQUEST_METHOD", request.getMethod().c_str(), 1);
-    setenv("QUERY_STRING", request.getQueryString().c_str(), 1);
-    setenv("SCRIPT_NAME", request.getUrl().c_str(), 1);
-    setenv("PATH_INFO", getPathInfo(request.getUrl(), scriptPath).c_str(), 1);
-    setenv("SCRIPT_FILENAME", scriptPath.c_str(), 1);
+	std::ostringstream oss;
+	oss << request.getBody().length();
+	setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
+	setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);
+	setenv("SERVER_SOFTWARE", "Webserv/1.0", 1);
+	setenv("CONTENT_LENGTH", oss.str().c_str(), 1);
+	setenv("CONTENT_TYPE", request.getHeader("Content-Type").c_str(), 1);
+	setenv("REQUEST_METHOD", request.getMethod().c_str(), 1);
+	setenv("QUERY_STRING", request.getQueryString().c_str(), 1);
+	setenv("SCRIPT_NAME", request.getUrl().c_str(), 1);
+	setenv("PATH_INFO", getPathInfo(request.getUrl(), scriptPath).c_str(), 1);
+	setenv("SCRIPT_FILENAME", scriptPath.c_str(), 1);
 
-    if (dup2(input_pipe[0], STDIN_FILENO) == -1) {
-        std::cerr << "[ERROR-CHILD] dup2 input failed" << std::endl;
-        perror("[ERROR-CHILD] dup2 input failed");
-        exit(1);
-    }
+	if (dup2(input_pipe[0], STDIN_FILENO) == -1) {
+		std::cerr << "[ERROR-CHILD] dup2 input failed" << std::endl;
+		perror("[ERROR-CHILD] dup2 input failed");
+		exit(1);
+	}
 
-    if (dup2(output_pipe[1], STDOUT_FILENO) == -1) {
-        std::cerr << "[ERROR-CHILD] dup2 output failed" << std::endl;
-        perror("[ERROR-CHILD] dup2 output failed");
-        exit(1);
-    }
+	if (dup2(output_pipe[1], STDOUT_FILENO) == -1) {
+		std::cerr << "[ERROR-CHILD] dup2 output failed" << std::endl;
+		perror("[ERROR-CHILD] dup2 output failed");
+		exit(1);
+	}
 
-    std::string cgiBinStr = location.getCgiBin();
-    if (cgiBinStr.empty()) {
-        std::cerr << "[ERROR-CHILD] CGI bin path is empty!" << std::endl;
-        exit(1);
-    }
+	std::string cgiBinStr = location.getCgiBin();
+	if (cgiBinStr.empty()) {
+		std::cerr << "[ERROR-CHILD] CGI bin path is empty!" << std::endl;
+		exit(1);
+	}
 
-    const char* cgi_bin = cgiBinStr.c_str();
-    const char* script_path = scriptPath.c_str();
-    char* const args[] = {
-        const_cast<char*>(cgi_bin),
-        const_cast<char*>(script_path),
-        NULL
-    };
+	const char* cgi_bin = cgiBinStr.c_str();
+	const char* script_path = scriptPath.c_str();
+	char* const args[] = {
+		const_cast<char*>(cgi_bin),
+		const_cast<char*>(script_path),
+		NULL
+	};
 
-    execv(cgi_bin, args);
+	execv(cgi_bin, args);
 
-    std::cerr << "[ERROR-CHILD] execv failed" << std::endl;
-    perror("[ERROR-CHILD] execv failed");
-    exit(1);
+	std::cerr << "[ERROR-CHILD] execv failed" << std::endl;
+	perror("[ERROR-CHILD] execv failed");
+	exit(1);
 }
 
 
@@ -724,59 +724,68 @@ void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int outpu
 	@returns void
 */
 void Router::handleParentProcess(const HttpRequest& request, HttpResponse& response,
-                               int input_pipe[2], int output_pipe[2], pid_t pid,
-                               int client_fd, size_t client_index) {
-    (void)client_fd;
-    (void)client_index;
-    
-    close(input_pipe[0]);
-    close(output_pipe[1]);
+							   int input_pipe[2], int output_pipe[2], pid_t pid,
+							   int client_fd, size_t client_index) {
+	(void)client_fd;
+	(void)client_index;
+	
+	close(input_pipe[0]);
+	close(output_pipe[1]);
 
-    if (request.getHeader("Transfer-Encoding") == "chunked") {
-        std::string decoded_body = decodeChunkedBody(request.getBody());
-        write(input_pipe[1], decoded_body.c_str(), decoded_body.length());
-    } else if (!request.getBody().empty()) {
-        write(input_pipe[1], request.getBody().c_str(), request.getBody().length());
-    }
+	if (request.getHeader("Transfer-Encoding") == "chunked") {
+		std::string decoded_body = decodeChunkedBody(request.getBody());
+		write(input_pipe[1], decoded_body.c_str(), decoded_body.length());
+	} else if (!request.getBody().empty()) {
+		write(input_pipe[1], request.getBody().c_str(), request.getBody().length());
+	}
 
-    close(input_pipe[1]);
+	close(input_pipe[1]);
 
-    
-    char buffer[4096];
-    std::string cgi_output;
-    fd_set read_fds;
-    struct timeval tv;
-    
-    FD_ZERO(&read_fds);
-    FD_SET(output_pipe[0], &read_fds);
-    tv.tv_sec = READ_TIMEOUT_SECONDS;
-    tv.tv_usec = 0;
+	
+	char buffer[4096];
+	std::string cgi_output;
+	fd_set read_fds;
+	struct timeval tv;
+	
+	FD_ZERO(&read_fds);
+	FD_SET(output_pipe[0], &read_fds);
+	tv.tv_sec = READ_TIMEOUT_SECONDS;
+	tv.tv_usec = 0;
 
-    while (true) {
-        fd_set tmp_fds = read_fds;
-        int ready = select(output_pipe[0] + 1, &tmp_fds, NULL, NULL, &tv);
-        
-        if (ready <= 0) {
-            kill(pid, SIGTERM);
-            close(output_pipe[0]);
-            setErrorResponse(response, 504);
-            return;
-        }
+	while (true) {
+		fd_set tmp_fds = read_fds;
+		int ready = select(output_pipe[0] + 1, &tmp_fds, NULL, NULL, &tv);
+		
+		if (ready <= 0) {
+			kill(-pid, SIGTERM);
+			usleep(100000);
+			kill(-pid, SIGKILL);
+			
+			close(output_pipe[0]);
+			
+			response.setStatusCode(408);
+			response.setHeader("Connection", "close");
+			response.setHeader("Cache-Control", "no-store");
+			setErrorResponse(response, 408);
+			
+			int status;
+			waitpid(pid, &status, 0);
+			return;
+		}
 
-        ssize_t bytes_read = read(output_pipe[0], buffer, sizeof(buffer));
-        if (bytes_read <= 0) break;
-        cgi_output.append(buffer, bytes_read);
-    }
+		ssize_t bytes_read = read(output_pipe[0], buffer, sizeof(buffer));
+		if (bytes_read <= 0) break;
+		cgi_output.append(buffer, bytes_read);
+	}
 
-    close(output_pipe[0]);
+	close(output_pipe[0]);
 
-    response.setHeader("Content-Type", "text/html");
-    response.setStatusCode(200);
-    response.setBody(cgi_output);
+	response.setHeader("Content-Type", "text/html");
+	response.setStatusCode(200);
+	response.setBody(cgi_output);
 
-    // Warte auf Child-Prozess
-    int status;
-    waitpid(pid, &status, 0);
+	int status;
+	waitpid(pid, &status, 0);
 }
 
 /* Decodes a chunked transfer-encoded HTTP body.
