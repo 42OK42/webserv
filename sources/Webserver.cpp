@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/22 16:31:12 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/22 16:33:01 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,6 @@
 #include "Router.hpp"
 #include <iostream>
 
-//time for olli mic drop commit?!
 
 Webserver::Webserver() {}
 
@@ -113,29 +112,24 @@ void Webserver::initializeServers()
 	@returns void
 */
 void Webserver::runEventLoop() {
-	// Überprüfe ob es überhaupt File Descriptors gibt
 	if (fds.empty()) {
 		return;
 	}
 
-	// Poll für Events mit Timeout von 1000ms (1 Sekunde)
 	int poll_count = poll(&fds[0], fds.size(), 1000);
 
 	if (poll_count < 0) {
 		if (errno == EINTR) {
-			// Wurde durch Signal unterbrochen (z.B. SIGINT)
 			return;
 		}
 		std::cerr << "Poll error: " << strerror(errno) << std::endl;
 		return;
 	}
 
-	// Timeout - keine Events
 	if (poll_count == 0) {
 		return;
 	}
 
-	// Kopiere fds um sichere Iteration zu gewährleisten
 	std::vector<struct pollfd> current_fds = fds;
 	
 	for (size_t i = 0; i < current_fds.size() && !sigint_flag; ++i) {
@@ -147,7 +141,6 @@ void Webserver::runEventLoop() {
 			}
 		}
 		
-		// Überprüfe auf Fehler oder geschlossene Verbindungen
 		if (current_fds[i].revents & (POLLERR | POLLNVAL)) {
 			if (!isServerSocket(current_fds[i].fd)) {
 				closeConnection(i);
@@ -327,7 +320,6 @@ void Webserver::closeConnection(size_t index) {
 	int client_fd = fds[index].fd;
 	std::cout << "\033[0;36m[INFO] Webserver::closeConnection: Closing client " << client_fd << "\033[0m" << std::endl;
 	
-	// Finde den zugehörigen Server
 	std::map<int, int>::iterator server_it = client_to_server.find(client_fd);
 	if (server_it != client_to_server.end()) {
 		ServerConfig& server = _servers[server_it->second];

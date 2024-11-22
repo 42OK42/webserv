@@ -215,14 +215,14 @@
 			position: relative;
 			width: 100%;
 			height: 150px;
-			background-color: #8bc34a; /* Light green for the corn */
+			background-color: #8bc34a;
 			display: flex;
 			align-items: flex-end;
 			overflow-x: hidden;
-			border-top: 10px solid #6c9e33; /* Top border to separate the road */
+			border-top: 10px solid #6c9e33;
+			justify-content: flex-start;
 		}
 
-		/* Corn stalks */
 		.cornfield .stalk {
 			width: 10px;
 			height: 100px;
@@ -230,6 +230,7 @@
 			margin-left: 15px;
 			position: relative;
 			border-radius: 2px;
+			flex-shrink: 0;
 		}
 
 		/* Corn ears */
@@ -274,74 +275,31 @@
 	<!-- Cornfield below the road -->
 	<div class="cornfield">
 		
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-		<div class="stalk"></div>
-
-
-
-
 	</div>
+
+	<script>
+	function adjustCornStalks() {
+		const cornfield = document.querySelector('.cornfield');
+		const stalkWidth = 25; // Breite eines Stalk + margin
+		const windowWidth = window.innerWidth;
+		const numberOfStalks = Math.floor(windowWidth / stalkWidth);
+		
+		// Lösche existierende Stalks
+		cornfield.innerHTML = '';
+		
+		// Füge neue Stalks basierend auf der Fensterbreite hinzu
+		for (let i = 0; i < numberOfStalks; i++) {
+			const stalk = document.createElement('div');
+			stalk.className = 'stalk';
+			cornfield.appendChild(stalk);
+		}
+	}
+
+	// Initial ausführen
+	adjustCornStalks();
+
+	// Bei Fenstergrößenänderung anpassen
+	window.addEventListener('resize', adjustCornStalks);
+	</script>
 </body>
 </html>
