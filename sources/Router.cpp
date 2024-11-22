@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Router.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/21 16:08:55 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/22 14:58:02 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -125,7 +125,7 @@ std::vector<std::string> Router::getFilesInDirectory(const std::string&) {
 void Router::handleRequest(const HttpRequest& request, HttpResponse& response,
 						 int client_fd, size_t client_index) {
 	std::string path = request.getUrl();
-	
+
 	if (path.find("/cgi-bin/") == 0) {
 		try {
 			const Location& location = _serverConfig.findLocation("/cgi-bin");
@@ -143,7 +143,7 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response,
 
 	try {
 		const Location& location = _serverConfig.findLocation(path);
-		
+
 		if (!location.isMethodAllowed(request.getMethod())) {
 			setErrorResponse(response, 405);
 			return;
@@ -436,7 +436,7 @@ void Router::handleDELETE(const HttpRequest& request, HttpResponse& response, co
 */
 void Router::setErrorResponse(HttpResponse& response, int errorCode) {
 	response.setStatusCode(errorCode);
-	
+
 	std::string errorPage;
 	try {
 		const Location& errorLocation = _serverConfig.findLocation("/error");
@@ -449,7 +449,7 @@ void Router::setErrorResponse(HttpResponse& response, int errorCode) {
 		ss << errorCode;
 		errorPage = "<html><body><h1>" + ss.str() + " Error</h1></body></html>";
 	}
-	
+
 	response.setHeader("Content-Type", "text/html");
 	response.setBody(errorPage);
 }
@@ -544,11 +544,11 @@ std::string Router::generateDirectoryListing(const std::string& dirPath, const s
 
 	@returns void
 */
-void Router::handleCGI(const HttpRequest& request, HttpResponse& response, 
+void Router::handleCGI(const HttpRequest& request, HttpResponse& response,
 					  const Location& location, int client_fd, size_t client_index) {
 	int input_pipe[2];
 	int output_pipe[2];
-	
+
 	if (!createPipes(input_pipe, output_pipe)) {
 		setErrorResponse(response, 500);
 		return;
@@ -652,7 +652,7 @@ pid_t Router::createFork(int input_pipe[2], int output_pipe[2], HttpResponse& re
 
 	@returns void
 */
-void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int output_pipe[2], 
+void Router::executeCgi(const HttpRequest& request, int input_pipe[2], int output_pipe[2],
 					   const Location& location, const std::string& scriptPath) {
 	close(input_pipe[1]);
 	close(output_pipe[0]);
@@ -728,7 +728,7 @@ void Router::handleParentProcess(const HttpRequest& request, HttpResponse& respo
 							   int client_fd, size_t client_index) {
 	(void)client_fd;
 	(void)client_index;
-	
+
 	close(input_pipe[0]);
 	close(output_pipe[1]);
 
@@ -741,12 +741,12 @@ void Router::handleParentProcess(const HttpRequest& request, HttpResponse& respo
 
 	close(input_pipe[1]);
 
-	
+
 	char buffer[4096];
 	std::string cgi_output;
 	fd_set read_fds;
 	struct timeval tv;
-	
+
 	FD_ZERO(&read_fds);
 	FD_SET(output_pipe[0], &read_fds);
 	tv.tv_sec = READ_TIMEOUT_SECONDS;
@@ -755,19 +755,19 @@ void Router::handleParentProcess(const HttpRequest& request, HttpResponse& respo
 	while (true) {
 		fd_set tmp_fds = read_fds;
 		int ready = select(output_pipe[0] + 1, &tmp_fds, NULL, NULL, &tv);
-		
+
 		if (ready <= 0) {
 			kill(-pid, SIGTERM);
 			usleep(100000);
 			kill(-pid, SIGKILL);
-			
+
 			close(output_pipe[0]);
-			
-			response.setStatusCode(408);
+
+			response.setStatusCode(504);
 			response.setHeader("Connection", "close");
 			response.setHeader("Cache-Control", "no-store");
-			setErrorResponse(response, 408);
-			
+			setErrorResponse(response, 504);
+
 			int status;
 			waitpid(pid, &status, 0);
 			return;
