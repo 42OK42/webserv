@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpResponse.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 18:05:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/19 21:14:45 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/22 15:55:25 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,6 +42,7 @@ void HttpResponse::setStatusMessage(int code)
 		case 405: statusMessage = "Method Not Allowed"; break;
 		case 413: statusMessage = "Payload Too Large"; break;
 		case 500: statusMessage = "Internal Server Error"; break;
+		case 504: statusMessage = "Gateway Timeout"; break;
 		default: statusMessage = "Unknown Status"; break;
 	}
 }
@@ -57,6 +58,15 @@ void HttpResponse::setBody(const std::string& body)
 	std::stringstream ss;
 	ss << body.size();
 	setHeader("Content-Length", ss.str());
+}
+
+const std::string& HttpResponse::getHeader(const std::string& key) const {
+    static const std::string empty_string;
+    std::map<std::string, std::string>::const_iterator it = headers.find(key);
+    if (it != headers.end()) {
+        return it->second;
+    }
+    return empty_string;
 }
 
 std::string HttpResponse::toString() const

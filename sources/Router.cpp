@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Router.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/19 21:17:03 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/22 15:55:52 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -150,19 +150,30 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 
 	if (path.find("/cgi-bin/") == 0) {
 		try {
+			std::cerr << "Debug: Path starts with /cgi-bin/ -> " << path << std::endl;
+
 			const Location& location = _serverConfig.findLocation("/cgi-bin");
+			std::cerr << "Debug: Location found for /cgi-bin" << std::endl;
+
 			std::string scriptPath = constructScriptPath(request, location);
+			std::cerr << "Debug: Constructed scriptPath -> " << scriptPath << std::endl;
+
 			if (access(scriptPath.c_str(), F_OK) == -1) {
+				std::cerr << "Debug: Script does not exist at path -> " << scriptPath << std::endl;
 				setErrorResponse(response, 404);
 				return;
 			}
+
+			std::cerr << "Debug: Script exists. Proceeding to handleCGI." << std::endl;
 			handleCGI(request, response, location);
 			return;
 		} catch (const ServerConfig::LocationNotFound& e) {
+			std::cerr << "Debug: LocationNotFound exception caught for /cgi-bin." << std::endl;
 			setErrorResponse(response, 404);
 			return;
 		}
 	}
+
 
 	size_t queryPos = path.find('?');
 	if (queryPos != std::string::npos) {
@@ -349,7 +360,7 @@ void Router::handlePOST(const HttpRequest& request, HttpResponse& response, cons
 
 	size_t maxBodySize = location.getClientMaxBodySize();
 
-	if (maxBodySize)
+	if (maxBodySize != static_cast<size_t>(-1))
 	{
 		if (request.getBody().length() > maxBodySize) {
 			setErrorResponse(response, 413);
@@ -465,10 +476,10 @@ void Router::handleDELETE(const HttpRequest& request, HttpResponse& response, co
 void Router::setErrorResponse(HttpResponse& response, int errorCode) {
 	response.setStatusCode(errorCode);
 	response.setHeader("Connection", "close");
-	
+
 	const std::map<int, std::string>& errorPages = _serverConfig.getErrorPages();
 	std::map<int, std::string>::const_iterator it = errorPages.find(errorCode);
-	
+
 	if (it != errorPages.end()) {
 		std::string errorBody = _serverConfig.readFile(it->second);
 		if (!errorBody.empty()) {
@@ -477,7 +488,7 @@ void Router::setErrorResponse(HttpResponse& response, int errorCode) {
 			return;
 		}
 	}
-	
+
 	std::ostringstream ss;
 	ss << "<html><body><h1>Error " << errorCode << "</h1></body></html>";
 	response.setBody(ss.str());
@@ -814,23 +825,12 @@ void Router::handleParentProcess(const HttpRequest& request, HttpResponse& respo
 	int select_result = select(output_pipe[0] + 1, &read_fds, NULL, NULL, &timeout);
 	if (select_result == 0) {
 		std::cerr << "\033[1;31m[ERROR] CGI script timed out\033[0m" << std::endl;
-		
-		// Kill process properly
 		kill(pid, SIGTERM);
-		usleep(100000);  // Wait a bit
-		kill(pid, SIGKILL);  // Force kill if still running
-		
-		// Clean up pipes
-		close(input_pipe[1]);
-		close(output_pipe[0]);
-		
-		// Set error response with immediate connection close
-		setErrorResponse(response, 408);
+		usleep(100000);
+		kill(pid, SIGKILL);
+		setErrorResponse(response, 504);
 		response.setHeader("Connection", "close");
-		
-		// Wait for process to avoid zombie
-		waitpid(pid, NULL, 0);
-		
+		close(output_pipe[0]);
 		return;
 	}
 
