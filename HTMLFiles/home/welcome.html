@@ -284,10 +284,8 @@
 		const windowWidth = window.innerWidth;
 		const numberOfStalks = Math.floor(windowWidth / stalkWidth);
 		
-		// Lösche existierende Stalks
 		cornfield.innerHTML = '';
 		
-		// Füge neue Stalks basierend auf der Fensterbreite hinzu
 		for (let i = 0; i < numberOfStalks; i++) {
 			const stalk = document.createElement('div');
 			stalk.className = 'stalk';
@@ -295,10 +293,8 @@
 		}
 	}
 
-	// Initial ausführen
 	adjustCornStalks();
 
-	// Bei Fenstergrößenänderung anpassen
 	window.addEventListener('resize', adjustCornStalks);
 	</script>
 </body>
