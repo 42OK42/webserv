@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserver.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/22 15:57:23 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/22 16:31:12 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -113,28 +113,44 @@ void Webserver::initializeServers()
 	@returns void
 */
 void Webserver::runEventLoop() {
-	size_t activeClients = 0;
-	for (size_t i = 0; i < fds.size(); ++i) {
-		if (!isServerSocket(fds[i].fd)) {
-			activeClients++;
-		}
-	}
-
-	int poll_count = poll(&fds[0], fds.size(), -1);
-
-	if (poll_count < 0) {
-		if (errno != EINTR) {
-			std::cerr << "Poll error: " << strerror(errno) << std::endl;
-		}
+	// Überprüfe ob es überhaupt File Descriptors gibt
+	if (fds.empty()) {
 		return;
 	}
 
-	for (size_t i = 0; i < fds.size(); ++i) {
-		if (fds[i].revents & POLLIN) {
-			if (isServerSocket(fds[i].fd)) {
-				handleNewConnection(fds[i].fd);
+	// Poll für Events mit Timeout von 1000ms (1 Sekunde)
+	int poll_count = poll(&fds[0], fds.size(), 1000);
+
+	if (poll_count < 0) {
+		if (errno == EINTR) {
+			// Wurde durch Signal unterbrochen (z.B. SIGINT)
+			return;
+		}
+		std::cerr << "Poll error: " << strerror(errno) << std::endl;
+		return;
+	}
+
+	// Timeout - keine Events
+	if (poll_count == 0) {
+		return;
+	}
+
+	// Kopiere fds um sichere Iteration zu gewährleisten
+	std::vector<struct pollfd> current_fds = fds;
+	
+	for (size_t i = 0; i < current_fds.size() && !sigint_flag; ++i) {
+		if (current_fds[i].revents & (POLLIN | POLLHUP)) {
+			if (isServerSocket(current_fds[i].fd)) {
+				handleNewConnection(current_fds[i].fd);
 			} else {
 				handleClientData(i);
+			}
+		}
+		
+		// Überprüfe auf Fehler oder geschlossene Verbindungen
+		if (current_fds[i].revents & (POLLERR | POLLNVAL)) {
+			if (!isServerSocket(current_fds[i].fd)) {
+				closeConnection(i);
 			}
 		}
 	}
@@ -304,8 +320,20 @@ void Webserver::handleClientData(size_t index) {
 	@returns void
 */
 void Webserver::closeConnection(size_t index) {
+	if (index >= fds.size()) {
+		return;
+	}
+	
 	int client_fd = fds[index].fd;
 	std::cout << "\033[0;36m[INFO] Webserver::closeConnection: Closing client " << client_fd << "\033[0m" << std::endl;
+	
+	// Finde den zugehörigen Server
+	std::map<int, int>::iterator server_it = client_to_server.find(client_fd);
+	if (server_it != client_to_server.end()) {
+		ServerConfig& server = _servers[server_it->second];
+		server.eraseClientData(client_fd);
+	}
+	
 	close(client_fd);
 	fds.erase(fds.begin() + index);
 	client_to_server.erase(client_fd);
@@ -368,6 +396,10 @@ ServerConfig* Webserver::findMatchingServer(const std::string& host, int port) {
 	@returns void
 */
 void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, int client_fd) {
+	if (!server) {
+		return;
+	}
+	
 	#ifdef DEBUG_MODE
 	std::cout << "\033[0;36m[DEBUG] Webserver::processRequest: Processing request for client "
 			  << client_fd << "\033[0m" << std::endl;
@@ -376,32 +408,39 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 	HttpResponse httpResponse(httpRequest);
 	Router router(*server);
 
-	router.handleRequest(httpRequest, httpResponse);
-
-	std::string responseStr = httpResponse.toString();
-
-	#ifdef DEBUG_MODE
-	std::cout << "\033[0;36m[DEBUG] Webserver::processRequest: Sending response:\n"
-			  << responseStr << "\033[0m" << std::endl;
-	#endif
-
-	ssize_t total_sent = 0;
-	while (total_sent < static_cast<ssize_t>(responseStr.length())) {
-		ssize_t sent = send(client_fd, responseStr.c_str() + total_sent,
-						  responseStr.length() - total_sent, MSG_NOSIGNAL);
-		if (sent <= 0) {
-			#ifdef DEBUG_MODE
-			std::cerr << "\033[0;31m[DEBUG] Webserver::processRequest: Error while sending\033[0m" << std::endl;
-			#endif
-			break;
+	try {
+		router.handleRequest(httpRequest, httpResponse);
+		
+		std::string responseStr = httpResponse.toString();
+		ssize_t total_sent = 0;
+		
+		while (total_sent < static_cast<ssize_t>(responseStr.length())) {
+			ssize_t sent = send(client_fd, responseStr.c_str() + total_sent,
+							  responseStr.length() - total_sent, MSG_NOSIGNAL);
+			if (sent <= 0) {
+				break;
+			}
+			total_sent += sent;
 		}
-		total_sent += sent;
-	}
 
-	if (httpResponse.getHeader("Connection") == "close") {
-		shutdown(client_fd, SHUT_RDWR);  // Explizites Shutdown
-		usleep(10000);                   // 10ms warten
-		closeConnection(client_fd);          // Verbindung schließen
+		if (httpResponse.getHeader("Connection") == "close") {
+			// Finde den Index des client_fd in fds
+			for (size_t i = 0; i < fds.size(); ++i) {
+				if (fds[i].fd == client_fd) {
+					closeConnection(i);
+					break;
+				}
+			}
+		}
+	} catch (const std::exception& e) {
+		std::cerr << "Error in processRequest: " << e.what() << std::endl;
+		// Finde den Index des client_fd in fds
+		for (size_t i = 0; i < fds.size(); ++i) {
+			if (fds[i].fd == client_fd) {
+				closeConnection(i);
+				break;
+			}
+		}
 	}
 }
 
