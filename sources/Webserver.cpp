@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/22 16:33:01 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/22 17:36:35 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -416,7 +416,6 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 		}
 
 		if (httpResponse.getHeader("Connection") == "close") {
-			// Finde den Index des client_fd in fds
 			for (size_t i = 0; i < fds.size(); ++i) {
 				if (fds[i].fd == client_fd) {
 					closeConnection(i);
@@ -426,7 +425,6 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 		}
 	} catch (const std::exception& e) {
 		std::cerr << "Error in processRequest: " << e.what() << std::endl;
-		// Finde den Index des client_fd in fds
 		for (size_t i = 0; i < fds.size(); ++i) {
 			if (fds[i].fd == client_fd) {
 				closeConnection(i);
