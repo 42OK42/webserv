@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpResponse.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 18:05:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/20 17:29:34 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/22 15:41:18 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,6 +42,7 @@ void HttpResponse::setStatusMessage(int code)
 		case 405: statusMessage = "Method Not Allowed"; break;
 		case 413: statusMessage = "Payload Too Large"; break;
 		case 500: statusMessage = "Internal Server Error"; break;
+		case 504: statusMessage = "Gateway Timeout"; break;
 		default: statusMessage = "Unknown Status"; break;
 	}
 }

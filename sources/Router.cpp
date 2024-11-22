@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Router.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/20 17:26:01 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/22 15:48:49 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -150,19 +150,30 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 
 	if (path.find("/cgi-bin/") == 0) {
 		try {
+			std::cerr << "Debug: Path starts with /cgi-bin/ -> " << path << std::endl;
+
 			const Location& location = _serverConfig.findLocation("/cgi-bin");
+			std::cerr << "Debug: Location found for /cgi-bin" << std::endl;
+
 			std::string scriptPath = constructScriptPath(request, location);
+			std::cerr << "Debug: Constructed scriptPath -> " << scriptPath << std::endl;
+
 			if (access(scriptPath.c_str(), F_OK) == -1) {
+				std::cerr << "Debug: Script does not exist at path -> " << scriptPath << std::endl;
 				setErrorResponse(response, 404);
 				return;
 			}
+
+			std::cerr << "Debug: Script exists. Proceeding to handleCGI." << std::endl;
 			handleCGI(request, response, location);
 			return;
 		} catch (const ServerConfig::LocationNotFound& e) {
+			std::cerr << "Debug: LocationNotFound exception caught for /cgi-bin." << std::endl;
 			setErrorResponse(response, 404);
 			return;
 		}
 	}
+
 
 	size_t queryPos = path.find('?');
 	if (queryPos != std::string::npos) {
@@ -349,7 +360,7 @@ void Router::handlePOST(const HttpRequest& request, HttpResponse& response, cons
 
 	size_t maxBodySize = location.getClientMaxBodySize();
 
-	if (maxBodySize)
+	if (maxBodySize != static_cast<size_t>(-1))
 	{
 		if (request.getBody().length() > maxBodySize) {
 			setErrorResponse(response, 413);
@@ -811,7 +822,7 @@ void Router::handleParentProcess(const HttpRequest& request, HttpResponse& respo
 		kill(pid, SIGTERM);
 		usleep(100000);
 		kill(pid, SIGKILL);
-		setErrorResponse(response, 408);
+		setErrorResponse(response, 504);
 		response.setHeader("Connection", "close");
 		close(output_pipe[0]);
 		return;

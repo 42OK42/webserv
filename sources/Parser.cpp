@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 20:25:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/17 03:42:07 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/22 15:34:13 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -268,7 +268,9 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
                 sizeStr = removeSemicolon(sizeStr);
                 std::stringstream ss(sizeStr);
                 ss >> size;
-                serverTemplate.setClientMaxBodySize(size);
+				if (size)
+                	serverTemplate.setClientMaxBodySize(size);
+
             }
             else if (key == "location") {
                 std::string path;
@@ -279,6 +281,12 @@ bool Parser::ParseConfigStream(std::stringstream& buffer)
                 location.setPath(path);
 				if (size)
 				{
+					location.setClientMaxBodySize(size);
+				}
+				else
+				{
+					size = -1;
+					serverTemplate.setClientMaxBodySize(size);
 					location.setClientMaxBodySize(size);
 				}
 

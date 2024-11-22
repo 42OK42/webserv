@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/18 17:04:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/17 04:19:48 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/22 15:40:38 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -310,6 +310,7 @@ void  ServerConfig::checkErrorPage()
 	errorsToCheck.push_back(413);
 	errorsToCheck.push_back(415);
 	errorsToCheck.push_back(500);
+	errorsToCheck.push_back(504);
 
 	std::map<int, std::string> defaultErrorPaths;
 	defaultErrorPaths[400] = "/HTMLFiles/error/400.html";
@@ -320,6 +321,7 @@ void  ServerConfig::checkErrorPage()
 	defaultErrorPaths[413] = "/HTMLFiles/error/413.html";
 	defaultErrorPaths[415] = "/HTMLFiles/error/415.html";
 	defaultErrorPaths[500] = "/HTMLFiles/error/500.html";
+	defaultErrorPaths[504] = "/HTMLFiles/error/504.html";
 
 	for (size_t i = 0; i < errorsToCheck.size(); ++i)
 	{
@@ -449,7 +451,7 @@ std::ostream& operator<<(std::ostream& os, const ServerConfig& server) {
 
 	os << "\033[1m\033[31mPort: " << server.getPort() << "\033[0m" << std::endl;
 	os << "\033[1m\033[32mHost: " << server.getHost() << "\033[0m" << std::endl;
-	os << "\033[1m\033[34mServer name: " << server.getServerName() << "\033[0m" << std::endl;
+	os << "\033[1m\033[34mMaxbodysize: " << server.getClientMaxBodySize() << "\033[0m" << std::endl;
 
 	os << std::endl;
 
