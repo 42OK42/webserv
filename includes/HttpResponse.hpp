@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 17:16:51 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/22 15:54:34 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/22 16:01:01 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ class HttpResponse
 		void setStatusCode(int code);
 		void setHeader(const std::string& key, const std::string& value);
 		void setBody(const std::string& body);
-		const std::string& getHeader(const std::string& key) const;
+		
 
 		std::string toString() const;
 		std::string getHeader(const std::string& key) const;

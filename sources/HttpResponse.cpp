@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/02 18:05:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/22 15:55:25 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/22 16:01:56 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,14 +60,7 @@ void HttpResponse::setBody(const std::string& body)
 	setHeader("Content-Length", ss.str());
 }
 
-const std::string& HttpResponse::getHeader(const std::string& key) const {
-    static const std::string empty_string;
-    std::map<std::string, std::string>::const_iterator it = headers.find(key);
-    if (it != headers.end()) {
-        return it->second;
-    }
-    return empty_string;
-}
+
 
 std::string HttpResponse::toString() const
 {
