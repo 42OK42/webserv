@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Router.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/22 15:55:52 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/25 16:13:20 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -827,7 +827,11 @@ void Router::handleParentProcess(const HttpRequest& request, HttpResponse& respo
 		std::cerr << "\033[1;31m[ERROR] CGI script timed out\033[0m" << std::endl;
 		kill(pid, SIGTERM);
 		usleep(100000);
-		kill(pid, SIGKILL);
+		int status;
+		if (waitpid(pid, &status, WNOHANG) == 0) {
+			kill(pid, SIGKILL);
+			waitpid(pid, NULL, 0);
+		}
 		setErrorResponse(response, 504);
 		response.setHeader("Connection", "close");
 		close(output_pipe[0]);

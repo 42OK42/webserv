@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/22 17:36:35 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/25 16:40:26 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -116,7 +116,10 @@ void Webserver::runEventLoop() {
 		return;
 	}
 
-	int poll_count = poll(&fds[0], fds.size(), 1000);
+	// Kopie der fds erstellen, um Modifikationen während der Iteration zu vermeiden
+	std::vector<struct pollfd> current_fds = fds;
+	
+	int poll_count = poll(&current_fds[0], current_fds.size(), 1000);
 
 	if (poll_count < 0) {
 		if (errno == EINTR) {
@@ -130,8 +133,6 @@ void Webserver::runEventLoop() {
 		return;
 	}
 
-	std::vector<struct pollfd> current_fds = fds;
-	
 	for (size_t i = 0; i < current_fds.size() && !sigint_flag; ++i) {
 		if (current_fds[i].revents & (POLLIN | POLLHUP)) {
 			if (isServerSocket(current_fds[i].fd)) {
@@ -216,26 +217,38 @@ void Webserver::handleNewConnection(int server_socket) {
 	@returns void
 */
 void Webserver::handleClientData(size_t index) {
-	int client_fd = fds[index].fd;
-	int server_socket = client_to_server[client_fd];
-
-	ServerConfig* server = NULL;
-	for (size_t i = 0; i < _servers.size(); ++i) {
-		if (_servers[i].getSocket() == server_socket) {
-			server = &_servers[i];
-			break;
-		}
-	}
-
-	if (!server) {
-		#ifdef DEBUG_MODE
-		std::cerr << "\033[0;31m[DEBUG] Webserver::handleClientData: No server found for socket " << server_socket << "\033[0m" << std::endl;
-		#endif
-		closeConnection(index);
+	if (index >= fds.size()) {
 		return;
 	}
-
+	
+	int client_fd = fds[index].fd;
+	bool shouldClose = false;
+	
 	try {
+		std::map<int, int>::iterator server_it = client_to_server.find(client_fd);
+		if (server_it == client_to_server.end()) {
+			closeConnection(index);
+			return;
+		}
+		
+		int server_socket = server_it->second;
+
+		ServerConfig* server = NULL;
+		for (size_t i = 0; i < _servers.size(); ++i) {
+			if (_servers[i].getSocket() == server_socket) {
+				server = &_servers[i];
+				break;
+			}
+		}
+
+		if (!server) {
+			#ifdef DEBUG_MODE
+			std::cerr << "\033[0;31m[DEBUG] Webserver::handleClientData: No server found for socket " << server_socket << "\033[0m" << std::endl;
+			#endif
+			closeConnection(index);
+			return;
+		}
+
 		bool requestComplete = server->readClientData(client_fd);
 		if (!requestComplete) {
 			return;
@@ -248,56 +261,27 @@ void Webserver::handleClientData(size_t index) {
 			return;
 		}
 
-		try {
-			HttpRequest httpRequest(requestData.c_str(), requestData.length(), *server);
-			bool shouldClose = (httpRequest.getHeader("Connection") == "close");
+		HttpRequest httpRequest(requestData.c_str(), requestData.length(), *server);
+		if (httpRequest.getHeader("Connection") == "close") {
+			shouldClose = true;
+		}
 
-			#ifdef DEBUG_MODE
-			std::cout << "\033[0;36m[DEBUG] Webserver::handleClientData: Connection Header = " << httpRequest.getHeader("Connection") << "\033[0m" << std::endl;
-			#endif
+		ServerConfig* matchingServer = findMatchingServer(httpRequest.getHost(), httpRequest.getPort());
+		if (matchingServer) {
+			processRequest(httpRequest, matchingServer, client_fd);
+		} else {
+			processRequest(httpRequest, server, client_fd);
+		}
 
-			ServerConfig* matchingServer = findMatchingServer(httpRequest.getHost(), httpRequest.getPort());
-			if (matchingServer) {
-				processRequest(httpRequest, matchingServer, client_fd);
-			} else {
-				processRequest(httpRequest, server, client_fd);
-			}
+		server->eraseClientData(client_fd);
 
-			server->eraseClientData(client_fd);
-
-			if (shouldClose) {
-				#ifdef DEBUG_MODE
-				std::cout << "\033[0;36m[DEBUG] Webserver::handleClientData: Closing connection upon request\033[0m" << std::endl;
-				#endif
-				closeConnection(index);
-			}
-
-		} catch (const std::runtime_error& e) {
-			if (std::string(e.what()) == "Request body exceeds maximum allowed size") {
-				#ifdef DEBUG_MODE
-				std::cout << "\033[0;31m[DEBUG] Webserver::handleClientData: File too large, sending 413\033[0m" << std::endl;
-				#endif
-
-				HttpResponse errorResponse;
-				Router router(*server);
-
-				router.setErrorResponse(errorResponse, 413);
-
-				std::string responseStr = errorResponse.toString();
-				send(client_fd, responseStr.c_str(), responseStr.length(), MSG_NOSIGNAL);
-
-				server->eraseClientData(client_fd);
-				closeConnection(index);
-				return;
-			}
+		if (shouldClose) {
+			std::cout << "[DEBUG] Closing connection due to Connection: close header" << std::endl;
 			closeConnection(index);
-			return;
 		}
 
 	} catch (const std::exception& e) {
-		#ifdef DEBUG_MODE
-		std::cerr << "\033[0;31m[DEBUG] Webserver::handleClientData: Error: " << e.what() << "\033[0m" << std::endl;
-		#endif
+		std::cerr << "[ERROR] Error in handleClientData: " << e.what() << std::endl;
 		closeConnection(index);
 	}
 }
@@ -314,21 +298,30 @@ void Webserver::handleClientData(size_t index) {
 */
 void Webserver::closeConnection(size_t index) {
 	if (index >= fds.size()) {
+		std::cerr << "[ERROR] Invalid index in closeConnection: " << index << std::endl;
 		return;
 	}
 	
 	int client_fd = fds[index].fd;
-	std::cout << "\033[0;36m[INFO] Webserver::closeConnection: Closing client " << client_fd << "\033[0m" << std::endl;
+	std::cout << "[DEBUG] Closing connection for client_fd: " << client_fd << std::endl;
 	
+	// Erst die Maps bereinigen
 	std::map<int, int>::iterator server_it = client_to_server.find(client_fd);
 	if (server_it != client_to_server.end()) {
-		ServerConfig& server = _servers[server_it->second];
-		server.eraseClientData(client_fd);
+		client_to_server.erase(server_it);
 	}
 	
-	close(client_fd);
-	fds.erase(fds.begin() + index);
-	client_to_server.erase(client_fd);
+	// Socket schließen
+	if (client_fd >= 0) {
+		close(client_fd);
+	}
+	
+	// Aus fds entfernen
+	try {
+		fds.erase(fds.begin() + index);
+	} catch (const std::exception& e) {
+		std::cerr << "[ERROR] Failed to erase fd: " << e.what() << std::endl;
+	}
 }
 
 /*
