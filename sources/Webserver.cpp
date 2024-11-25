@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserver.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/25 17:55:00 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/25 18:01:53 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -116,9 +116,8 @@ void Webserver::runEventLoop() {
 		return;
 	}
 
-	// Kopie der fds erstellen, um Modifikationen während der Iteration zu vermeiden
 	std::vector<struct pollfd> current_fds = fds;
-	
+
 	int poll_count = poll(&current_fds[0], current_fds.size(), 1000);
 
 	if (poll_count < 0) {
@@ -141,7 +140,7 @@ void Webserver::runEventLoop() {
 				handleClientData(i);
 			}
 		}
-		
+
 		if (current_fds[i].revents & (POLLERR | POLLNVAL)) {
 			if (!isServerSocket(current_fds[i].fd)) {
 				closeConnection(i);
@@ -220,17 +219,17 @@ void Webserver::handleClientData(size_t index) {
 	if (index >= fds.size()) {
 		return;
 	}
-	
+
 	int client_fd = fds[index].fd;
 	bool shouldClose = false;
-	
+
 	try {
 		std::map<int, int>::iterator server_it = client_to_server.find(client_fd);
 		if (server_it == client_to_server.end()) {
 			closeConnection(index);
 			return;
 		}
-		
+
 		int server_socket = server_it->second;
 
 		ServerConfig* server = NULL;
@@ -303,24 +302,21 @@ void Webserver::closeConnection(size_t index) {
 		std::cerr << "[ERROR] Invalid index in closeConnection: " << index << std::endl;
 		return;
 	}
-	
+
 	int client_fd = fds[index].fd;
 	#ifdef DEBUG_MODE
 	std::cout << "[DEBUG] Closing connection for client_fd: " << client_fd << std::endl;
 	#endif
-	
-	// Erst die Maps bereinigen
+
 	std::map<int, int>::iterator server_it = client_to_server.find(client_fd);
 	if (server_it != client_to_server.end()) {
 		client_to_server.erase(server_it);
 	}
-	
-	// Socket schließen
+
 	if (client_fd >= 0) {
 		close(client_fd);
 	}
-	
-	// Aus fds entfernen
+
 	try {
 		fds.erase(fds.begin() + index);
 	} catch (const std::exception& e) {
@@ -388,7 +384,7 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 	if (!server) {
 		return;
 	}
-	
+
 	#ifdef DEBUG_MODE
 	std::cout << "\033[0;36m[DEBUG] Webserver::processRequest: Processing request for client "
 			  << client_fd << "\033[0m" << std::endl;
@@ -399,10 +395,10 @@ void Webserver::processRequest(HttpRequest& httpRequest, ServerConfig* server, i
 
 	try {
 		router.handleRequest(httpRequest, httpResponse);
-		
+
 		std::string responseStr = httpResponse.toString();
 		ssize_t total_sent = 0;
-		
+
 		while (total_sent < static_cast<ssize_t>(responseStr.length())) {
 			ssize_t sent = send(client_fd, responseStr.c_str() + total_sent,
 							  responseStr.length() - total_sent, MSG_NOSIGNAL);
