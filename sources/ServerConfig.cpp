@@ -6,7 +6,7 @@
 /*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/18 17:04:09 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/25 16:56:32 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/25 17:21:57 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -211,18 +211,6 @@ void ServerConfig::setErrorPage(const std::vector<std::string>& tokens) {
 }
 
 void ServerConfig::setClientMaxBodySize(size_t token) {
-
-    std::stringstream ss;
-    ss << token;
-    std::string sizeString = ss.str();
-
-    if (sizeString[sizeString.length() - 1] == 'M' || sizeString[sizeString.length() - 1] == 'm') {
-        sizeString = sizeString.substr(0, sizeString.length() - 1);
-        size_t sizeInMb = 0;
-        std::istringstream(sizeString) >> sizeInMb;
-
-        token = sizeInMb * 1024 * 1024;
-    }
 
     _clientMaxBodySize = token;
 }
