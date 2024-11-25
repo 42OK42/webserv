@@ -44,6 +44,17 @@
 		"system_error": "cpp",
 		"type_traits": "cpp",
 		"tuple": "cpp",
-		"typeinfo": "cpp"
+		"typeinfo": "cpp",
+		"atomic": "cpp",
+		"bit": "cpp",
+		"cstdarg": "cpp",
+		"cstddef": "cpp",
+		"iterator": "cpp",
+		"memory": "cpp",
+		"numeric": "cpp",
+		"optional": "cpp",
+		"ranges": "cpp",
+		"span": "cpp",
+		"cinttypes": "cpp"
 	}
 }

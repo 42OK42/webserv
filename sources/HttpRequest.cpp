@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpRequest.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
+/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/08 15:49:27 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/22 17:18:37 by ecarlier         ###   ########.fr       */
+/*   Updated: 2024/11/25 17:53:28 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -134,7 +134,9 @@ void HttpRequest::parse(const char* buffer, int bytesRead) {
 
 		if (!_serverConfig.isBodySizeAllowed(contentLength))
 		{
+			#ifdef DEBUG_MODE
 			std::cout << "\033[0;31m[DEBUG] HttpRequest::parse: Content-Length exceeds allowed size\033[0m" << std::endl;
+			#endif
 		}
 
 

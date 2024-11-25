@@ -6,7 +6,7 @@
 /*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 15:06:19 by ecarlier          #+#    #+#             */
-/*   Updated: 2024/11/25 16:40:26 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/25 17:55:00 by okrahl           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -276,7 +276,9 @@ void Webserver::handleClientData(size_t index) {
 		server->eraseClientData(client_fd);
 
 		if (shouldClose) {
+			#ifdef DEBUG_MODE
 			std::cout << "[DEBUG] Closing connection due to Connection: close header" << std::endl;
+			#endif
 			closeConnection(index);
 		}
 
@@ -303,7 +305,9 @@ void Webserver::closeConnection(size_t index) {
 	}
 	
 	int client_fd = fds[index].fd;
+	#ifdef DEBUG_MODE
 	std::cout << "[DEBUG] Closing connection for client_fd: " << client_fd << std::endl;
+	#endif
 	
 	// Erst die Maps bereinigen
 	std::map<int, int>::iterator server_it = client_to_server.find(client_fd);
