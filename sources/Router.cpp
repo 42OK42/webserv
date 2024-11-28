@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Router.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/11/25 17:52:46 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/28 17:14:35 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -150,25 +150,19 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 
 	if (path.find("/cgi-bin/") == 0) {
 		try {
-			std::cerr << "Debug: Path starts with /cgi-bin/ -> " << path << std::endl;
 
 			const Location& location = _serverConfig.findLocation("/cgi-bin");
-			std::cerr << "Debug: Location found for /cgi-bin" << std::endl;
 
 			std::string scriptPath = constructScriptPath(request, location);
-			std::cerr << "Debug: Constructed scriptPath -> " << scriptPath << std::endl;
 
 			if (access(scriptPath.c_str(), F_OK) == -1) {
-				std::cerr << "Debug: Script does not exist at path -> " << scriptPath << std::endl;
 				setErrorResponse(response, 404);
 				return;
 			}
 
-			std::cerr << "Debug: Script exists. Proceeding to handleCGI." << std::endl;
 			handleCGI(request, response, location);
 			return;
 		} catch (const ServerConfig::LocationNotFound& e) {
-			std::cerr << "Debug: LocationNotFound exception caught for /cgi-bin." << std::endl;
 			setErrorResponse(response, 404);
 			return;
 		}
