@@ -25,7 +25,7 @@ This project involves the development of an HTTP server written in C++98, design
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone git@github.com:42OK42/webserv.git
 cd webserv
 
 # Compile the server
