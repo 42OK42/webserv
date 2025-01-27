@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Router.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: okrahl <okrahl@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ecarlier <ecarlier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/16 17:44:54 by okrahl            #+#    #+#             */
-/*   Updated: 2024/12/03 15:41:30 by okrahl           ###   ########.fr       */
+/*   Updated: 2024/11/28 17:14:35 by ecarlier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -182,24 +182,11 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 			return;
 		}
 
-		std::string fullPath = location.getRoot();
-		if (request.getMethod() == "GET") {
-			if (access(fullPath.c_str(), R_OK) == -1) {
-				setErrorResponse(response, 403);
-				return;
-			}
-		} else if (request.getMethod() == "POST" || request.getMethod() == "DELETE") {
-			if (access(fullPath.c_str(), W_OK) == -1) {
-				setErrorResponse(response, 403);
-				return;
-			}
-		}
-
 		if (request.getMethod() == "GET") {
 			handleGET(request, response, location);
 		}
 		else if (request.getMethod() == "POST") {
-			
+			handlePOST(request, response, location);
 		}
 		else if (request.getMethod() == "DELETE") {
 			handleDELETE(request, response, location);
@@ -227,13 +214,12 @@ void Router::handleRequest(const HttpRequest& request, HttpResponse& response) {
 	@returns void
 */
 void Router::handleGET(const HttpRequest& request, HttpResponse& response, const Location& location) {
-	std::string path = request.getUrl();
-
-	if (access(location.getRoot().c_str(), R_OK) == -1) {
-		setErrorResponse(response, 403);
+	if (!location.isMethodAllowed("GET")) {
+		setErrorResponse(response, 405);
 		return;
 	}
 
+	std::string path = request.getUrl();
 	size_t queryPos = path.find("?file=");
 
 	if (queryPos != std::string::npos) {
