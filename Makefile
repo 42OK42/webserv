@@ -1,7 +1,7 @@
 GREEN = \033[0;32m
 RESET = \033[0m
 
-DEBUG = 1
+DEBUG = 0
 PARSER = 0
 
 NAME = webserv
